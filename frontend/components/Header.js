@@ -2,47 +2,6 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 
-const HeaderContainer = styled.div`
-  border-bottom: 1px solid #b9b9b9;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 15px;
-`;
-const Title = styled.div`
-  a {
-    font-weight: 600;
-    font-size: 25px;
-    :hover {
-      color: #0f6cf7;
-    }
-  }
-`;
-
-const ButtonContainer = styled.div`
-  display: flex;
-  gap: 15px;
-  justify-content: space-between;
-  align-items: center;
-`;
-
-const Button = styled.button`
-  /* margin: 5px; */
-  background-color: #0f6cf7;
-  opacity: 75%;
-  color: white;
-  padding: 10px 20px;
-  font-size: 110%;
-  border-radius: 3px;
-  min-width: 100px;
-  border: none;
-  outline: none;
-  cursor: pointer;
-  :hover {
-    opacity: 100%;
-  }
-`;
-
 const Header = () => {
   const [currentAccount, setCurrentAccount] = useState('');
   const checkIfWalletIsConnected = async () => {
@@ -112,5 +71,45 @@ const Header = () => {
     </HeaderContainer>
   );
 };
+
+const HeaderContainer = styled.div`
+  border-bottom: 1px solid #b9b9b9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+`;
+const Title = styled.div`
+  a {
+    font-weight: 600;
+    font-size: 25px;
+    :hover {
+      color: #0f6cf7;
+    }
+  }
+`;
+
+const ButtonContainer = styled.div`
+  display: flex;
+  gap: 15px;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const Button = styled.button`
+  background-color: #0f6cf7;
+  opacity: 75%;
+  color: white;
+  padding: 10px 20px;
+  font-size: 110%;
+  border-radius: 3px;
+  min-width: 100px;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  :hover {
+    opacity: 100%;
+  }
+`;
 
 export default Header;
