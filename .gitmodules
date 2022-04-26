@@ -1,3 +1,6 @@
 [submodule "contracts/lib/ds-test"]
 	path = contracts/lib/ds-test
 	url = https://github.com/dapphub/ds-test
+[submodule "contracts/lib/ds-weth"]
+	path = contracts/lib/ds-weth
+	url = https://github.com/dapphub/ds-weth
