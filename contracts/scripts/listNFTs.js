@@ -6,6 +6,7 @@ const {
   WETH_RINKEBY,
   SPECULATE_EXCHANGE,
   STRATEGY,
+  TRANSFER_MANAGER_ERC721,
 } = require('./addresses');
 require('dotenv').config();
 
@@ -32,6 +33,13 @@ const main = async () => {
   );
   await approval_tx.wait();
   console.log('approval tx:', approval_tx);
+
+  let approval_tx2 = await collection.setApprovalForAll(
+    TRANSFER_MANAGER_ERC721,
+    true
+  );
+  await approval_tx2.wait();
+  console.log('approval tx 2:', approval_tx);
 
   const speculateExchange = factory.attach(SPECULATE_EXCHANGE);
 

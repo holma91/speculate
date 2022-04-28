@@ -10,7 +10,7 @@ import "../libraries/OrderTypes.sol";
 
 // contracts
 import "../SpeculateExchange.sol";
-import "../strategies/StrategyStandardSaleForFixedPrice.sol";
+import "../StrategyStandardSaleForFixedPrice.sol";
 import "../TransferManagerERC721.sol";
 import "../TransferManagerERC1155.sol";
 import "../TransferSelectorNFT.sol";

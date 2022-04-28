@@ -1,0 +1,8 @@
+create user interface for fast nft marketplace
+
+listing (makerAsk)
+unlisting (undo makerAsk)
+bidding (makerBid)
+cancel bid (undo makerBid)
+buying (takerBid)
+selling (takerAsk)

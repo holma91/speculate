@@ -1,6 +1,6 @@
 const ethers = require('ethers');
 const SpeculateExchange = require('../out/SpeculateExchange.sol/SpeculateExchange.json');
-const { SPECULATE_EXCHANGE } = require('./addresses');
+const { SPECULATE_EXCHANGE, TRANSFER_SELECTOR_NFT } = require('./addresses');
 require('dotenv').config();
 
 const main = async () => {
@@ -14,9 +14,11 @@ const main = async () => {
 
   const speculateExchange = factory.attach(SPECULATE_EXCHANGE);
 
-  let makerOrder = await speculateExchange.getMakerOrder(1);
-
-  console.log(makerOrder);
+  // let tx = await speculateExchange.updateTransferSelectorNFT(
+  //   TRANSFER_SELECTOR_NFT
+  // );
+  let tx = await speculateExchange.getMakerOrder(2);
+  console.log(tx);
 };
 
 const runMain = async () => {

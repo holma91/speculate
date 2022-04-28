@@ -1,11 +1,17 @@
 
 
-deploy order:
+setup order:
+deploy:
 1. CurrencyManager
 2. ExecutionManager
 3. RoyaltyFeeRegistry
 4. RoyaltyFeeManager
 5. SpeculateExchange
+6. TransferManagerERC721
+7. TransferManagerERC1155
+8. TransferSelector
+call getters:
+9. TransferSelector on SpeculateExchange
 
 
 CurrencyManager deployed at: 0x3dc7a5Da5270CAd2F02BaBD4fB9b5C69E5B08a00
@@ -14,3 +20,6 @@ RoyaltyFeeRegistry deployed at: 0xfdC3f003C172f16aE896ea1aa72A579DD488c6f0
 RoyaltyFeeManager deployed at: 0xa1Addb86A0cD50dE4d5361853e52B8F8868F7f0B
 SpeculateExchange deployed at: 0x2F590c91288813bc6Da336aeF489Bd5DD4916aFB
 strategyStandardSaleForFixedPrice deployed at: 0x5931f4C378e63cA04f290e36E9F4818f47647935
+transferManagerERC721 deployed at: 0x480C5BD007a934eafBf02FEbE6C5f1bf6Bb92ec8
+transferManagerERC1155 deployed at: 0x0666d846C2C07568a0E562E1fFeFe599c3cCC526
+transferSelectorNFT deployed at: 0x4bF559Bce1218766c7d211217eD9b9A7DEBF4275

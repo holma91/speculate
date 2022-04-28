@@ -1,7 +1,12 @@
 const ethers = require('ethers');
 const SpeculateExchange = require('../out/SpeculateExchange.sol/SpeculateExchange.json');
 const WETH_ABI = require('../wethABI.json');
-const { ADDRESS3, WETH_RINKEBY, SPECULATE_EXCHANGE } = require('./addresses');
+const {
+  ADDRESS3,
+  WETH_RINKEBY,
+  SPECULATE_EXCHANGE,
+  TRANSFER_MANAGER_ERC721,
+} = require('./addresses');
 require('dotenv').config();
 
 const collectionAddress = '0x6a7091978AbDeCDFA06ff14bAAbf323873DFEd96';
@@ -24,7 +29,7 @@ const main = async () => {
   await approveTx.wait();
   console.log('approvedTx:', approveTx);
 
-  const makerAsk = await speculateExchange.getMakerOrder(1);
+  const makerAsk = await speculateExchange.getMakerOrder(3);
 
   // need to have a collection field in here aswell
   const takerBid = {
