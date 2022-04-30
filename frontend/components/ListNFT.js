@@ -1,5 +1,6 @@
 import { createAlchemyWeb3 } from '@alch/alchemy-web3';
 import { useEffect, useState } from 'react';
+import useFetch from '../hooks/useFetch';
 import styled from 'styled-components';
 
 export default function ListNFT() {
@@ -9,22 +10,22 @@ export default function ListNFT() {
     const getNfts = async () => {
       const { ethereum } = window;
       if (ethereum) {
-        const web3 = createAlchemyWeb3(process.env.ALCHEMY_RINKEBY_RPC);
-
-        // The wallet address we want to query for NFTs:
-        const ownerAddr = ethereum.selectedAddress;
-        const fetchedNfts = await web3.alchemy.getNfts({
-          owner: ownerAddr,
+        const chain = 'avalanche%20testnet';
+        const url = `https://deep-index.moralis.io/api/v2/${ethereum.selectedAddress}/nft?chain=${chain}&format=decimal`;
+        let response = await fetch(url, {
+          headers: { 'X-API-Key': process.env.MORALIS_API_KEY },
         });
 
-        console.log(fetchedNfts.ownedNfts);
+        response = await response.json();
+        const allNfts = response.result.map((nft) => {
+          return { ...nft, metadata: JSON.parse(nft.metadata) };
+        });
 
-        setNfts(fetchedNfts.ownedNfts);
+        setNfts(allNfts);
       } else {
         console.log('ethereum object not found');
       }
     };
-
     getNfts();
   }, []);
 
@@ -33,12 +34,12 @@ export default function ListNFT() {
       <h1>your nfts</h1>
       <NFTContainer>
         {nfts.map((nft) => {
-          return (
+          return nft.metadata && nft.metadata.image ? (
             <NFTCard key={Math.random() * 10}>
               <img src={nft.metadata.image} alt={`ugly nft`} />
               <ListButton>List</ListButton>
             </NFTCard>
-          );
+          ) : null;
         })}
       </NFTContainer>
     </Container>
@@ -58,6 +59,7 @@ const NFTContainer = styled.div`
   justify-content: center;
   flex-wrap: wrap;
   gap: 10px;
+  margin-bottom: 20px;
 `;
 
 const NFTCard = styled.div`
