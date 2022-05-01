@@ -1,12 +1,35 @@
-import { createAlchemyWeb3 } from '@alch/alchemy-web3';
 import { useEffect, useState } from 'react';
-import useFetch from '../hooks/useFetch';
+import { ethers } from 'ethers';
 import styled from 'styled-components';
+import SpeculateExchange from '../../contracts/out/SpeculateExchange.sol/SpeculateExchange.json';
+import { fuji } from '../utils/addresses';
 
 export default function ListNFT() {
+  const [exchangeContract, setExchangeContract] = useState(null);
   const [nfts, setNfts] = useState([]);
 
   useEffect(() => {
+    const setUpExchange = async () => {
+      const { ethereum } = window;
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const signer = provider.getSigner();
+        const contract = new ethers.Contract(
+          fuji.speculateExchange,
+          SpeculateExchange.abi,
+          signer
+        );
+        setExchangeContract(contract);
+      } else {
+        console.log('ethereum object not found');
+      }
+    };
+
+    const getMakerOrders = async () => {
+      // collection + id is a UID
+      // if nft found here, don't show in UI
+    };
+
     const getNfts = async () => {
       const { ethereum } = window;
       if (ethereum) {
@@ -26,8 +49,36 @@ export default function ListNFT() {
         console.log('ethereum object not found');
       }
     };
+
     getNfts();
+    setUpExchange();
   }, []);
+
+  const listNFT = async () => {
+    const { window } = ethereum;
+    if (window) {
+      const makerAsk = {
+        isOrderAsk: true,
+        signer: window.selectedAddress,
+        collection: fuji.nftCollection,
+        price: ethers.BigNumber.from(ethers.utils.parseEther('0.01')),
+        tokenId: 1,
+        amount: 1,
+        strategy: fuji.strategy,
+        currency: fuji.wavax,
+        startTime: 1651301377,
+        endTime: 1660995560,
+      };
+
+      let tx = await exchangeContract.createMakerAsk(makerAsk, {
+        gasLimit: 300000,
+      });
+      await tx.wait();
+      console.log(tx);
+    } else {
+      console.log('ethereum object not found');
+    }
+  };
 
   return (
     <Container>
@@ -37,7 +88,7 @@ export default function ListNFT() {
           return nft.metadata && nft.metadata.image ? (
             <NFTCard key={Math.random() * 10}>
               <img src={nft.metadata.image} alt={`ugly nft`} />
-              <ListButton>List</ListButton>
+              <ListButton onClick={listNFT}>List</ListButton>
             </NFTCard>
           ) : null;
         })}

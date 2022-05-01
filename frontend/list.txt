@@ -1,0 +1,12 @@
+1. get all nfts for the user
+2. get all makerAsks
+
+compare 1 and 2,
+- show the non-listed with the button list
+- show the listed with the button re-list
+
+
+1. click on list
+  - make a pre-configured makerAsk
+
+
