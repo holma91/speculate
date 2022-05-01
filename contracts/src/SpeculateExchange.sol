@@ -45,8 +45,17 @@ contract SpeculateExchange {
     // does stuff related to who can transfer assets in a collection
     ITransferSelectorNFT public transferSelectorNFT;
 
-    mapping(uint256 => OrderTypes.MakerOrder) public makerOrderById;
-    uint256 public makerOrderCount;
+    mapping(address => mapping(uint256 => OrderTypes.MakerOrder))
+        public makerAskByNFT;
+    mapping(address => mapping(uint256 => OrderTypes.MakerOrder))
+        public makerBidByNFT;
+
+    // convenience arrays for the frontend
+    OrderTypes.MakerOrder[] public makerAsks;
+    OrderTypes.MakerOrder[] public makerBids;
+
+    uint256 public makerAskCount;
+    uint256 public makerBidCount;
 
     // takes a bid, accepts an offer to sell
     event TakerBid(
@@ -82,12 +91,28 @@ contract SpeculateExchange {
         protocolFeeRecipient = _protocolFeeRecipient;
     }
 
-    function getMakerOrder(uint256 id)
+    function getMakerAsk(address collection, uint256 id)
         public
         view
         returns (OrderTypes.MakerOrder memory)
     {
-        return makerOrderById[id];
+        return makerAskByNFT[collection][id];
+    }
+
+    function getMakerAsks()
+        public
+        view
+        returns (OrderTypes.MakerOrder[] memory)
+    {
+        return makerAsks;
+    }
+
+    function getMakerBid(address collection, uint256 id)
+        public
+        view
+        returns (OrderTypes.MakerOrder memory)
+    {
+        return makerBidByNFT[collection][id];
     }
 
     function createMakerAsk(OrderTypes.MakerOrder calldata makerAsk)
@@ -103,9 +128,10 @@ contract SpeculateExchange {
             "caller is not the owner"
         );
 
-        makerOrderCount++;
-        makerOrderById[makerOrderCount] = makerAsk;
-        return makerOrderCount;
+        makerAskByNFT[makerAsk.collection][makerAsk.tokenId] = makerAsk;
+        makerAsks.push(makerAsk);
+        makerAskCount++;
+        return makerAskCount;
     }
 
     function createMakerBid(OrderTypes.MakerOrder calldata makerBid)
@@ -117,9 +143,10 @@ contract SpeculateExchange {
         // check that msg.sender have the funds?
         // check that the nft exists?
 
-        makerOrderCount++;
-        makerOrderById[makerOrderCount] = makerBid;
-        return makerOrderCount;
+        makerBidByNFT[makerBid.collection][makerBid.tokenId] = makerBid;
+        makerBids.push(makerBid);
+        makerBidCount++;
+        return makerBidCount;
     }
 
     function matchAskWithTakerBid(

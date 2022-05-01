@@ -1,10 +1,10 @@
 const ethers = require('ethers');
 const SpeculateExchange = require('../out/SpeculateExchange.sol/SpeculateExchange.json');
-const { SPECULATE_EXCHANGE, TRANSFER_SELECTOR_NFT } = require('./addresses');
+const { fuji, mumbai, rinkeby } = require('./addresses');
 require('dotenv').config();
 
 const main = async () => {
-  provider = new ethers.providers.JsonRpcProvider(process.env.rpc_rinkeby);
+  provider = new ethers.providers.JsonRpcProvider(process.env.rpc_fuji);
   const wallet = new ethers.Wallet(process.env.pk2, provider);
   const factory = new ethers.ContractFactory(
     SpeculateExchange.abi,
@@ -12,13 +12,15 @@ const main = async () => {
     wallet
   );
 
-  const speculateExchange = factory.attach(SPECULATE_EXCHANGE);
+  const speculateExchange = factory.attach(fuji.speculateExchange);
 
-  // let tx = await speculateExchange.updateTransferSelectorNFT(
-  //   TRANSFER_SELECTOR_NFT
-  // );
-  let tx = await speculateExchange.getMakerOrder(2);
-  console.log(tx);
+  let tx = await speculateExchange.updateTransferSelectorNFT(
+    fuji.transferSelectorNFT
+  );
+  await tx.wait();
+  console.log(tx.hash);
+  // const makerAsk = await speculateExchange.getMakerAsk(fuji.nftCollection, 2);
+  // console.log(makerAsk);
 };
 
 const runMain = async () => {

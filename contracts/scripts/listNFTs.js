@@ -1,19 +1,11 @@
 const ethers = require('ethers');
 const SpeculateExchange = require('../out/SpeculateExchange.sol/SpeculateExchange.json');
-const MyEpicGameABI = require('../myEpicGameABI.json');
-const {
-  ADDRESS2,
-  WETH_RINKEBY,
-  SPECULATE_EXCHANGE,
-  STRATEGY,
-  TRANSFER_MANAGER_ERC721,
-} = require('./addresses');
+const NFTCollection = require('../out/NFT.sol/NFT.json');
+const { fuji, mumbai, rinkeby, ADDRESS3, ADDRESS2 } = require('./addresses');
 require('dotenv').config();
 
-const collectionAddress = '0x6a7091978AbDeCDFA06ff14bAAbf323873DFEd96';
-
 const main = async () => {
-  provider = new ethers.providers.JsonRpcProvider(process.env.rpc_rinkeby);
+  provider = new ethers.providers.JsonRpcProvider(process.env.rpc_fuji);
   const wallet = new ethers.Wallet(process.env.pk2, provider);
   const factory = new ethers.ContractFactory(
     SpeculateExchange.abi,
@@ -22,42 +14,42 @@ const main = async () => {
   );
 
   const collection = new ethers.Contract(
-    collectionAddress,
-    MyEpicGameABI,
+    fuji.nftCollection,
+    NFTCollection.abi,
     wallet
   );
 
-  let approval_tx = await collection.setApprovalForAll(
-    SPECULATE_EXCHANGE,
+  let approval_tx1 = await collection.setApprovalForAll(
+    fuji.speculateExchange,
     true
   );
-  await approval_tx.wait();
-  console.log('approval tx:', approval_tx);
+  await approval_tx1.wait();
+  console.log('approval tx1:', approval_tx1.hash);
 
   let approval_tx2 = await collection.setApprovalForAll(
-    TRANSFER_MANAGER_ERC721,
+    fuji.transferManagerERC721,
     true
   );
   await approval_tx2.wait();
-  console.log('approval tx 2:', approval_tx);
+  console.log('approval tx 2:', approval_tx2.hash);
 
-  const speculateExchange = factory.attach(SPECULATE_EXCHANGE);
+  const speculateExchange = factory.attach(fuji.speculateExchange);
 
   const makerAsk = {
     isOrderAsk: true,
     signer: ADDRESS2,
-    collection: collectionAddress,
+    collection: fuji.nftCollection,
     price: ethers.BigNumber.from(ethers.utils.parseEther('0.01')),
-    tokenId: 9,
+    tokenId: 2,
     amount: 1,
-    strategy: STRATEGY,
-    currency: WETH_RINKEBY,
-    startTime: 1650995560,
+    strategy: fuji.strategy,
+    currency: fuji.wavax,
+    startTime: 1651301377,
     endTime: 1660995560,
   };
 
   let tx = await speculateExchange.createMakerAsk(makerAsk, {
-    gasLimit: 300000,
+    gasLimit: 500000,
   });
   await tx.wait();
   console.log(tx);

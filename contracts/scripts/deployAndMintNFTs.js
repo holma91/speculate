@@ -1,17 +1,18 @@
 const ethers = require('ethers');
 const NFT = require('../out/NFT.sol/NFT.json');
-const { NFT_CONTRACT_MUMBAI, ADDRESS2 } = require('./addresses');
+const { fuji, mumbai, rinkeby, ADDRESS3, ADDRESS2 } = require('./addresses');
 require('dotenv').config();
 
 const main = async () => {
-  provider = new ethers.providers.JsonRpcProvider(process.env.rpc_mumbai);
+  const provider = new ethers.providers.JsonRpcProvider(process.env.rpc_fuji);
   const wallet = new ethers.Wallet(process.env.pk2, provider);
   const factory = new ethers.ContractFactory(NFT.abi, NFT.bytecode, wallet);
 
-  const nft = factory.attach(NFT_CONTRACT_MUMBAI);
+  const nftContract = await factory.deploy('nejm', 'symb');
+  await nftContract.deployed();
 
-  for (let i = 0; i < 25; i++) {
-    let tx = await nft.mintTo(ADDRESS2, {
+  for (let i = 0; i < 5; i++) {
+    let tx = await nftContract.mintTo(ADDRESS2, {
       gasLimit: 300000,
       value: ethers.utils.parseEther('0.01'),
     });

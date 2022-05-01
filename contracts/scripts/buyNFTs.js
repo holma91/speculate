@@ -1,18 +1,11 @@
 const ethers = require('ethers');
 const SpeculateExchange = require('../out/SpeculateExchange.sol/SpeculateExchange.json');
 const WETH_ABI = require('../wethABI.json');
-const {
-  ADDRESS3,
-  WETH_RINKEBY,
-  SPECULATE_EXCHANGE,
-  TRANSFER_MANAGER_ERC721,
-} = require('./addresses');
+const { ADDRESS3, ADDRESS2, mumbai, rinkeby, fuji } = require('./addresses');
 require('dotenv').config();
 
-const collectionAddress = '0x6a7091978AbDeCDFA06ff14bAAbf323873DFEd96';
-
 const main = async () => {
-  provider = new ethers.providers.JsonRpcProvider(process.env.rpc_rinkeby);
+  provider = new ethers.providers.JsonRpcProvider(process.env.rpc_fuji);
   const wallet = new ethers.Wallet(process.env.pk3, provider);
   const factory = new ethers.ContractFactory(
     SpeculateExchange.abi,
@@ -22,30 +15,46 @@ const main = async () => {
 
   const BID = ethers.BigNumber.from(ethers.utils.parseEther('0.01'));
 
-  const speculateExchange = factory.attach(SPECULATE_EXCHANGE);
+  const speculateExchange = factory.attach(fuji.speculateExchange);
 
-  const weth = new ethers.Contract(WETH_RINKEBY, WETH_ABI, wallet);
+  const weth = new ethers.Contract(fuji.wavax, WETH_ABI, wallet);
   let approveTx = await weth.approve(speculateExchange.address, BID);
   await approveTx.wait();
-  console.log('approvedTx:', approveTx);
+  console.log('approveTx:', approveTx.hash);
 
-  const makerAsk = await speculateExchange.getMakerOrder(3);
+  const makerAsk = await speculateExchange.getMakerAsk(fuji.nftCollection, 2);
+  const parsedMakerAsk = {
+    isOrderAsk: makerAsk.isOrderAsk,
+    signer: makerAsk.signer,
+    collection: makerAsk.collection,
+    price: makerAsk.price,
+    tokenId: makerAsk.tokenId,
+    amount: makerAsk.amount,
+    strategy: makerAsk.strategy,
+    currency: makerAsk.currency,
+    startTime: makerAsk.startTime,
+    endTime: makerAsk.endTime,
+  };
 
   // need to have a collection field in here aswell
   const takerBid = {
     isOrderAsk: false,
     taker: ADDRESS3,
     price: BID,
-    tokenId: 9,
+    tokenId: 2,
   };
 
-  // ERROR WHEN TRANSFERING THE NFT
+  // console.log(parsedMakerAsk);
+  // console.log(takerBid);
 
-  let tx = await speculateExchange.matchAskWithTakerBid(takerBid, makerAsk, {
-    gasLimit: 300000,
-  });
+  let tx = await speculateExchange.matchAskWithTakerBid(
+    takerBid,
+    parsedMakerAsk,
+    {
+      gasLimit: 500000,
+    }
+  );
   await tx.wait();
-
   console.log(tx);
 };
 
