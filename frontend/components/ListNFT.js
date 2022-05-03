@@ -6,7 +6,19 @@ import { fuji } from '../utils/addresses';
 
 export default function ListNFT() {
   const [exchangeContract, setExchangeContract] = useState(null);
+  const [currentAddress, setCurrentAddress] = useState(null);
+  const [makerAsks, setMakerAsks] = useState([]);
   const [nfts, setNfts] = useState([]);
+
+  useEffect(() => {
+    // this useEffect should listen to address changes
+    const { ethereum } = window;
+    if (ethereum) {
+      setCurrentAddress(ethereum.selectedAddress);
+    } else {
+      console.log('ethereum object not found');
+    }
+  });
 
   useEffect(() => {
     const setUpExchange = async () => {
@@ -20,14 +32,37 @@ export default function ListNFT() {
           signer
         );
         setExchangeContract(contract);
+        return contract;
       } else {
         console.log('ethereum object not found');
       }
     };
 
-    const getMakerOrders = async () => {
-      // collection + id is a UID
-      // if nft found here, don't show in UI
+    const getMakerOrders = async (contract) => {
+      const makerAsks = await contract.getMakerAsks();
+      // key is collection + id (is a UID)
+      const parsedMakerAsks = {};
+      for (const makerAsk of makerAsks) {
+        const parsedMakerAsk = {
+          isOrderAsk: makerAsk.isOrderAsk,
+          signer: makerAsk.signer.toLowerCase(),
+          collection: makerAsk.collection.toLowerCase(),
+          price: makerAsk.price,
+          tokenId: makerAsk.tokenId,
+          amount: makerAsk.amount,
+          strategy: makerAsk.strategy,
+          currency: makerAsk.currency,
+          startTime: makerAsk.startTime,
+          endTime: makerAsk.endTime,
+        };
+        parsedMakerAsks[
+          `${parsedMakerAsk.signer}:${
+            parsedMakerAsk.collection
+          }:${parsedMakerAsk.tokenId.toString()}`
+        ] = parsedMakerAsk;
+        console.log(parsedMakerAsks);
+        setMakerAsks(parsedMakerAsks);
+      }
     };
 
     const getNfts = async () => {
@@ -44,25 +79,32 @@ export default function ListNFT() {
           return { ...nft, metadata: JSON.parse(nft.metadata) };
         });
 
+        console.log(allNfts);
+
         setNfts(allNfts);
       } else {
         console.log('ethereum object not found');
       }
     };
 
-    getNfts();
-    setUpExchange();
-  }, []);
+    const setup = async () => {
+      let speculateExchangeContract = await setUpExchange();
+      await getMakerOrders(speculateExchangeContract);
+      await getNfts();
+    };
 
-  const listNFT = async () => {
-    const { window } = ethereum;
-    if (window) {
+    setup();
+  }, [currentAddress]);
+
+  const listNFT = async (collectionAddress, collectionId) => {
+    const { ethereum } = window;
+    if (ethereum) {
       const makerAsk = {
         isOrderAsk: true,
-        signer: window.selectedAddress,
-        collection: fuji.nftCollection,
+        signer: ethereum.selectedAddress,
+        collection: collectionAddress,
         price: ethers.BigNumber.from(ethers.utils.parseEther('0.01')),
-        tokenId: 1,
+        tokenId: collectionId,
         amount: 1,
         strategy: fuji.strategy,
         currency: fuji.wavax,
@@ -71,7 +113,7 @@ export default function ListNFT() {
       };
 
       let tx = await exchangeContract.createMakerAsk(makerAsk, {
-        gasLimit: 300000,
+        gasLimit: 500000,
       });
       await tx.wait();
       console.log(tx);
@@ -87,8 +129,23 @@ export default function ListNFT() {
         {nfts.map((nft) => {
           return nft.metadata && nft.metadata.image ? (
             <NFTCard key={Math.random() * 10}>
-              <img src={nft.metadata.image} alt={`ugly nft`} />
-              <ListButton onClick={listNFT}>List</ListButton>
+              {makerAsks[
+                `${nft.owner_of}:${nft.token_address}:${nft.token_id}`
+              ] ? (
+                <>
+                  <ListedImage src={nft.metadata.image} alt={`ugly nft`} />
+                  <ListedButton>Listed</ListedButton>
+                </>
+              ) : (
+                <>
+                  <ListImage src={nft.metadata.image} alt={`ugly nft`} />
+                  <ListButton
+                    onClick={() => listNFT(nft.token_address, nft.token_id)}
+                  >
+                    List
+                  </ListButton>
+                </>
+              )}
             </NFTCard>
           ) : null;
         })}
@@ -116,13 +173,19 @@ const NFTContainer = styled.div`
 const NFTCard = styled.div`
   display: flex;
   flex-direction: column;
+`;
 
-  img {
-    width: 300px;
-    height: 250px;
-    /* border-radius: 10px; */
-    object-fit: cover;
-  }
+const ListImage = styled.img`
+  width: 300px;
+  height: 250px;
+  object-fit: cover;
+`;
+
+const ListedImage = styled.img`
+  opacity: 50%;
+  width: 300px;
+  height: 250px;
+  object-fit: cover;
 `;
 
 const ListButton = styled.button`
@@ -139,4 +202,16 @@ const ListButton = styled.button`
   :hover {
     opacity: 100%;
   }
+`;
+
+const ListedButton = styled.button`
+  background-color: #0f6cf7;
+  opacity: 50%;
+  color: white;
+  padding: 8px 15px;
+  font-size: 100%;
+  /* border-radius: 3px; */
+  min-width: 50px;
+  border: none;
+  outline: none;
 `;
