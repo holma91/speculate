@@ -15,6 +15,10 @@ const protocolFeeRecipient = '0xB06903728e09748E3d941b83f1657B147bA045d2';
 const _protocolFee = 200;
 const _royaltyFeeLimit = 9000;
 
+const sleep = (ms) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
 const getFactories = (wallet) => {
   return [
     new ethers.ContractFactory(
@@ -143,6 +147,8 @@ const main = async () => {
     transferManagerERC1155.address
   );
   console.log('transferSelectorNFT deployed at:', transferSelectorNFT.address);
+
+  await sleep(10000);
 
   let tx = await seContract.updateTransferSelectorNFT(
     transferSelectorNFT.address
