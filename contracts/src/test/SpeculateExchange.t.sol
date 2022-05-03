@@ -192,7 +192,6 @@ contract SpeculateExchangeTest is DSTest {
         assertEq(makerAsk2.signer, retrievedMakerAsk2.signer);
         assertEq(makerAsk2.strategy, retrievedMakerAsk2.strategy);
         assertEq(makerAsk2.endTime, retrievedMakerAsk2.endTime);
-        assertEq(speculateExchange.makerAskCount(), 2);
         cheats.stopPrank();
     }
 
@@ -238,7 +237,6 @@ contract SpeculateExchangeTest is DSTest {
         assertEq(makerBid2.signer, retrievedMakerBid2.signer);
         assertEq(makerBid2.strategy, retrievedMakerBid2.strategy);
         assertEq(makerBid2.endTime, retrievedMakerBid2.endTime);
-        assertEq(speculateExchange.makerBidCount(), 2);
         cheats.stopPrank();
     }
 
@@ -352,42 +350,6 @@ contract SpeculateExchangeTest is DSTest {
 
         assertEq(collection.ownerOf(2), alice);
         assertEq(collection.ownerOf(1), address(receiver));
-    }
-
-    function testCanGetMakerOrders() public {
-        cheats.startPrank(address(receiver), address(receiver));
-        OrderTypes.MakerOrder memory makerAsk = OrderTypes.MakerOrder(
-            true,
-            address(receiver),
-            address(collection),
-            0.01 ether,
-            1,
-            1,
-            address(strategyStandardSaleForFixedPrice),
-            address(WETH),
-            1650718512,
-            1650719912
-        );
-        speculateExchange.createMakerAsk(makerAsk);
-        OrderTypes.MakerOrder memory makerAsk2 = OrderTypes.MakerOrder(
-            true,
-            address(receiver),
-            address(collection),
-            0.01 ether,
-            2,
-            1,
-            address(strategyStandardSaleForFixedPrice),
-            address(WETH),
-            1650718512,
-            1650719912
-        );
-        speculateExchange.createMakerAsk(makerAsk2);
-
-        OrderTypes.MakerOrder[] memory makerAsks = speculateExchange
-            .getMakerAsks();
-
-        assertEq(makerAsks[0].tokenId, makerAsk.tokenId);
-        assertEq(makerAsks[1].tokenId, makerAsk2.tokenId);
     }
 }
 

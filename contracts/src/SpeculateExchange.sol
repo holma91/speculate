@@ -50,13 +50,6 @@ contract SpeculateExchange {
     mapping(address => mapping(uint256 => OrderTypes.MakerOrder))
         public makerBidByNFT;
 
-    // convenience arrays for the frontend
-    OrderTypes.MakerOrder[] public makerAsks;
-    OrderTypes.MakerOrder[] public makerBids;
-
-    uint256 public makerAskCount;
-    uint256 public makerBidCount;
-
     event TakerBid(
         address indexed taker,
         address indexed maker,
@@ -108,14 +101,6 @@ contract SpeculateExchange {
         return makerAskByNFT[collection][id];
     }
 
-    function getMakerAsks()
-        public
-        view
-        returns (OrderTypes.MakerOrder[] memory)
-    {
-        return makerAsks;
-    }
-
     function getMakerBid(address collection, uint256 id)
         public
         view
@@ -124,10 +109,7 @@ contract SpeculateExchange {
         return makerBidByNFT[collection][id];
     }
 
-    function createMakerAsk(OrderTypes.MakerOrder calldata makerAsk)
-        external
-        returns (uint256)
-    {
+    function createMakerAsk(OrderTypes.MakerOrder calldata makerAsk) external {
         require(makerAsk.isOrderAsk, "order is not an ask");
         require(msg.sender == makerAsk.signer, "maker must be the sender");
         // check that msg.sender owns the nft
@@ -138,8 +120,6 @@ contract SpeculateExchange {
         );
 
         makerAskByNFT[makerAsk.collection][makerAsk.tokenId] = makerAsk;
-        makerAsks.push(makerAsk);
-        makerAskCount++;
 
         emit MakerAsk(
             makerAsk.signer,
@@ -150,23 +130,15 @@ contract SpeculateExchange {
             makerAsk.amount,
             makerAsk.price
         );
-
-        return makerAskCount;
     }
 
-    function createMakerBid(OrderTypes.MakerOrder calldata makerBid)
-        external
-        returns (uint256)
-    {
+    function createMakerBid(OrderTypes.MakerOrder calldata makerBid) external {
         require(!makerBid.isOrderAsk, "order is not a bid");
         require(msg.sender == makerBid.signer, "maker must be the sender");
         // check that msg.sender have the funds?
         // check that the nft exists?
 
         makerBidByNFT[makerBid.collection][makerBid.tokenId] = makerBid;
-        makerBids.push(makerBid);
-        makerBidCount++;
-        return makerBidCount;
     }
 
     function matchAskWithTakerBid(

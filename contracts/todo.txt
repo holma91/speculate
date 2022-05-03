@@ -8,7 +8,18 @@ buying (takerBid)
 selling (takerAsk)
 
 
+
+get listing
+- query the server
+
+
+
+
+
 todo in contract
 - events
   - makerOrders
+
+- remove makerAsks after match
+  - overwrite with empty order
   
