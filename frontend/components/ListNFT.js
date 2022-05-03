@@ -6,19 +6,42 @@ import { fuji } from '../utils/addresses';
 
 export default function ListNFT() {
   const [exchangeContract, setExchangeContract] = useState(null);
-  const [currentAddress, setCurrentAddress] = useState(null);
   const [makerAsks, setMakerAsks] = useState([]);
+  const [makerBids, setMakerBids] = useState([]);
   const [nfts, setNfts] = useState([]);
 
   useEffect(() => {
-    // this useEffect should listen to address changes
-    const { ethereum } = window;
-    if (ethereum) {
-      setCurrentAddress(ethereum.selectedAddress);
-    } else {
-      console.log('ethereum object not found');
-    }
-  });
+    const getNfts = async () => {
+      const { ethereum } = window;
+      if (ethereum) {
+        const chain = 'avalanche%20testnet';
+        const url = `https://deep-index.moralis.io/api/v2/${ethereum.selectedAddress}/nft?chain=${chain}&format=decimal`;
+        let response = await fetch(url, {
+          headers: { 'X-API-Key': process.env.MORALIS_API_KEY },
+        });
+
+        response = await response.json();
+        const allNfts = response.result.map((nft) => {
+          let listed = false;
+          if (
+            makerAsks[nft.token_address] &&
+            makerAsks[nft.token_address][nft.token_id]
+          ) {
+            listed = true;
+          }
+          return { ...nft, metadata: JSON.parse(nft.metadata), listed };
+        });
+
+        console.log(allNfts);
+
+        setNfts(allNfts);
+      } else {
+        console.log('ethereum object not found');
+      }
+    };
+
+    getNfts();
+  }, [makerAsks, makerBids]);
 
   useEffect(() => {
     const setUpExchange = async () => {
@@ -32,69 +55,30 @@ export default function ListNFT() {
           signer
         );
         setExchangeContract(contract);
-        return contract;
+        setupEventListener();
       } else {
         console.log('ethereum object not found');
       }
     };
 
-    const getMakerOrders = async (contract) => {
-      const makerAsks = await contract.getMakerAsks();
-      // key is collection + id (is a UID)
-      const parsedMakerAsks = {};
-      for (const makerAsk of makerAsks) {
-        const parsedMakerAsk = {
-          isOrderAsk: makerAsk.isOrderAsk,
-          signer: makerAsk.signer.toLowerCase(),
-          collection: makerAsk.collection.toLowerCase(),
-          price: makerAsk.price,
-          tokenId: makerAsk.tokenId,
-          amount: makerAsk.amount,
-          strategy: makerAsk.strategy,
-          currency: makerAsk.currency,
-          startTime: makerAsk.startTime,
-          endTime: makerAsk.endTime,
-        };
-        parsedMakerAsks[
-          `${parsedMakerAsk.signer}:${
-            parsedMakerAsk.collection
-          }:${parsedMakerAsk.tokenId.toString()}`
-        ] = parsedMakerAsk;
-        console.log(parsedMakerAsks);
-        setMakerAsks(parsedMakerAsks);
-      }
-    };
+    const setUpMakerOrders = async () => {
+      const responseMakerAsks = await fetch('http://localhost:3001/makerAsks/');
+      const responseMakerBids = await fetch('http://localhost:3001/makerBids/');
+      let makerAsks = await responseMakerAsks.json();
+      let makerBids = await responseMakerBids.json();
 
-    const getNfts = async () => {
-      const { ethereum } = window;
-      if (ethereum) {
-        const chain = 'avalanche%20testnet';
-        const url = `https://deep-index.moralis.io/api/v2/${ethereum.selectedAddress}/nft?chain=${chain}&format=decimal`;
-        let response = await fetch(url, {
-          headers: { 'X-API-Key': process.env.MORALIS_API_KEY },
-        });
-
-        response = await response.json();
-        const allNfts = response.result.map((nft) => {
-          return { ...nft, metadata: JSON.parse(nft.metadata) };
-        });
-
-        console.log(allNfts);
-
-        setNfts(allNfts);
-      } else {
-        console.log('ethereum object not found');
-      }
+      setMakerAsks(makerAsks);
+      setMakerBids(makerBids);
+      return makerAsks;
     };
 
     const setup = async () => {
-      let speculateExchangeContract = await setUpExchange();
-      await getMakerOrders(speculateExchangeContract);
-      await getNfts();
+      await setUpExchange();
+      await setUpMakerOrders();
     };
 
     setup();
-  }, [currentAddress]);
+  }, []);
 
   const listNFT = async (collectionAddress, collectionId) => {
     const { ethereum } = window;
@@ -129,9 +113,7 @@ export default function ListNFT() {
         {nfts.map((nft) => {
           return nft.metadata && nft.metadata.image ? (
             <NFTCard key={Math.random() * 10}>
-              {makerAsks[
-                `${nft.owner_of}:${nft.token_address}:${nft.token_id}`
-              ] ? (
+              {nft.listed ? (
                 <>
                   <ListedImage src={nft.metadata.image} alt={`ugly nft`} />
                   <ListedButton>Listed</ListedButton>

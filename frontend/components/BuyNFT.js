@@ -1,31 +1,95 @@
-import { createAlchemyWeb3 } from '@alch/alchemy-web3';
 import { useEffect, useState } from 'react';
+import { ethers } from 'ethers';
 import styled from 'styled-components';
+import SpeculateExchange from '../../contracts/out/SpeculateExchange.sol/SpeculateExchange.json';
+import { fuji } from '../utils/addresses';
 
 export default function BuyNFT() {
+  const [exchangeContract, setExchangeContract] = useState(null);
+  const [makerAsks, setMakerAsks] = useState([]);
   const [nfts, setNfts] = useState([]);
 
   useEffect(() => {
-    const getNfts = async () => {
+    const setUpExchange = async () => {
       const { ethereum } = window;
       if (ethereum) {
-        const web3 = createAlchemyWeb3(process.env.ALCHEMY_RINKEBY_RPC);
-
-        // The wallet address we want to query for NFTs:
-        const ownerAddr = ethereum.selectedAddress;
-        const fetchedNfts = await web3.alchemy.getNfts({
-          owner: ownerAddr,
-        });
-
-        console.log(fetchedNfts.ownedNfts);
-
-        setNfts(fetchedNfts.ownedNfts);
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const signer = provider.getSigner();
+        const contract = new ethers.Contract(
+          fuji.speculateExchange,
+          SpeculateExchange.abi,
+          signer
+        );
+        setExchangeContract(contract);
+        return contract;
       } else {
         console.log('ethereum object not found');
       }
     };
 
-    getNfts();
+    const getMakerOrders = async (contract) => {
+      const { ethereum } = window;
+      if (ethereum) {
+        const makerAsks = await contract.getMakerAsks();
+        // key is collection + id (is a UID)
+        const parsedMakerAsks = {};
+        for (const makerAsk of makerAsks) {
+          const parsedMakerAsk = {
+            isOrderAsk: makerAsk.isOrderAsk,
+            signer: makerAsk.signer.toLowerCase(),
+            collection: makerAsk.collection.toLowerCase(),
+            price: makerAsk.price,
+            tokenId: makerAsk.tokenId,
+            amount: makerAsk.amount,
+            strategy: makerAsk.strategy,
+            currency: makerAsk.currency,
+            startTime: makerAsk.startTime,
+            endTime: makerAsk.endTime,
+          };
+          if (parsedMakerAsk.signer !== ethereum.selectedAddress) {
+            parsedMakerAsks[
+              `${
+                parsedMakerAsk.collection
+              }:${parsedMakerAsk.tokenId.toString()}`
+            ] = parsedMakerAsk;
+          }
+          console.log(parsedMakerAsks);
+          setMakerAsks(parsedMakerAsks);
+        }
+      } else {
+        console.log("can't find the ethereum object");
+      }
+    };
+
+    const getNfts = async () => {
+      const { ethereum } = window;
+      if (ethereum) {
+        const chain = 'avalanche%20testnet';
+        const url = `https://deep-index.moralis.io/api/v2/nft/${fuji.nftCollection}?chain=${chain}&format=decimal`;
+        let response = await fetch(url, {
+          headers: { 'X-API-Key': process.env.MORALIS_API_KEY },
+        });
+
+        response = await response.json();
+        const allNfts = response.result.map((nft) => {
+          return { ...nft, metadata: JSON.parse(nft.metadata) };
+        });
+
+        console.log(allNfts);
+
+        setNfts(allNfts);
+      } else {
+        console.log('ethereum object not found');
+      }
+    };
+
+    const setup = async () => {
+      let speculateExchangeContract = await setUpExchange();
+      await getMakerOrders(speculateExchangeContract);
+      await getNfts();
+    };
+
+    setup();
   }, []);
 
   return (
@@ -35,8 +99,12 @@ export default function BuyNFT() {
         {nfts.map((nft) => {
           return (
             <NFTCard key={Math.random() * 10}>
-              <img src={nft.metadata.image} alt={`ugly nft`} />
-              <ListButton>buy</ListButton>
+              {makerAsks[`${nft.token_address}:${nft.token_id}`] ? (
+                <>
+                  <img src={nft.metadata.image} alt={`ugly nft`} />
+                  <ListButton>buy</ListButton>
+                </>
+              ) : null}
             </NFTCard>
           );
         })}
@@ -58,6 +126,7 @@ const NFTContainer = styled.div`
   justify-content: center;
   flex-wrap: wrap;
   gap: 10px;
+  margin-bottom: 20px;
 `;
 
 const NFTCard = styled.div`
