@@ -61,7 +61,28 @@ contract SpeculateExchange {
         uint256 price
     );
 
+    event TakerAsk(
+        address indexed taker,
+        address indexed maker,
+        address indexed strategy,
+        address currency,
+        address collection,
+        uint256 tokenId,
+        uint256 amount,
+        uint256 price
+    );
+
     event MakerAsk(
+        address indexed maker,
+        address indexed collection,
+        uint256 indexed tokenId,
+        address currency,
+        address strategy,
+        uint256 amount,
+        uint256 price
+    );
+
+    event MakerBid(
         address indexed maker,
         address indexed collection,
         uint256 indexed tokenId,
@@ -112,7 +133,6 @@ contract SpeculateExchange {
     function createMakerAsk(OrderTypes.MakerOrder calldata makerAsk) external {
         require(makerAsk.isOrderAsk, "order is not an ask");
         require(msg.sender == makerAsk.signer, "maker must be the sender");
-        // check that msg.sender owns the nft
         require(
             IERC721(makerAsk.collection).ownerOf(makerAsk.tokenId) ==
                 msg.sender,
@@ -135,10 +155,27 @@ contract SpeculateExchange {
     function createMakerBid(OrderTypes.MakerOrder calldata makerBid) external {
         require(!makerBid.isOrderAsk, "order is not a bid");
         require(msg.sender == makerBid.signer, "maker must be the sender");
+        require(
+            makerBid.price >
+                makerBidByNFT[makerBid.collection][makerBid.tokenId].price ||
+                block.timestamp >
+                makerBidByNFT[makerBid.collection][makerBid.tokenId].endTime,
+            "cannot overwrite previous bid"
+        );
         // check that msg.sender have the funds?
         // check that the nft exists?
 
         makerBidByNFT[makerBid.collection][makerBid.tokenId] = makerBid;
+
+        emit MakerBid(
+            makerBid.signer,
+            makerBid.collection,
+            makerBid.tokenId,
+            makerBid.currency,
+            makerBid.strategy,
+            makerBid.amount,
+            makerBid.price
+        );
     }
 
     function matchAskWithTakerBid(
@@ -248,18 +285,18 @@ contract SpeculateExchange {
             takerAsk.price
         );
 
-        // emit TakerAsk(
-        //     bidHash,
-        //     makerBid.nonce,
-        //     takerAsk.taker,
-        //     makerBid.signer,
-        //     makerBid.strategy,
-        //     makerBid.currency,
-        //     makerBid.collection,
-        //     tokenId,
-        //     amount,
-        //     takerAsk.price
-        // );
+        emit TakerAsk(
+            takerAsk.taker,
+            makerBid.signer,
+            makerBid.strategy,
+            makerBid.currency,
+            makerBid.collection,
+            tokenId,
+            amount,
+            takerAsk.price
+        );
+
+        delete makerBidByNFT[makerBid.collection][makerBid.tokenId];
     }
 
     /**

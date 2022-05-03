@@ -71,6 +71,15 @@ contract SpeculateExchangeTest is DSTest {
         uint256 amount,
         uint256 price
     );
+    event MakerBid(
+        address indexed maker,
+        address indexed collection,
+        uint256 indexed tokenId,
+        address currency,
+        address strategy,
+        uint256 amount,
+        uint256 price
+    );
     event TakerBid(
         address indexed taker,
         address indexed maker,
@@ -81,6 +90,17 @@ contract SpeculateExchangeTest is DSTest {
         uint256 amount,
         uint256 price
     );
+    event TakerAsk(
+        address indexed taker,
+        address indexed maker,
+        address indexed strategy,
+        address currency,
+        address collection,
+        uint256 tokenId,
+        uint256 amount,
+        uint256 price
+    );
+
     CheatCodes internal cheats;
     SpeculateExchange internal speculateExchange;
 
@@ -210,6 +230,16 @@ contract SpeculateExchangeTest is DSTest {
             1650719912
         );
 
+        cheats.expectEmit(true, true, true, true);
+        emit MakerBid(
+            makerBid.signer,
+            makerBid.collection,
+            makerBid.tokenId,
+            makerBid.currency,
+            makerBid.strategy,
+            makerBid.amount,
+            makerBid.price
+        );
         speculateExchange.createMakerBid(makerBid);
         OrderTypes.MakerOrder memory retrievedMakerBid = speculateExchange
             .getMakerBid(makerBid.collection, makerBid.tokenId);
@@ -217,11 +247,12 @@ contract SpeculateExchangeTest is DSTest {
         assertEq(makerBid.strategy, retrievedMakerBid.strategy);
         assertEq(makerBid.endTime, retrievedMakerBid.endTime);
 
+        // can overwrite previous bid
         OrderTypes.MakerOrder memory makerBid2 = OrderTypes.MakerOrder(
             false,
             alice,
             address(collection),
-            0.01 ether,
+            0.02 ether,
             1,
             1,
             address(strategyStandardSaleForFixedPrice),
@@ -238,6 +269,108 @@ contract SpeculateExchangeTest is DSTest {
         assertEq(makerBid2.strategy, retrievedMakerBid2.strategy);
         assertEq(makerBid2.endTime, retrievedMakerBid2.endTime);
         cheats.stopPrank();
+    }
+
+    function testCanOverBidSomeoneElse() public {
+        OrderTypes.MakerOrder memory makerBid = OrderTypes.MakerOrder(
+            false,
+            alice,
+            address(collection),
+            0.01 ether,
+            1,
+            1,
+            address(strategyStandardSaleForFixedPrice),
+            address(WETH),
+            1650718512,
+            1650719912
+        );
+        cheats.prank(alice);
+        speculateExchange.createMakerBid(makerBid);
+
+        // can overwrite previous bid with higher price
+        OrderTypes.MakerOrder memory makerBid2 = OrderTypes.MakerOrder(
+            false,
+            bob,
+            address(collection),
+            0.02 ether,
+            1,
+            1,
+            address(strategyStandardSaleForFixedPrice),
+            address(WETH),
+            1650718512,
+            1650719912
+        );
+        cheats.prank(bob);
+        speculateExchange.createMakerBid(makerBid2);
+
+        OrderTypes.MakerOrder memory retrievedMakerBid = speculateExchange
+            .getMakerBid(makerBid.collection, makerBid.tokenId);
+
+        assertEq(makerBid2.signer, retrievedMakerBid.signer);
+        assertEq(makerBid2.price, retrievedMakerBid.price);
+
+        // can overwrite previous bid when previous bid is stale
+        OrderTypes.MakerOrder memory makerBid3 = OrderTypes.MakerOrder(
+            false,
+            alice,
+            address(collection),
+            0.01 ether,
+            1,
+            1,
+            address(strategyStandardSaleForFixedPrice),
+            address(WETH),
+            1650718512,
+            1650719920
+        );
+        cheats.warp(1650719913);
+        cheats.prank(alice);
+        speculateExchange.createMakerBid(makerBid3);
+
+        OrderTypes.MakerOrder memory retrievedMakerBid2 = speculateExchange
+            .getMakerBid(makerBid.collection, makerBid.tokenId);
+
+        assertEq(makerBid3.signer, retrievedMakerBid2.signer);
+        assertEq(makerBid3.price, retrievedMakerBid2.price);
+    }
+
+    function testCannotOverBidWithLowerPrice() public {
+        OrderTypes.MakerOrder memory makerBid = OrderTypes.MakerOrder(
+            false,
+            alice,
+            address(collection),
+            0.01 ether,
+            1,
+            1,
+            address(strategyStandardSaleForFixedPrice),
+            address(WETH),
+            1650718512,
+            1650719912
+        );
+        cheats.prank(alice);
+        speculateExchange.createMakerBid(makerBid);
+
+        // cannot overwrite previous bid with lower or same price
+        OrderTypes.MakerOrder memory makerBid2 = OrderTypes.MakerOrder(
+            false,
+            bob,
+            address(collection),
+            0.01 ether,
+            1,
+            1,
+            address(strategyStandardSaleForFixedPrice),
+            address(WETH),
+            1650718512,
+            1650719912
+        );
+        cheats.prank(bob);
+        cheats.expectRevert("cannot overwrite previous bid");
+        speculateExchange.createMakerBid(makerBid2);
+
+        OrderTypes.MakerOrder memory retrievedMakerBid = speculateExchange
+            .getMakerBid(makerBid.collection, makerBid.tokenId);
+
+        assertEq(makerBid.signer, retrievedMakerBid.signer);
+        assertEq(makerBid.price, retrievedMakerBid.price);
     }
 
     function testCanCanMatchMakerAskWithTakerBid() public {
@@ -342,6 +475,17 @@ contract SpeculateExchangeTest is DSTest {
         cheats.startPrank(address(receiver), address(receiver));
         assertEq(collection.ownerOf(2), address(receiver));
 
+        cheats.expectEmit(true, true, true, true);
+        emit TakerAsk(
+            takerAsk.taker,
+            makerBid.signer,
+            makerBid.strategy,
+            makerBid.currency,
+            makerBid.collection,
+            makerBid.tokenId,
+            makerBid.amount,
+            makerBid.price
+        );
         speculateExchange.matchBidWithTakerAsk(takerAsk, makerBid);
         uint256 receiverBalanceAfter = WETH.balanceOf(address(receiver));
         uint256 aliceBalanceAfter = WETH.balanceOf(alice);
