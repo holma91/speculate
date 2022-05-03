@@ -33,16 +33,17 @@ speculateExchange.on(
   'MakerAsk',
   async (maker, collection, tokenId, currency, strategy, amount, price) => {
     console.log('MakerAsk received');
+    collection = collection.toLowerCase();
     if (!makerAsks[collection]) {
       makerAsks[collection] = {};
     }
 
     makerAsks[collection][tokenId] = {
-      maker,
-      collection,
+      maker: maker.toLowerCase(),
+      collection: collection.toLowerCase(),
       tokenId,
-      currency,
-      strategy,
+      currency: currency.toLowerCase(),
+      strategy: strategy.toLowerCase(),
       amount,
       price,
     };
@@ -61,15 +62,16 @@ speculateExchange.on(
   'MakerBid',
   async (maker, collection, tokenId, currency, strategy, amount, price) => {
     console.log('MakerBid received');
+    collection = collection.toLowerCase();
     if (!makerBids[collection]) {
       makerBids[collection] = {};
     }
     makerBids[collection][tokenId] = {
-      maker,
-      collection,
+      maker: maker.toLowerCase(),
+      collection: collection.toLowerCase(),
       tokenId,
-      currency,
-      strategy,
+      currency: currency.toLowerCase(),
+      strategy: strategy.toLowerCase(),
       amount,
       price,
     };
@@ -97,6 +99,7 @@ speculateExchange.on(
     price
   ) => {
     console.log('TakerAsk received');
+    collection = collection.toLowerCase();
     makerBids[collection][tokenId] = {};
     fs.writeFile(
       './server/makerBids.json',
@@ -121,6 +124,7 @@ speculateExchange.on(
     price
   ) => {
     console.log('TakerBid received');
+    collection = collection.toLowerCase();
     makerAsks[collection][tokenId] = {};
     fs.writeFile(
       './server/makerAsks.json',
