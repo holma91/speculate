@@ -36,6 +36,13 @@ interface CheatCodes {
     function startPrank(address, address) external;
 
     function stopPrank() external;
+
+    function expectEmit(
+        bool,
+        bool,
+        bool,
+        bool
+    ) external;
 }
 
 contract MockWETH is ERC20("Wrapped Ether", "WETH") {
@@ -55,6 +62,25 @@ contract MockCollection is ERC721("name", "symbol") {
 }
 
 contract SpeculateExchangeTest is DSTest {
+    event MakerAsk(
+        address indexed maker,
+        address indexed collection,
+        uint256 indexed tokenId,
+        address currency,
+        address strategy,
+        uint256 amount,
+        uint256 price
+    );
+    event TakerBid(
+        address indexed taker,
+        address indexed maker,
+        address indexed strategy,
+        address currency,
+        address collection,
+        uint256 tokenId,
+        uint256 amount,
+        uint256 price
+    );
     CheatCodes internal cheats;
     SpeculateExchange internal speculateExchange;
 
@@ -128,6 +154,17 @@ contract SpeculateExchangeTest is DSTest {
             1650718512,
             1650719912
         );
+        cheats.expectEmit(true, true, true, true);
+        // the event we expect to see
+        emit MakerAsk(
+            makerAsk.signer,
+            makerAsk.collection,
+            makerAsk.tokenId,
+            makerAsk.currency,
+            makerAsk.strategy,
+            makerAsk.amount,
+            makerAsk.price
+        );
         speculateExchange.createMakerAsk(makerAsk);
         OrderTypes.MakerOrder memory retrievedMakerAsk = speculateExchange
             .getMakerAsk(makerAsk.collection, makerAsk.tokenId);
@@ -140,7 +177,7 @@ contract SpeculateExchangeTest is DSTest {
             true,
             address(receiver),
             address(collection),
-            0.01 ether,
+            0.02 ether,
             1,
             1,
             address(strategyStandardSaleForFixedPrice),
@@ -243,13 +280,35 @@ contract SpeculateExchangeTest is DSTest {
         WETH.approve(address(speculateExchange), 1 ether);
         assertEq(collection.ownerOf(1), address(receiver));
 
+        cheats.expectEmit(true, true, true, true);
+        emit TakerBid(
+            takerBid.taker,
+            makerAsk.signer,
+            makerAsk.strategy,
+            makerAsk.currency,
+            makerAsk.collection,
+            makerAsk.tokenId,
+            makerAsk.amount,
+            makerAsk.price
+        );
         speculateExchange.matchAskWithTakerBid(takerBid, makerAsk);
         uint256 receiverBalanceAfter = WETH.balanceOf(address(receiver));
         uint256 aliceBalanceAfter = WETH.balanceOf(alice);
         assertEq(receiverBalanceAfter, receiverBalanceBefore + 1 ether);
         assertEq(aliceBalanceAfter, aliceBalanceBefore - 1 ether);
-
         assertEq(collection.ownerOf(1), alice);
+
+        // make sure old makerAsk is deleted
+        OrderTypes.MakerOrder memory oldMakerAsk = speculateExchange
+            .getMakerAsk(address(collection), 1);
+        assertEq(
+            oldMakerAsk.signer,
+            0x0000000000000000000000000000000000000000
+        );
+        assertEq(
+            oldMakerAsk.collection,
+            0x0000000000000000000000000000000000000000
+        );
     }
 
     function testCanMatchMakerBidWithTakerAsk() public {

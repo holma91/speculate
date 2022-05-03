@@ -3,7 +3,7 @@ POSSIBLE ERRORS
 - forgetting msg.value when minting
 - gas limit
 - get backs weird dictionary/array from in getMakerAsk()
-- staticcall_0_1 on 0x0000... address is when I forget to update transferSelectorNFT on SpeculateExchange
+- staticcall_0_1 on 0x0000... address is when I forget to update transferSelectorNFT on SpeculateExchange (polygon error prob)
 
 setup order:
 deploy:

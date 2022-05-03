@@ -14,13 +14,13 @@ const main = async () => {
 
   const speculateExchange = factory.attach(fuji.speculateExchange);
 
-  let tx = await speculateExchange.updateTransferSelectorNFT(
-    fuji.transferSelectorNFT
-  );
-  await tx.wait();
-  console.log(tx.hash);
-  // const makerAsk = await speculateExchange.getMakerAsk(fuji.nftCollection, 2);
-  // console.log(makerAsk);
+  // let tx = await speculateExchange.updateTransferSelectorNFT(
+  //   fuji.transferSelectorNFT
+  // );
+  // await tx.wait();
+  // console.log(tx.hash);
+  const makerAsks = await speculateExchange.getMakerAsks();
+  console.log(makerAsks);
 };
 
 const runMain = async () => {

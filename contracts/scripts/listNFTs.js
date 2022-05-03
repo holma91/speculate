@@ -19,19 +19,19 @@ const main = async () => {
     wallet
   );
 
-  let approval_tx1 = await collection.setApprovalForAll(
-    fuji.speculateExchange,
-    true
-  );
-  await approval_tx1.wait();
-  console.log('approval tx1:', approval_tx1.hash);
+  // let approval_tx1 = await collection.setApprovalForAll(
+  //   fuji.speculateExchange,
+  //   true
+  // );
+  // await approval_tx1.wait();
+  // console.log('approval tx1:', approval_tx1.hash);
 
-  let approval_tx2 = await collection.setApprovalForAll(
-    fuji.transferManagerERC721,
-    true
-  );
-  await approval_tx2.wait();
-  console.log('approval tx 2:', approval_tx2.hash);
+  // let approval_tx2 = await collection.setApprovalForAll(
+  //   fuji.transferManagerERC721,
+  //   true
+  // );
+  // await approval_tx2.wait();
+  // console.log('approval tx 2:', approval_tx2.hash);
 
   const speculateExchange = factory.attach(fuji.speculateExchange);
 
@@ -40,7 +40,7 @@ const main = async () => {
     signer: ADDRESS2,
     collection: fuji.nftCollection,
     price: ethers.BigNumber.from(ethers.utils.parseEther('0.01')),
-    tokenId: 2,
+    tokenId: 3,
     amount: 1,
     strategy: fuji.strategy,
     currency: fuji.wavax,

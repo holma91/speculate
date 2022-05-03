@@ -6,3 +6,9 @@ bidding (makerBid)
 cancel bid (undo makerBid)
 buying (takerBid)
 selling (takerAsk)
+
+
+todo in contract
+- events
+  - makerOrders
+  
