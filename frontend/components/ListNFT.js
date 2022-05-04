@@ -141,12 +141,26 @@ export default function ListNFT() {
             <NFTCard key={Math.random() * 10}>
               {nft.listed ? (
                 <>
-                  <ListedImage src={nft.metadata.image} alt={`ugly nft`} />
-                  <ListedButton>Listed</ListedButton>
+                  <ListImage src={nft.metadata.image} alt={`ugly nft`} />
+                  <Price>2.3</Price>
+                  <Offer>
+                    <p>1.8</p>
+                    <p className="accept">Accept Offer</p>
+                  </Offer>
+                  <ListButton
+                    onClick={() => listNFT(nft.token_address, nft.token_id)}
+                  >
+                    Re-List
+                  </ListButton>
                 </>
               ) : (
                 <>
                   <ListImage src={nft.metadata.image} alt={`ugly nft`} />
+                  <Price>unlisted</Price>
+                  <Offer>
+                    <p>1.25</p>
+                    <p className="accept">Accept Offer</p>
+                  </Offer>
                   <ListButton
                     onClick={() => listNFT(nft.token_address, nft.token_id)}
                   >
@@ -161,6 +175,25 @@ export default function ListNFT() {
     </Container>
   );
 }
+
+const Price = styled.div`
+  padding: 10px;
+  /* padding: 5px; */
+  border-bottom: 1px solid #b9b9b9;
+`;
+
+const Offer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  p {
+    margin: 0;
+  }
+
+  .accept:hover {
+    color: #16b857;
+  }
+`;
 
 const Container = styled.div`
   display: flex;
@@ -179,30 +212,42 @@ const NFTContainer = styled.div`
 `;
 
 const NFTCard = styled.div`
+  cursor: pointer;
   display: flex;
   flex-direction: column;
+  border-radius: 10px;
+  border: 1px solid #b9b9b9;
+
+  .accept {
+    opacity: 0;
+  }
+
+  :hover {
+    /* border: 1px solid black; */
+    background: #f6f4f4;
+    .accept {
+      opacity: 100%;
+    }
+  }
 `;
 
 const ListImage = styled.img`
-  width: 300px;
-  height: 250px;
+  width: 275px;
+  height: 275px;
   object-fit: cover;
-`;
-
-const ListedImage = styled.img`
-  opacity: 50%;
-  width: 300px;
-  height: 250px;
-  object-fit: cover;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px; ;
 `;
 
 const ListButton = styled.button`
+  margin: 7.5px;
   background-color: #0f6cf7;
   opacity: 75%;
   color: white;
   padding: 8px 15px;
   font-size: 100%;
-  /* border-radius: 3px; */
+  border-radius: 5px;
+
   min-width: 50px;
   border: none;
   outline: none;
@@ -210,16 +255,4 @@ const ListButton = styled.button`
   :hover {
     opacity: 100%;
   }
-`;
-
-const ListedButton = styled.button`
-  background-color: #0f6cf7;
-  opacity: 50%;
-  color: white;
-  padding: 8px 15px;
-  font-size: 100%;
-  /* border-radius: 3px; */
-  min-width: 50px;
-  border: none;
-  outline: none;
 `;
