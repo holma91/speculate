@@ -43,7 +43,7 @@ export default function ListNFT() {
           ) {
             bidded = true;
             highestBid = ethers.utils.formatEther(
-              makerBids[nft.token_address][nft.token_id]
+              makerBids[nft.token_address][nft.token_id].price
             );
           }
 
@@ -96,6 +96,33 @@ export default function ListNFT() {
         },
       }));
     };
+    const onMakerBid = (
+      maker,
+      collection,
+      tokenId,
+      currency,
+      strategy,
+      amount,
+      price
+    ) => {
+      console.log('MakerBid received');
+      collection = collection.toLowerCase();
+      setMakerBids((prevState) => ({
+        ...prevState,
+        [collection]: {
+          ...prevState[collection],
+          [tokenId]: {
+            maker: maker.toLowerCase(),
+            collection: collection,
+            tokenId,
+            currency: currency.toLowerCase(),
+            strategy: strategy.toLowerCase(),
+            amount,
+            price,
+          },
+        },
+      }));
+    };
     const { ethereum } = window;
     if (ethereum) {
       const provider = new ethers.providers.Web3Provider(ethereum);
@@ -107,6 +134,7 @@ export default function ListNFT() {
       );
       setExchangeContract(contract);
       contract.on('MakerAsk', onMakerAsk);
+      contract.on('MakerBid', onMakerBid);
     } else {
       console.log('ethereum object not found');
     }
