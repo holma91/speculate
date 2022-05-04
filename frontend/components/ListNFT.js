@@ -21,7 +21,8 @@ export default function ListNFT() {
         });
 
         response = await response.json();
-        const allNfts = response.result.map((nft) => {
+        const receivedNFTs = response.result;
+        const allNfts = receivedNFTs.map((nft) => {
           let listed = false;
           if (
             makerAsks[nft.token_address] &&
@@ -39,28 +40,60 @@ export default function ListNFT() {
         console.log('ethereum object not found');
       }
     };
-
     getNfts();
-  }, [makerAsks, makerBids]);
+  }, [makerAsks]);
 
   useEffect(() => {
-    const setUpExchange = async () => {
-      const { ethereum } = window;
-      if (ethereum) {
-        const provider = new ethers.providers.Web3Provider(ethereum);
-        const signer = provider.getSigner();
-        const contract = new ethers.Contract(
-          fuji.speculateExchange,
-          SpeculateExchange.abi,
-          signer
-        );
-        setExchangeContract(contract);
-        setupEventListener();
-      } else {
-        console.log('ethereum object not found');
+    let contract;
+    const onMakerAsk = (
+      maker,
+      collection,
+      tokenId,
+      currency,
+      strategy,
+      amount,
+      price
+    ) => {
+      collection = collection.toLowerCase();
+      setMakerAsks((prevState) => ({
+        ...prevState,
+        [collection]: {
+          ...prevState[collection],
+          [tokenId]: {
+            maker: maker.toLowerCase(),
+            collection: collection,
+            tokenId,
+            currency: currency.toLowerCase(),
+            strategy: strategy.toLowerCase(),
+            amount,
+            price,
+          },
+        },
+      }));
+    };
+    const { ethereum } = window;
+    if (ethereum) {
+      const provider = new ethers.providers.Web3Provider(ethereum);
+      const signer = provider.getSigner();
+      contract = new ethers.Contract(
+        fuji.speculateExchange,
+        SpeculateExchange.abi,
+        signer
+      );
+      setExchangeContract(contract);
+      contract.on('MakerAsk', onMakerAsk);
+    } else {
+      console.log('ethereum object not found');
+    }
+
+    return () => {
+      if (contract) {
+        contract.off('MakerAsk', onMakerAsk);
       }
     };
+  }, []);
 
+  useEffect(() => {
     const setUpMakerOrders = async () => {
       const responseMakerAsks = await fetch('http://localhost:3001/makerAsks/');
       const responseMakerBids = await fetch('http://localhost:3001/makerBids/');
@@ -69,15 +102,8 @@ export default function ListNFT() {
 
       setMakerAsks(makerAsks);
       setMakerBids(makerBids);
-      return makerAsks;
     };
-
-    const setup = async () => {
-      await setUpExchange();
-      await setUpMakerOrders();
-    };
-
-    setup();
+    setUpMakerOrders();
   }, []);
 
   const listNFT = async (collectionAddress, collectionId) => {
