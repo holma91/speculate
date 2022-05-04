@@ -19,8 +19,8 @@ const main = async () => {
   // );
   // await tx.wait();
   // console.log(tx.hash);
-  const makerAsks = await speculateExchange.getMakerAsks();
-  console.log(makerAsks);
+  const makerAsk = await speculateExchange.getMakerAsk(fuji.nftCollection, 25);
+  console.log(makerAsk);
 };
 
 const runMain = async () => {

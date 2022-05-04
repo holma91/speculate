@@ -24,13 +24,37 @@ export default function ListNFT() {
         const receivedNFTs = response.result;
         const allNfts = receivedNFTs.map((nft) => {
           let listed = false;
+          let listPrice = '';
+          let bidded = false;
+          let highestBid = 'no offer';
           if (
             makerAsks[nft.token_address] &&
             makerAsks[nft.token_address][nft.token_id]
           ) {
             listed = true;
+            listPrice = ethers.utils.formatEther(
+              makerAsks[nft.token_address][nft.token_id].price
+            );
           }
-          return { ...nft, metadata: JSON.parse(nft.metadata), listed };
+
+          if (
+            makerBids[nft.token_address] &&
+            makerBids[nft.token_address][nft.token_id]
+          ) {
+            bidded = true;
+            highestBid = ethers.utils.formatEther(
+              makerBids[nft.token_address][nft.token_id]
+            );
+          }
+
+          return {
+            ...nft,
+            metadata: JSON.parse(nft.metadata),
+            listed,
+            listPrice,
+            bidded,
+            highestBid,
+          };
         });
 
         console.log(allNfts);
@@ -41,7 +65,7 @@ export default function ListNFT() {
       }
     };
     getNfts();
-  }, [makerAsks]);
+  }, [makerAsks, makerBids]);
 
   useEffect(() => {
     let contract;
@@ -54,6 +78,7 @@ export default function ListNFT() {
       amount,
       price
     ) => {
+      console.log('MakerAsk received');
       collection = collection.toLowerCase();
       setMakerAsks((prevState) => ({
         ...prevState,
@@ -142,9 +167,9 @@ export default function ListNFT() {
               {nft.listed ? (
                 <>
                   <ListImage src={nft.metadata.image} alt={`ugly nft`} />
-                  <Price>2.3</Price>
+                  <Price>{nft.listPrice}</Price>
                   <Offer>
-                    <p>1.8</p>
+                    <p>{nft.highestBid}</p>
                     <p className="accept">Accept Offer</p>
                   </Offer>
                   <ListButton
@@ -158,7 +183,7 @@ export default function ListNFT() {
                   <ListImage src={nft.metadata.image} alt={`ugly nft`} />
                   <Price>unlisted</Price>
                   <Offer>
-                    <p>1.25</p>
+                    <p>{nft.highestBid}</p>
                     <p className="accept">Accept Offer</p>
                   </Offer>
                   <ListButton
