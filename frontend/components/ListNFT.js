@@ -27,7 +27,7 @@ export default function ListNFT() {
           let listed = false;
           let listPrice = '';
           let bidded = false;
-          let highestBid = 'no offer';
+          let highestBid = '';
           if (
             makerAsks[nft.token_address] &&
             makerAsks[nft.token_address][nft.token_id]
@@ -303,51 +303,22 @@ export default function ListNFT() {
         {nfts.map((nft) => {
           return nft.metadata && nft.metadata.image ? (
             <NFTCard key={Math.random() * 10}>
-              {nft.listed ? (
-                <>
-                  <ListImage src={nft.metadata.image} alt={`ugly nft`} />
-                  <Price>{nft.listPrice}</Price>
-                  <Offer>
-                    <p>{nft.highestBid}</p>
-                    <p
-                      className="accept"
-                      onClick={() =>
-                        acceptOffer(nft.token_address, nft.token_id)
-                      }
-                    >
-                      Accept Offer
-                    </p>
-                  </Offer>
-                  <ListButton
-                    onClick={() => listNFT(nft.token_address, nft.token_id)}
-                  >
-                    Re-List
-                  </ListButton>
-                </>
-              ) : (
-                <>
-                  <ListImage src={nft.metadata.image} alt={`ugly nft`} />
-                  <Price>unlisted</Price>
-                  <Offer>
-                    <p>{nft.highestBid}</p>
-                    <p
-                      className="accept"
-                      onClick={() =>
-                        acceptOffer(nft.token_address, nft.token_id)
-                      }
-                    >
-                      Accept Offer
-                    </p>
-                  </Offer>
-                  <ListButton
-                    onClick={() =>
-                      listNFT(nft.token_address, nft.token_id, nft.highestBid)
-                    }
-                  >
-                    List
-                  </ListButton>
-                </>
-              )}
+              <ListImage src={nft.metadata.image} alt={`ugly nft`} />
+              <Price>{nft.listed ? nft.listPrice : 'unlisted'}</Price>
+              <Offer>
+                <p>{nft.bidded ? nft.highestBid : 'no offer'}</p>
+                <p
+                  className="accept"
+                  onClick={() => acceptOffer(nft.token_address, nft.token_id)}
+                >
+                  {nft.bidded && 'Accept Offer'}
+                </p>
+              </Offer>
+              <ListButton
+                onClick={() => listNFT(nft.token_address, nft.token_id)}
+              >
+                {nft.listed ? 'Re-List' : 'List'}
+              </ListButton>
             </NFTCard>
           ) : null;
         })}
