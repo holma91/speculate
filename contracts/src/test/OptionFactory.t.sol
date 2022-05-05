@@ -38,8 +38,9 @@ contract OptionFactoryTest is DSTest, ERC1155Holder {
     OptionFactory internal optionFactory;
     MockV3Aggregator internal btcUsdPriceFeed;
     MockV3Aggregator internal ethUsdPriceFeed;
-    OptionFactory.Option internal btc50Call;
-    OptionFactory.Option internal eth4Call;
+    OptionFactory.Option internal short_eth4Call;
+    OptionFactory.Option internal long_eth4Call;
+    OptionFactory.Collateral internal collateral_eth4Call;
 
     function setUp() public {
         alice = address(0x1337);
@@ -49,53 +50,86 @@ contract OptionFactoryTest is DSTest, ERC1155Holder {
         btcUsdPriceFeed = new MockV3Aggregator(8, 40_000 * 10**8);
         ethUsdPriceFeed = new MockV3Aggregator(8, 3_000 * 10**8);
 
-        btc50Call = OptionFactory.Option(
-            address(btcUsdPriceFeed),
-            0.5 * 10**18,
-            true,
-            50_000 * 10**8,
-            1_000, // expiry
-            10 // premium in the native currency
-        );
-
-        eth4Call = OptionFactory.Option(
+        short_eth4Call = OptionFactory.Option(
             address(ethUsdPriceFeed),
             1 * 10**18,
             true,
+            false,
             4_000 * 10**8,
-            1_000, // expiry
-            10 // premium in the native currency
+            1_000
+        );
+
+        long_eth4Call = OptionFactory.Option(
+            address(ethUsdPriceFeed),
+            1 * 10**18,
+            true,
+            true,
+            4_000 * 10**8,
+            1_000
+        );
+
+        // covered call
+        collateral_eth4Call = OptionFactory.Collateral(
+            address(ethUsdPriceFeed),
+            10 * 10**18,
+            10
         );
     }
 
     function testCanCreateOption() public {
-        uint256 btc50CallId = optionFactory.createOption(
-            btc50Call,
-            10,
-            address(btcUsdPriceFeed)
+        uint256 long_eth4CallId = optionFactory.createOption(
+            short_eth4Call,
+            long_eth4Call,
+            collateral_eth4Call
         );
-        OptionFactory.Option memory retrievedOption = optionFactory
-            .getOptionById(btc50CallId);
+        OptionFactory.Option memory retrievedLong = optionFactory.getOptionById(
+            long_eth4CallId
+        );
+        OptionFactory.Option memory retrievedShort = optionFactory
+            .getOptionById(long_eth4CallId - 1);
+        OptionFactory.Collateral memory retrievedCollateral = optionFactory
+            .getCollateralById(long_eth4CallId - 1);
 
-        assertEq(btc50Call.underlyingAsset, retrievedOption.underlyingAsset);
-        assertEq(optionFactory.balanceOf(address(this), btc50CallId), 10);
+        assertEq(
+            long_eth4Call.underlyingPriceFeed,
+            retrievedLong.underlyingPriceFeed
+        );
+        assertEq(
+            short_eth4Call.underlyingPriceFeed,
+            retrievedShort.underlyingPriceFeed
+        );
+        assertEq(collateral_eth4Call.priceFeed, retrievedCollateral.priceFeed);
+        assertEq(optionFactory.balanceOf(address(this), long_eth4CallId), 10);
+        assertEq(
+            optionFactory.balanceOf(address(this), long_eth4CallId - 1),
+            1
+        );
     }
 
-    function testCanTransferOption() public {
-        uint256 btc50CallId = optionFactory.createOption(
-            btc50Call,
-            10,
-            address(btcUsdPriceFeed)
+    function testCanCheckIfLiquidateable() public {
+        uint256 long_eth4CallId = optionFactory.createOption(
+            short_eth4Call,
+            long_eth4Call,
+            collateral_eth4Call
         );
-        assertEq(optionFactory.balanceOf(address(this), btc50CallId), 10);
-        optionFactory.safeTransferFrom(
-            address(this),
-            alice,
-            btc50CallId,
-            5,
-            ""
-        );
-        assertEq(optionFactory.balanceOf(address(this), btc50CallId), 5);
-        assertEq(optionFactory.balanceOf(alice, btc50CallId), 5);
+        assertTrue(optionFactory.canBeLiquidated(long_eth4CallId - 1));
     }
+
+    // function testCanTransferOption() public {
+    //     uint256 btc50CallId = optionFactory.createOption(
+    //         btc50Call,
+    //         10,
+    //         address(btcUsdPriceFeed)
+    //     );
+    //     assertEq(optionFactory.balanceOf(address(this), btc50CallId), 10);
+    //     optionFactory.safeTransferFrom(
+    //         address(this),
+    //         alice,
+    //         btc50CallId,
+    //         5,
+    //         ""
+    //     );
+    //     assertEq(optionFactory.balanceOf(address(this), btc50CallId), 5);
+    //     assertEq(optionFactory.balanceOf(alice, btc50CallId), 5);
+    // }
 }
