@@ -123,6 +123,74 @@ export default function ListNFT() {
         },
       }));
     };
+
+    const onTakerAsk = (
+      taker,
+      maker,
+      strategy,
+      currency,
+      collection,
+      tokenId,
+      amount,
+      price
+    ) => {
+      console.log('TakerAsk received');
+      collection = collection.toLowerCase();
+      setMakerBids((prevState) => ({
+        ...prevState,
+        [collection]: {
+          ...Object.fromEntries(
+            Object.entries(prevState[collection]).filter(
+              ([key, _]) => key !== tokenId
+            )
+          ),
+        },
+      }));
+      setMakerAsks((prevState) => ({
+        ...prevState,
+        [collection]: {
+          ...Object.fromEntries(
+            Object.entries(prevState[collection]).filter(
+              ([key, _]) => key !== tokenId
+            )
+          ),
+        },
+      }));
+    };
+
+    const onTakerBid = (
+      taker,
+      maker,
+      strategy,
+      currency,
+      collection,
+      tokenId,
+      amount,
+      price
+    ) => {
+      console.log('TakerBid received');
+      collection = collection.toLowerCase();
+      setMakerBids((prevState) => ({
+        ...prevState,
+        [collection]: {
+          ...Object.fromEntries(
+            Object.entries(prevState[collection]).filter(
+              ([key, _]) => key !== tokenId
+            )
+          ),
+        },
+      }));
+      setMakerAsks((prevState) => ({
+        ...prevState,
+        [collection]: {
+          ...Object.fromEntries(
+            Object.entries(prevState[collection]).filter(
+              ([key, _]) => key !== tokenId
+            )
+          ),
+        },
+      }));
+    };
     const { ethereum } = window;
     if (ethereum) {
       const provider = new ethers.providers.Web3Provider(ethereum);
@@ -135,6 +203,8 @@ export default function ListNFT() {
       setExchangeContract(contract);
       contract.on('MakerAsk', onMakerAsk);
       contract.on('MakerBid', onMakerBid);
+      contract.on('TakerAsk', onTakerAsk);
+      contract.on('TakerBid', onTakerBid);
     } else {
       console.log('ethereum object not found');
     }
