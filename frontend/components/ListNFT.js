@@ -22,6 +22,7 @@ export default function ListNFT() {
 
         response = await response.json();
         const receivedNFTs = response.result;
+        if (!receivedNFTs) return;
         const allNfts = receivedNFTs.map((nft) => {
           let listed = false;
           let listPrice = '';
@@ -123,7 +124,6 @@ export default function ListNFT() {
         },
       }));
     };
-
     const onTakerAsk = (
       taker,
       maker,
@@ -157,7 +157,6 @@ export default function ListNFT() {
         },
       }));
     };
-
     const onTakerBid = (
       taker,
       maker,
@@ -191,6 +190,7 @@ export default function ListNFT() {
         },
       }));
     };
+
     const { ethereum } = window;
     if (ethereum) {
       const provider = new ethers.providers.Web3Provider(ethereum);
@@ -255,6 +255,47 @@ export default function ListNFT() {
     }
   };
 
+  const acceptOffer = async (collectionAddress, collectionId) => {
+    const { ethereum } = window;
+    if (ethereum) {
+      const makerBid = await exchangeContract.getMakerBid(
+        collectionAddress,
+        collectionId
+      );
+      const parsedMakerBid = {
+        isOrderAsk: makerBid.isOrderAsk,
+        signer: makerBid.signer,
+        collection: makerBid.collection,
+        price: makerBid.price,
+        tokenId: makerBid.tokenId,
+        amount: makerBid.amount,
+        strategy: makerBid.strategy,
+        currency: makerBid.currency,
+        startTime: makerBid.startTime,
+        endTime: makerBid.endTime,
+      };
+
+      const takerAsk = {
+        isOrderAsk: true,
+        taker: ethereum.selectedAddress,
+        price: makerBid.price,
+        tokenId: makerBid.tokenId,
+      };
+
+      let tx = await exchangeContract.matchBidWithTakerAsk(
+        takerAsk,
+        parsedMakerBid,
+        {
+          gasLimit: 500000,
+        }
+      );
+      await tx.wait();
+      console.log(tx);
+    } else {
+      console.log('ethereum object not found');
+    }
+  };
+
   return (
     <Container>
       <h1>your nfts</h1>
@@ -268,7 +309,14 @@ export default function ListNFT() {
                   <Price>{nft.listPrice}</Price>
                   <Offer>
                     <p>{nft.highestBid}</p>
-                    <p className="accept">Accept Offer</p>
+                    <p
+                      className="accept"
+                      onClick={() =>
+                        acceptOffer(nft.token_address, nft.token_id)
+                      }
+                    >
+                      Accept Offer
+                    </p>
                   </Offer>
                   <ListButton
                     onClick={() => listNFT(nft.token_address, nft.token_id)}
@@ -282,10 +330,19 @@ export default function ListNFT() {
                   <Price>unlisted</Price>
                   <Offer>
                     <p>{nft.highestBid}</p>
-                    <p className="accept">Accept Offer</p>
+                    <p
+                      className="accept"
+                      onClick={() =>
+                        acceptOffer(nft.token_address, nft.token_id)
+                      }
+                    >
+                      Accept Offer
+                    </p>
                   </Offer>
                   <ListButton
-                    onClick={() => listNFT(nft.token_address, nft.token_id)}
+                    onClick={() =>
+                      listNFT(nft.token_address, nft.token_id, nft.highestBid)
+                    }
                   >
                     List
                   </ListButton>

@@ -10,3 +10,8 @@ compare 1 and 2,
   - make a pre-configured makerAsk
 
 
+
+
+- list nft - DONE
+- accept offer on nft - DONE
+- 
