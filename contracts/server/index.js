@@ -100,7 +100,8 @@ speculateExchange.on(
   ) => {
     console.log('TakerAsk received');
     collection = collection.toLowerCase();
-    makerBids[collection][tokenId] = {};
+    delete makerBids[collection][tokenId];
+    delete makerAsks[collection][tokenId];
     fs.writeFile(
       './server/makerBids.json',
       JSON.stringify(makerBids),
@@ -125,7 +126,8 @@ speculateExchange.on(
   ) => {
     console.log('TakerBid received');
     collection = collection.toLowerCase();
-    makerAsks[collection][tokenId] = {};
+    delete makerAsks[collection][tokenId];
+    delete makerBids[collection][tokenId];
     fs.writeFile(
       './server/makerAsks.json',
       JSON.stringify(makerAsks),

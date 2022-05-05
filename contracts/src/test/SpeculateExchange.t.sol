@@ -396,6 +396,20 @@ contract SpeculateExchangeTest is DSTest {
                 address(transferManagerERC721)
             )
         );
+
+        OrderTypes.MakerOrder memory makerBid = OrderTypes.MakerOrder(
+            false,
+            alice,
+            address(collection),
+            0.01 ether,
+            1,
+            1,
+            address(strategyStandardSaleForFixedPrice),
+            address(WETH),
+            block.timestamp,
+            1653806167
+        );
+
         // create taker bid
         OrderTypes.TakerOrder memory takerBid = OrderTypes.TakerOrder(
             false,
@@ -408,6 +422,8 @@ contract SpeculateExchangeTest is DSTest {
         uint256 aliceBalanceBefore = WETH.balanceOf(alice);
         cheats.stopPrank();
         cheats.startPrank(alice, alice);
+        // create pointless makerBid
+        speculateExchange.createMakerBid(makerBid);
         WETH.approve(address(speculateExchange), 1 ether);
         assertEq(collection.ownerOf(1), address(receiver));
 
@@ -438,6 +454,18 @@ contract SpeculateExchangeTest is DSTest {
         );
         assertEq(
             oldMakerAsk.collection,
+            0x0000000000000000000000000000000000000000
+        );
+
+        OrderTypes.MakerOrder memory oldMakerBid = speculateExchange
+            .getMakerBid(address(collection), 1);
+
+        assertEq(
+            oldMakerBid.signer,
+            0x0000000000000000000000000000000000000000
+        );
+        assertEq(
+            oldMakerBid.collection,
             0x0000000000000000000000000000000000000000
         );
     }

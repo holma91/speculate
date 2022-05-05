@@ -41,6 +41,7 @@ contract NFT is ERC721, Ownable {
         override
         returns (string memory)
     {
+        // get all the option info here
         if (ownerOf(tokenId) == address(0)) {
             revert NonExistentTokenURI();
         }

@@ -1,0 +1,27 @@
+AS A WRITER:
+  underlying asset
+  strike price
+  expiry
+  premium
+  collateral
+
+
+
+
+
+
+- one erc1155 contract for everything
+- every new option is a token where the amount is the number of options
+
+
+
+
+
+
+
+
+
+
+projects using erc1155
+- enjin
+- sandbox

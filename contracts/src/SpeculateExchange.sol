@@ -233,6 +233,7 @@ contract SpeculateExchange {
             takerBid.price
         );
 
+        delete makerBidByNFT[makerAsk.collection][makerAsk.tokenId];
         delete makerAskByNFT[makerAsk.collection][makerAsk.tokenId];
     }
 
@@ -296,6 +297,7 @@ contract SpeculateExchange {
             takerAsk.price
         );
 
+        delete makerAskByNFT[makerBid.collection][makerBid.tokenId];
         delete makerBidByNFT[makerBid.collection][makerBid.tokenId];
     }
 

@@ -16,10 +16,13 @@ const main = async () => {
 
   const speculateExchange = factory.attach(fuji.speculateExchange);
 
-  const BID = ethers.BigNumber.from(ethers.utils.parseEther('0.001'));
+  const BID = ethers.BigNumber.from(ethers.utils.parseEther('0.05'));
 
   const weth = new ethers.Contract(fuji.wavax, WETH_ABI, wallet);
-  let approveTx = await weth.approve(speculateExchange.address, BID);
+  let approveTx = await weth.approve(
+    speculateExchange.address,
+    ethers.utils.parseEther('5')
+  );
   await approveTx.wait();
   console.log('approveTx:', approveTx.hash);
 
@@ -27,8 +30,8 @@ const main = async () => {
     isOrderAsk: false,
     signer: ADDRESS3,
     collection: fuji.nftCollection,
-    price: ethers.BigNumber.from(ethers.utils.parseEther('0.002')),
-    tokenId: 45,
+    price: BID,
+    tokenId: 39,
     amount: 1,
     strategy: fuji.strategy,
     currency: fuji.wavax,

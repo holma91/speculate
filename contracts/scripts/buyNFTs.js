@@ -22,7 +22,7 @@ const main = async () => {
   await approveTx.wait();
   console.log('approveTx:', approveTx.hash);
 
-  const makerAsk = await speculateExchange.getMakerAsk(fuji.nftCollection, 2);
+  const makerAsk = await speculateExchange.getMakerAsk(fuji.nftCollection, 38);
   const parsedMakerAsk = {
     isOrderAsk: makerAsk.isOrderAsk,
     signer: makerAsk.signer,
@@ -41,7 +41,7 @@ const main = async () => {
     isOrderAsk: false,
     taker: ADDRESS3,
     price: BID,
-    tokenId: 2,
+    tokenId: 38,
   };
 
   // console.log(parsedMakerAsk);
