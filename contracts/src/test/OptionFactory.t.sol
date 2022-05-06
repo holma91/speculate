@@ -40,7 +40,10 @@ contract OptionFactoryTest is DSTest, ERC1155Holder {
     MockV3Aggregator internal ethUsdPriceFeed;
     OptionFactory.Option internal short_eth4Call;
     OptionFactory.Option internal long_eth4Call;
+    OptionFactory.Option internal short_btc50Call;
+    OptionFactory.Option internal long_btc50Call;
     OptionFactory.Collateral internal collateral_eth4Call;
+    OptionFactory.Collateral internal collateral_btc50Call;
 
     function setUp() public {
         alice = address(0x1337);
@@ -72,6 +75,30 @@ contract OptionFactoryTest is DSTest, ERC1155Holder {
         collateral_eth4Call = OptionFactory.Collateral(
             address(ethUsdPriceFeed),
             10 * 10**18,
+            10
+        );
+
+        short_btc50Call = OptionFactory.Option(
+            address(btcUsdPriceFeed),
+            0.1 * 10**18,
+            true,
+            false,
+            50_000 * 10**8,
+            1_000
+        );
+
+        long_btc50Call = OptionFactory.Option(
+            address(btcUsdPriceFeed),
+            0.1 * 10**18,
+            true,
+            true,
+            50_000 * 10**8,
+            1_000
+        );
+
+        collateral_btc50Call = OptionFactory.Collateral(
+            address(ethUsdPriceFeed),
+            20 * 10**18, // 20 eth collateral
             10
         );
     }
@@ -112,24 +139,50 @@ contract OptionFactoryTest is DSTest, ERC1155Holder {
             long_eth4Call,
             collateral_eth4Call
         );
-        assertTrue(optionFactory.canBeLiquidated(long_eth4CallId - 1));
+        cheats.expectRevert("liquidate: covered call cannot be liquidated");
+        optionFactory.canBeLiquidated(long_eth4CallId - 1);
+        // ethUsdPriceFeed.updateAnswer(2500);
+
+        uint256 long_btc50CallId = optionFactory.createOption(
+            short_btc50Call,
+            long_btc50Call,
+            collateral_btc50Call
+        );
+
+        int256 CR = optionFactory.getCollateralToRiskRatio(
+            long_btc50CallId - 1
+        );
+        assertEq(CR, 1500);
+        assertTrue(!optionFactory.canBeLiquidated(long_btc50CallId - 1));
+
+        // eth plummets against btc
+        ethUsdPriceFeed.updateAnswer(2100 * 10**8);
+
+        CR = optionFactory.getCollateralToRiskRatio(long_btc50CallId - 1);
+        assertEq(CR, 1050);
+
+        assertTrue(optionFactory.canBeLiquidated(long_btc50CallId - 1));
     }
 
-    // function testCanTransferOption() public {
-    //     uint256 btc50CallId = optionFactory.createOption(
-    //         btc50Call,
-    //         10,
-    //         address(btcUsdPriceFeed)
-    //     );
-    //     assertEq(optionFactory.balanceOf(address(this), btc50CallId), 10);
-    //     optionFactory.safeTransferFrom(
-    //         address(this),
-    //         alice,
-    //         btc50CallId,
-    //         5,
-    //         ""
-    //     );
-    //     assertEq(optionFactory.balanceOf(address(this), btc50CallId), 5);
-    //     assertEq(optionFactory.balanceOf(alice, btc50CallId), 5);
-    // }
+    // 0.1 * 10 = 1btc in risk = $40_000
+    // 10 = 20eth in collateral = $60_000
+    // hf = 60_0000/40_000 = 1.5
+
+    function testCanTransferOption() public {
+        uint256 long_btc50CallId = optionFactory.createOption(
+            short_btc50Call,
+            long_btc50Call,
+            collateral_btc50Call
+        );
+        assertEq(optionFactory.balanceOf(address(this), long_btc50CallId), 10);
+        optionFactory.safeTransferFrom(
+            address(this),
+            alice,
+            long_btc50CallId,
+            5,
+            ""
+        );
+        assertEq(optionFactory.balanceOf(address(this), long_btc50CallId), 5);
+        assertEq(optionFactory.balanceOf(alice, long_btc50CallId), 5);
+    }
 }

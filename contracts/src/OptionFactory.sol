@@ -46,10 +46,12 @@ contract OptionFactory is ERC1155 {
         return currentOptionId++;
     }
 
-    function canBeLiquidated(uint256 optionId) public view returns (bool) {
+    function getCollateralToRiskRatio(uint256 optionId)
+        public
+        view
+        returns (int256)
+    {
         Option memory option = optionById[optionId];
-        require(!option.long, "liquidate: not a short");
-
         Collateral memory collateral = collateralById[optionId];
 
         (, int256 underlyingPrice, , , ) = AggregatorV3Interface(
@@ -64,7 +66,22 @@ contract OptionFactory is ERC1155 {
             underlyingPrice;
         int256 collateralUsd = int256(collateral.amount) * collateralPrice;
 
-        return riskUsd >= collateralUsd;
+        return (collateralUsd * 10**3) / riskUsd;
+    }
+
+    function canBeLiquidated(uint256 optionId) public view returns (bool) {
+        Option memory option = optionById[optionId];
+        require(!option.long, "liquidate: not a short");
+
+        Collateral memory collateral = collateralById[optionId];
+        require(
+            option.underlyingPriceFeed != collateral.priceFeed && !option.long,
+            "liquidate: covered call cannot be liquidated"
+        );
+
+        int256 collateralToRiskRatio = getCollateralToRiskRatio(optionId);
+
+        return collateralToRiskRatio < 1200;
     }
 
     function getCollateralById(uint256 optionId)
