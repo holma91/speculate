@@ -55,11 +55,11 @@ const Header = () => {
         </Link>
       </Title>
       <ButtonContainer>
-        <Button>
-          <Link href="/positions">
+        <Link href="/positions">
+          <Button>
             <a>Positions</a>
-          </Link>
-        </Button>
+          </Button>
+        </Link>
         <Button onClick={connectWallet}>
           {currentAccount ? (
             <span>Connected</span>
