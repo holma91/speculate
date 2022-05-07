@@ -20,11 +20,9 @@ export default function home() {
 const Container = styled.div`
   display: flex;
   flex-direction: column;
-  /* justify-content: center; */
   align-items: center;
   padding-top: 0;
   margin: 0;
-  /* margin-top: 10px; */
 
   h1 {
     margin-top: 50px;
