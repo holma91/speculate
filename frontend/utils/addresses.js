@@ -43,5 +43,6 @@ export const fuji = {
   transferSelectorNFT: '0x25B00A3CdaDDa21Ef72f825f6C641698aaeb7BE4',
 
   nftCollection: '0x075c91Fec12269Fdb6FB2B869A1ec70a062412dA',
+  nft2Collection: '0x0903d105fa51006fE41f4f1621DBb1ce3a50cA6C',
   wavax: '0xd00ae08403B9bbb9124bB305C09058E32C39A48c',
 };

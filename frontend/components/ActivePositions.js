@@ -4,11 +4,45 @@ import styled from 'styled-components';
 import SpeculateExchange from '../../contracts/out/SpeculateExchange.sol/SpeculateExchange.json';
 import { fuji } from '../utils/addresses';
 
-export default function ListNFT() {
+function NormalView({ nfts, listOption, acceptOffer }) {
+  return <div>hey</div>;
+}
+
+function NFTView({ nfts, listOption, acceptOffer }) {
+  return (
+    <NFTContainer>
+      {nfts.map((nft) => {
+        return nft.metadata && nft.metadata.image ? (
+          <NFTCard key={Math.random() * 10}>
+            <ListImage src={nft.metadata.image} alt={`ugly nft`} />
+            <Price>{nft.listed ? nft.listPrice : 'unlisted'}</Price>
+            <Offer>
+              <p>{nft.bidded ? nft.highestBid : 'no offer'}</p>
+              <p
+                className="accept"
+                onClick={() => acceptOffer(nft.token_address, nft.token_id)}
+              >
+                {nft.bidded && 'Accept Offer'}
+              </p>
+            </Offer>
+            <ListButton
+              onClick={() => listOption(nft.token_address, nft.token_id)}
+            >
+              {nft.listed ? 'Re-List' : 'List'}
+            </ListButton>
+          </NFTCard>
+        ) : null;
+      })}
+    </NFTContainer>
+  );
+}
+
+export default function ActivePositions() {
   const [exchangeContract, setExchangeContract] = useState(null);
   const [makerAsks, setMakerAsks] = useState([]);
   const [makerBids, setMakerBids] = useState([]);
   const [nfts, setNfts] = useState([]);
+  const [view, setView] = useState('list');
 
   useEffect(() => {
     const getNfts = async () => {
@@ -24,6 +58,7 @@ export default function ListNFT() {
         const receivedNFTs = response.result;
         if (!receivedNFTs) return;
         const allNfts = receivedNFTs.map((nft) => {
+          console.log(nft.contract_type);
           let listed = false;
           let listPrice = '';
           let bidded = false;
@@ -229,7 +264,7 @@ export default function ListNFT() {
     setUpMakerOrders();
   }, []);
 
-  const listNFT = async (collectionAddress, collectionId) => {
+  const listOption = async (collectionAddress, collectionId) => {
     const { ethereum } = window;
     if (ethereum) {
       const makerAsk = {
@@ -298,34 +333,42 @@ export default function ListNFT() {
 
   return (
     <Container>
-      <h1>your nfts</h1>
-      <NFTContainer>
-        {nfts.map((nft) => {
-          return nft.metadata && nft.metadata.image ? (
-            <NFTCard key={Math.random() * 10}>
-              <ListImage src={nft.metadata.image} alt={`ugly nft`} />
-              <Price>{nft.listed ? nft.listPrice : 'unlisted'}</Price>
-              <Offer>
-                <p>{nft.bidded ? nft.highestBid : 'no offer'}</p>
-                <p
-                  className="accept"
-                  onClick={() => acceptOffer(nft.token_address, nft.token_id)}
-                >
-                  {nft.bidded && 'Accept Offer'}
-                </p>
-              </Offer>
-              <ListButton
-                onClick={() => listNFT(nft.token_address, nft.token_id)}
-              >
-                {nft.listed ? 'Re-List' : 'List'}
-              </ListButton>
-            </NFTCard>
-          ) : null;
-        })}
-      </NFTContainer>
+      <h1>your positions</h1>
+      <ViewMenu>
+        <p onClick={() => setView('list')}>List View</p>
+        <p onClick={() => setView('grid')}>Grid View</p>
+      </ViewMenu>
+      {view === 'list' ? (
+        <NormalView
+          nfts={nfts}
+          listOption={listOption}
+          acceptOffer={acceptOffer}
+        />
+      ) : (
+        <NFTView
+          nfts={nfts}
+          listOption={listOption}
+          acceptOffer={acceptOffer}
+        />
+      )}
     </Container>
   );
 }
+
+const ViewMenu = styled.div`
+  display: flex;
+  gap: 10px;
+
+  p {
+    font-size: 20px;
+    margin-top: 0;
+
+    :hover {
+      color: #0f6cf7;
+      cursor: pointer;
+    }
+  }
+`;
 
 const Price = styled.div`
   padding: 10px;

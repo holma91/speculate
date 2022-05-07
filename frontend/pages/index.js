@@ -4,13 +4,13 @@ import styled from 'styled-components';
 export default function home() {
   return (
     <Container>
-      <h1>Marketplace for FNFTs</h1>
+      <h1>Tokenized Derivatives</h1>
       <Menu>
         <Link href="/list">
-          <a>List NFTs</a>
+          <a>Write Options</a>
         </Link>
         <Link href="/buy">
-          <a>Buy NFTs</a>
+          <a>Buy Options</a>
         </Link>
       </Menu>
     </Container>
