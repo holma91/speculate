@@ -5,6 +5,9 @@ import * as Yup from 'yup';
 import { ethers } from 'ethers';
 import styled from 'styled-components';
 
+import { fuji } from '../utils/addresses';
+import OptionFactory from '../../contracts/out/OptionFactory.sol/OptionFactory.json';
+
 const MyTextInput = ({ label, ...props }) => {
   const [field, meta] = useField(props);
 
@@ -74,6 +77,17 @@ const priceFeeds = {
       USD: '0x7794ee502922e2b723432DDD852B3C30A911F021',
     },
   },
+  FUJI: {
+    ETH: {
+      USD: '0x86d67c3D38D2bCeE722E601025C25a575021c6EA',
+    },
+    BTC: {
+      USD: '0x31CF013A08c6Ac228C94551d535d5BAfE19c602a',
+    },
+    AVAX: {
+      USD: '0x5498BB86BC934c8D34FDA08E81D444153d0D06aD',
+    },
+  },
 };
 
 const calculateOtherOdds = (x) => {
@@ -92,52 +106,56 @@ export default function Write() {
         const provider = new ethers.providers.Web3Provider(ethereum);
         const signer = provider.getSigner();
 
-        // const woptionsFactory = new ethers.Contract(
-        //   woptionFactoryAddress,
-        //   woptionFactory.abi,
-        //   signer
-        // );
+        const optionFactory = new ethers.Contract(
+          fuji.optionFactory,
+          OptionFactory.abi,
+          signer
+        );
 
-        // const priceFeedAddress =
-        //   priceFeeds.RINKEBY[values.asset.toUpperCase()].USD;
+        console.log(optionFactory);
 
-        // const priceFeed = new ethers.Contract(
-        //   priceFeedAddress,
-        //   AggregatorV3Interface.abi,
-        //   signer
-        // );
-        // const priceFeedDecimals = await priceFeed.decimals();
+        const priceFeedAddress =
+          priceFeeds.FUJI[values.asset.toUpperCase()].USD;
 
-        // const woption = {
-        //   priceFeedAddress,
-        //   tokenizerAddress,
-        //   strikePrice: ethers.utils.parseUnits(
-        //     values.strikePrice.toString(),
-        //     priceFeedDecimals
-        //   ),
-        //   expiry: new Date(values.expiry).getTime() / 1000,
-        //   over: values.prediction === 'over',
-        //   overOdds:
-        //     values.prediction === 'over'
-        //       ? ethers.utils.parseUnits(values.writerOdds.toString(), 6)
-        //       : ethers.utils.parseUnits(values.buyerOdds.toString(), 6),
-        //   underOdds:
-        //     values.prediction === 'over'
-        //       ? ethers.utils.parseUnits(values.buyerOdds.toString(), 6)
-        //       : ethers.utils.parseUnits(values.writerOdds.toString(), 6),
-        // };
+        const priceFeedDecimals = 8;
 
-        // console.log(woption);
-        // const dep = ethers.utils.parseEther(values.deposit.toString());
+        const shortOption = {
+          underlyingPriceFeed: priceFeedAddress,
+          underlyingAmount: values.rightToBuy,
+          call: values.type === 'call',
+          long: false,
+          strikePrice: ethers.utils.parseUnits(
+            values.strikePrice.toString(),
+            priceFeedDecimals
+          ),
+          expiry: new Date(values.expiry).getTime() / 1000,
+        };
 
-        // const x = await woptionsFactory.createWoption(
-        //   ...Object.values(woption),
-        //   {
-        //     value: dep,
-        //     gasLimit: 3000000,
-        //   }
-        // );
-        // console.log(x);
+        const longOption = shortOption;
+        longOption.long = true;
+
+        const collateral = {
+          priceFeed: priceFeedAddress,
+          amount: ethers.utils.parseEther(values.collateral.toString()),
+          mintedLongs: values.numberOfOptions,
+        };
+
+        console.log(shortOption);
+        const startingCollateral = ethers.utils.parseEther(
+          values.collateral.toString()
+        );
+
+        const tx = await optionFactory.createOption(
+          shortOption,
+          longOption,
+          collateral,
+          {
+            value: startingCollateral,
+            gasLimit: 3000000,
+          }
+        );
+        await tx.wait();
+        console.log(tx);
       } else {
         console.log("Ethereum object doesn't exist!");
       }
@@ -153,13 +171,14 @@ export default function Write() {
           initialValues={{
             asset: 'eth',
             strikePrice: 2500,
+            rightToBuy: 1,
             type: 'call',
             writerOdds: 2.0,
             buyerOdds: 2.0,
             expiry: '',
             collateral: 1,
             premium: 1,
-            amount: 1,
+            numberOfOptions: 1,
           }}
           validationSchema={Yup.object({
             collateral: Yup.number()
@@ -198,6 +217,14 @@ export default function Write() {
             </InputContainer>
             <InputContainer>
               <MyTextInput
+                label="Right to buy (in Asset):"
+                name="rightToBuy"
+                type="number"
+                placeholder="1"
+              />
+            </InputContainer>
+            <InputContainer>
+              <MyTextInput
                 label="Expiry Date:"
                 name="expiry"
                 type="date"
@@ -222,8 +249,8 @@ export default function Write() {
             </InputContainer>
             <InputContainer>
               <MyTextInput
-                label="Amount:"
-                name="amount"
+                label="Number of options:"
+                name="numberOfOptions"
                 type="number"
                 placeholder="1"
               />
