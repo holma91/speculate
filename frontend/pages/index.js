@@ -6,7 +6,7 @@ export default function home() {
     <Container>
       <h1>Tokenized Derivatives</h1>
       <Menu>
-        <Link href="/list">
+        <Link href="/write">
           <a>Write Options</a>
         </Link>
         <Link href="/buy">
