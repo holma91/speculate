@@ -83,7 +83,7 @@ const calculateOtherOdds = (x) => {
 export default function Write() {
   // const woptionFactoryAddress = '0x97F8B3dDEF6C4bCB678dD85c1f04AD01A4506B9B';
 
-  const writeWoption = async (values) => {
+  const writeOption = async (values) => {
     try {
       const { ethereum } = window;
       console.log(values);
@@ -92,52 +92,52 @@ export default function Write() {
         const provider = new ethers.providers.Web3Provider(ethereum);
         const signer = provider.getSigner();
 
-        const woptionsFactory = new ethers.Contract(
-          woptionFactoryAddress,
-          woptionFactory.abi,
-          signer
-        );
+        // const woptionsFactory = new ethers.Contract(
+        //   woptionFactoryAddress,
+        //   woptionFactory.abi,
+        //   signer
+        // );
 
-        const priceFeedAddress =
-          priceFeeds.RINKEBY[values.asset.toUpperCase()].USD;
+        // const priceFeedAddress =
+        //   priceFeeds.RINKEBY[values.asset.toUpperCase()].USD;
 
-        const priceFeed = new ethers.Contract(
-          priceFeedAddress,
-          AggregatorV3Interface.abi,
-          signer
-        );
-        const priceFeedDecimals = await priceFeed.decimals();
+        // const priceFeed = new ethers.Contract(
+        //   priceFeedAddress,
+        //   AggregatorV3Interface.abi,
+        //   signer
+        // );
+        // const priceFeedDecimals = await priceFeed.decimals();
 
-        const woption = {
-          priceFeedAddress,
-          tokenizerAddress,
-          strikePrice: ethers.utils.parseUnits(
-            values.strikePrice.toString(),
-            priceFeedDecimals
-          ),
-          expiry: new Date(values.expiry).getTime() / 1000,
-          over: values.prediction === 'over',
-          overOdds:
-            values.prediction === 'over'
-              ? ethers.utils.parseUnits(values.writerOdds.toString(), 6)
-              : ethers.utils.parseUnits(values.buyerOdds.toString(), 6),
-          underOdds:
-            values.prediction === 'over'
-              ? ethers.utils.parseUnits(values.buyerOdds.toString(), 6)
-              : ethers.utils.parseUnits(values.writerOdds.toString(), 6),
-        };
+        // const woption = {
+        //   priceFeedAddress,
+        //   tokenizerAddress,
+        //   strikePrice: ethers.utils.parseUnits(
+        //     values.strikePrice.toString(),
+        //     priceFeedDecimals
+        //   ),
+        //   expiry: new Date(values.expiry).getTime() / 1000,
+        //   over: values.prediction === 'over',
+        //   overOdds:
+        //     values.prediction === 'over'
+        //       ? ethers.utils.parseUnits(values.writerOdds.toString(), 6)
+        //       : ethers.utils.parseUnits(values.buyerOdds.toString(), 6),
+        //   underOdds:
+        //     values.prediction === 'over'
+        //       ? ethers.utils.parseUnits(values.buyerOdds.toString(), 6)
+        //       : ethers.utils.parseUnits(values.writerOdds.toString(), 6),
+        // };
 
-        console.log(woption);
-        const dep = ethers.utils.parseEther(values.deposit.toString());
+        // console.log(woption);
+        // const dep = ethers.utils.parseEther(values.deposit.toString());
 
-        const x = await woptionsFactory.createWoption(
-          ...Object.values(woption),
-          {
-            value: dep,
-            gasLimit: 3000000,
-          }
-        );
-        console.log(x);
+        // const x = await woptionsFactory.createWoption(
+        //   ...Object.values(woption),
+        //   {
+        //     value: dep,
+        //     gasLimit: 3000000,
+        //   }
+        // );
+        // console.log(x);
       } else {
         console.log("Ethereum object doesn't exist!");
       }
@@ -153,27 +153,23 @@ export default function Write() {
           initialValues={{
             asset: 'eth',
             strikePrice: 2500,
-            prediction: 'over',
+            type: 'call',
             writerOdds: 2.0,
             buyerOdds: 2.0,
             expiry: '',
-            deposit: 1,
+            collateral: 1,
+            premium: 1,
+            amount: 1,
           }}
           validationSchema={Yup.object({
-            writerOdds: Yup.number()
-              .min(1, "Odds can't be below 1")
-              .required('Required'),
-            buyerOdds: Yup.number()
-              .min(1, "Odds can't be below 1")
-              .required('Required'),
-            deposit: Yup.number()
+            collateral: Yup.number()
               .min(0.000000001, 'Must deposit atleast 1 gwei')
               .required('Required'),
             strikePrice: Yup.number().required('Required'),
             expiry: Yup.date().required('Required'),
           })}
           onSubmit={(values) => {
-            writeWoption(values);
+            writeOption(values);
           }}
         >
           <Form>
@@ -187,34 +183,17 @@ export default function Write() {
               </StyledSelect>
             </InputContainer>
             <InputContainer>
+              <StyledSelect label="Type:" name="type">
+                <option value="call">CALL</option>
+                <option value="put">PUT</option>
+              </StyledSelect>
+            </InputContainer>
+            <InputContainer>
               <MyTextInput
                 label="Strike Price:"
                 name="strikePrice"
                 type="number"
                 placeholder="3500"
-              />
-            </InputContainer>
-            <InputContainer>
-              <StyledSelect label="Prediction:" name="prediction">
-                <option value="over">OVER</option>
-                <option value="under">UNDER</option>
-              </StyledSelect>
-            </InputContainer>
-            <InputContainer>
-              <MyTextInput
-                label="Writer Odds:"
-                name="writerOdds"
-                type="number"
-                placeholder="2.00"
-              />
-            </InputContainer>
-            <InputContainer>
-              <DisabledTextInput
-                label="Buyer Odds:"
-                name="buyerOdds"
-                type="number"
-                placeholder="2.00"
-                disabled
               />
             </InputContainer>
             <InputContainer>
@@ -227,20 +206,48 @@ export default function Write() {
             </InputContainer>
             <InputContainer>
               <MyTextInput
-                label="Your Deposit:"
-                name="deposit"
+                label="Your Collateral (ETH):"
+                name="collateral"
                 type="number"
                 placeholder="1"
               />
             </InputContainer>
-
-            <Button type="submit">Write Woption</Button>
+            <InputContainer>
+              <MyTextInput
+                label="Premium (ETH):"
+                name="premium"
+                type="number"
+                placeholder="1"
+              />
+            </InputContainer>
+            <InputContainer>
+              <MyTextInput
+                label="Amount:"
+                name="amount"
+                type="number"
+                placeholder="1"
+              />
+            </InputContainer>
+            <Button type="submit">Write Option</Button>
           </Form>
         </Formik>
       </InnerContainer>
     </OuterContainer>
   );
 }
+
+const Summary = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  h3 {
+    margin: 5px;
+  }
+  p {
+    margin: 3px;
+    font-size: 16px;
+  }
+`;
 
 const OuterContainer = styled.div`
   padding-top: 30px;
