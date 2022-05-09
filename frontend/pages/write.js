@@ -5,6 +5,77 @@ import * as Yup from 'yup';
 import { ethers } from 'ethers';
 import styled from 'styled-components';
 
+const MyTextInput = ({ label, ...props }) => {
+  const [field, meta] = useField(props);
+
+  return (
+    <>
+      <label htmlFor={props.id || props.name}>{label}</label>
+      {meta.touched && meta.error ? (
+        <StyledMyTextInput {...field} {...props} error />
+      ) : (
+        <StyledMyTextInput {...field} {...props} />
+      )}
+    </>
+  );
+};
+
+const DisabledTextInput = ({ label, ...props }) => {
+  const {
+    values: { writerOdds },
+    setFieldValue,
+  } = useFormikContext();
+  const [field, meta] = useField(props);
+
+  useEffect(() => {
+    setFieldValue(props.name, calculateOtherOdds(writerOdds));
+  }, [writerOdds]);
+
+  return (
+    <>
+      <label htmlFor={props.id || props.name}>{label}</label>
+      {meta.touched && meta.error ? (
+        <StyledMyTextInput {...field} {...props} error />
+      ) : (
+        <StyledMyTextInput {...field} {...props} />
+      )}
+    </>
+  );
+};
+
+const MySelect = ({ label, ...props }) => {
+  const [field, meta] = useField(props);
+  return (
+    <div>
+      <label htmlFor={props.id || props.name}>{label}</label>
+      <select {...field} {...props} />
+      {meta.touched && meta.error ? <div>{meta.error}</div> : null}
+    </div>
+  );
+};
+
+const priceFeeds = {
+  RINKEBY: {
+    ETH: {
+      // gets back price with 8 decimals
+      // scale the input by 10^8
+      USD: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e',
+    },
+    BTC: {
+      USD: '0xECe365B379E1dD183B20fc5f022230C044d51404',
+    },
+    ATOM: {
+      USD: '0x3539F2E214d8BC7E611056383323aC6D1b01943c',
+    },
+    LINK: {
+      USD: '0xd8bd0a1cb028a31aa859a21a3758685a95de4623',
+    },
+    MATIC: {
+      USD: '0x7794ee502922e2b723432DDD852B3C30A911F021',
+    },
+  },
+};
+
 const calculateOtherOdds = (x) => {
   return x === 1 ? 1 : x / (x - 1);
 };
