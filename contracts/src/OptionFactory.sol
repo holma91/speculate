@@ -33,7 +33,8 @@ contract OptionFactory is ERC1155 {
         Option memory shortOption,
         Option memory longOption,
         Collateral memory collateral
-    ) public returns (uint256) {
+    ) public payable returns (uint256) {
+        require(collateral.amount == msg.value, "wrong collateral amount");
         collateralById[currentOptionId] = collateral;
 
         optionById[currentOptionId] = shortOption;
@@ -44,6 +45,34 @@ contract OptionFactory is ERC1155 {
         _mint(msg.sender, currentOptionId, collateral.mintedLongs, ""); // longs
 
         return currentOptionId++;
+    }
+
+    function exerciseOption(uint256 optionId, uint256 amount) public {
+        // msg.sender needs to hold the corresponding nft
+        uint256 balance = balanceOf(msg.sender, optionId);
+        require(balance >= amount, "too small balance");
+
+        Option memory option = getOptionById(optionId);
+
+        // check if long
+        require(option.long, "can't exercise a short");
+
+        // check expiry
+        require(block.timestamp >= option.expiry, "not at expiry");
+
+        // check price
+        (, int256 currentPrice, , , ) = AggregatorV3Interface(
+            option.underlyingPriceFeed
+        ).latestRoundData();
+        int256 totalValue = currentPrice * int256(amount);
+        uint256 total = option.underlyingAmount * amount;
+
+        // burn the exercised options
+        _burn(msg.sender, optionId, amount);
+
+        // settle in cash
+        (bool sent, ) = msg.sender.call{value: total}("");
+        require(sent, "failed ether transfer");
     }
 
     function getCollateralToRiskRatio(uint256 optionId)

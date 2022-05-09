@@ -104,7 +104,7 @@ contract OptionFactoryTest is DSTest, ERC1155Holder {
     }
 
     function testCanCreateOption() public {
-        uint256 long_eth4CallId = optionFactory.createOption(
+        uint256 long_eth4CallId = optionFactory.createOption{value: 10 ether}(
             short_eth4Call,
             long_eth4Call,
             collateral_eth4Call
@@ -134,7 +134,7 @@ contract OptionFactoryTest is DSTest, ERC1155Holder {
     }
 
     function testCanCheckIfLiquidateable() public {
-        uint256 long_eth4CallId = optionFactory.createOption(
+        uint256 long_eth4CallId = optionFactory.createOption{value: 10 ether}(
             short_eth4Call,
             long_eth4Call,
             collateral_eth4Call
@@ -143,7 +143,7 @@ contract OptionFactoryTest is DSTest, ERC1155Holder {
         optionFactory.canBeLiquidated(long_eth4CallId - 1);
         // ethUsdPriceFeed.updateAnswer(2500);
 
-        uint256 long_btc50CallId = optionFactory.createOption(
+        uint256 long_btc50CallId = optionFactory.createOption{value: 20 ether}(
             short_btc50Call,
             long_btc50Call,
             collateral_btc50Call
@@ -169,7 +169,7 @@ contract OptionFactoryTest is DSTest, ERC1155Holder {
     // hf = 60_0000/40_000 = 1.5
 
     function testCanTransferOption() public {
-        uint256 long_btc50CallId = optionFactory.createOption(
+        uint256 long_btc50CallId = optionFactory.createOption{value: 20 ether}(
             short_btc50Call,
             long_btc50Call,
             collateral_btc50Call
@@ -185,4 +185,39 @@ contract OptionFactoryTest is DSTest, ERC1155Holder {
         assertEq(optionFactory.balanceOf(address(this), long_btc50CallId), 5);
         assertEq(optionFactory.balanceOf(alice, long_btc50CallId), 5);
     }
+
+    function testCanExercise() public {
+        uint256 balanceStart = address(this).balance;
+        uint256 long_eth4CallId = optionFactory.createOption{value: 10 ether}(
+            short_eth4Call,
+            long_eth4Call,
+            collateral_eth4Call
+        );
+        uint256 balanceMid = address(this).balance;
+        assertEq(balanceStart, balanceMid + 10 ether);
+
+        assertEq(optionFactory.balanceOf(address(this), long_eth4CallId), 10);
+        assertEq(
+            optionFactory.balanceOf(address(this), long_eth4CallId - 1),
+            1
+        );
+
+        // eth rises
+        ethUsdPriceFeed.updateAnswer(4000 * 10**8);
+        cheats.warp(1000);
+
+        // emit log_uint(address(optionFactory).balance);
+
+        optionFactory.exerciseOption(long_eth4CallId, 10);
+
+        assertEq(optionFactory.balanceOf(address(this), long_eth4CallId), 0);
+
+        uint256 balanceEnd = address(this).balance;
+        assertEq(balanceStart, balanceEnd);
+    }
+
+    receive() external payable {}
 }
+
+// creator gets 1 erc1155 that represents the sell side
+// creator gets 10 erc1155 that represent the buy side
