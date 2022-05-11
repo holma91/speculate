@@ -132,6 +132,11 @@ const RecentContainer = styled.div`
   margin: 40px;
   display: flex;
   gap: 50px;
+
+  @media screen and (max-width: 1000px) {
+    flex-direction: column;
+    gap: 10px;
+  }
 `;
 
 const RecentOptions = styled.div`
@@ -185,6 +190,18 @@ const Container = styled.div`
     margin-top: 50px;
     margin-bottom: 10px;
     font-size: 70px;
+  }
+
+  @media screen and (max-width: 1000px) {
+    h1 {
+      font-size: 48px;
+    }
+  }
+
+  @media screen and (max-width: 500px) {
+    h1 {
+      font-size: 40px;
+    }
   }
 `;
 
