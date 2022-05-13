@@ -9,7 +9,7 @@ export default function home() {
         <Link href="/write">
           <a>Write Options</a>
         </Link>
-        <Link href="/buy">
+        <Link href="/options">
           <a>Buy Options</a>
         </Link>
       </Menu>
