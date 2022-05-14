@@ -1,5 +1,5 @@
 const ethers = require('ethers');
-const NFT2 = require('../out/NFT2.sol/NFT2.json');
+const NFT2 = require('../../out/NFT2.sol/NFT2.json');
 const { fuji, mumbai, rinkeby, ADDRESS3, ADDRESS2 } = require('./addresses');
 require('dotenv').config();
 

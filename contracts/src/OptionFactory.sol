@@ -2,9 +2,10 @@
 pragma solidity 0.8.13;
 
 import "openzeppelin-contracts/contracts/token/ERC1155/ERC1155.sol";
+import "openzeppelin-contracts/contracts/token/ERC1155/extensions/ERC1155URIStorage.sol";
 import "chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-contract OptionFactory is ERC1155 {
+contract OptionFactory is ERC1155URIStorage {
     uint256 public currentOptionId;
 
     mapping(uint256 => Option) public optionById;
@@ -14,7 +15,6 @@ contract OptionFactory is ERC1155 {
         address underlyingPriceFeed;
         uint256 underlyingAmount;
         bool call;
-        bool long;
         uint256 strikePrice;
         uint256 expiry;
     }
@@ -25,24 +25,21 @@ contract OptionFactory is ERC1155 {
         uint256 mintedLongs;
     }
 
-    constructor() ERC1155("/path") {
+    constructor() ERC1155("") {
         currentOptionId = 0;
     }
 
-    function createOption(
-        Option memory shortOption,
-        Option memory longOption,
-        Collateral memory collateral
-    ) public payable returns (uint256) {
+    function createOption(Option memory option, Collateral memory collateral)
+        public
+        payable
+        returns (uint256)
+    {
         require(collateral.amount == msg.value, "wrong collateral amount");
         collateralById[currentOptionId] = collateral;
 
-        optionById[currentOptionId] = shortOption;
-        _mint(msg.sender, currentOptionId, 1, ""); // short
-
-        currentOptionId++;
-        optionById[currentOptionId] = longOption;
+        optionById[currentOptionId] = option;
         _mint(msg.sender, currentOptionId, collateral.mintedLongs, ""); // longs
+        // _setURI(currentOptionId, metadataURI);
 
         return currentOptionId++;
     }
@@ -53,9 +50,6 @@ contract OptionFactory is ERC1155 {
         require(balance >= amount, "too small balance");
 
         Option memory option = getOptionById(optionId);
-
-        // check if long
-        require(option.long, "can't exercise a short");
 
         // check expiry
         require(block.timestamp >= option.expiry, "not at expiry");
@@ -100,11 +94,10 @@ contract OptionFactory is ERC1155 {
 
     function canBeLiquidated(uint256 optionId) public view returns (bool) {
         Option memory option = optionById[optionId];
-        require(!option.long, "liquidate: not a short");
 
         Collateral memory collateral = collateralById[optionId];
         require(
-            option.underlyingPriceFeed != collateral.priceFeed && !option.long,
+            option.underlyingPriceFeed != collateral.priceFeed,
             "liquidate: covered call cannot be liquidated"
         );
 

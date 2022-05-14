@@ -45,6 +45,8 @@ const fuji = {
   nftCollection: '0x075c91Fec12269Fdb6FB2B869A1ec70a062412dA',
   nft2Collection: '0x0903d105fa51006fE41f4f1621DBb1ce3a50cA6C',
   wavax: '0xd00ae08403B9bbb9124bB305C09058E32C39A48c',
+
+  optionFactory: '0x9637e2145dCAdA494e4aadf28C636F05a2dAA9aE',
 };
 
 module.exports = {

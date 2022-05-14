@@ -32,3 +32,9 @@ strategyStandardSaleForFixedPrice deployed at: 0x093AD2Fd36FD87F402e20633CfB0F54
 transferManagerERC721 deployed at: 0x2192c32F806155124582521E1571583703A0430C
 transferManagerERC1155 deployed at: 0x3F32F4B2Da6958bdA7447B547D164fA7A012bBf2
 transferSelectorNFT deployed at: 0xCB45cd473c3C04f2915C1917a47e71Cdab4904E5
+
+
+
+OPTION SIDE:
+deploy:
+optionFactory deployed at: 0x9637e2145dCAdA494e4aadf28C636F05a2dAA9aE
