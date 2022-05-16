@@ -13,7 +13,7 @@ export default function Options() {
           <span>Current Price</span>
           <span>Right to buy</span>
           <span>Expiry</span>
-          <span>1 ETH</span>
+          <span>Premium</span>
         </OptionsHeader>
         <Option>
           <span>
@@ -206,45 +206,7 @@ const Option = styled.div`
     align-items: center;
     gap: 6px;
   }
-`;
-
-const Container = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 0;
-  margin: 0;
-
-  h1 {
-    margin-top: 50px;
-    margin-bottom: 10px;
-    font-size: 70px;
-  }
-
-  @media screen and (max-width: 1000px) {
-    h1 {
-      font-size: 48px;
-    }
-  }
-
-  @media screen and (max-width: 500px) {
-    h1 {
-      font-size: 40px;
-    }
-  }
-`;
-
-const Menu = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  a {
-    font-size: 32px;
-    margin: 0 7px;
-
-    :hover {
-      color: #0f6cf7;
-    }
+  :hover {
+    background: #fafafa;
   }
 `;

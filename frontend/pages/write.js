@@ -1,5 +1,5 @@
 import React from 'react';
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Formik, Form, useField, useFormikContext } from 'formik';
 import * as Yup from 'yup';
 import { ethers } from 'ethers';
@@ -7,32 +7,10 @@ import styled from 'styled-components';
 
 import { fuji } from '../utils/addresses';
 import OptionFactory from '../../contracts/out/OptionFactory.sol/OptionFactory.json';
+import { optionTemplates } from '../data/optionTemplates';
 
 const MyTextInput = ({ label, ...props }) => {
   const [field, meta] = useField(props);
-
-  return (
-    <>
-      <label htmlFor={props.id || props.name}>{label}</label>
-      {meta.touched && meta.error ? (
-        <StyledMyTextInput {...field} {...props} error />
-      ) : (
-        <StyledMyTextInput {...field} {...props} />
-      )}
-    </>
-  );
-};
-
-const DisabledTextInput = ({ label, ...props }) => {
-  const {
-    values: { writerOdds },
-    setFieldValue,
-  } = useFormikContext();
-  const [field, meta] = useField(props);
-
-  useEffect(() => {
-    setFieldValue(props.name, calculateOtherOdds(writerOdds));
-  }, [writerOdds]);
 
   return (
     <>
@@ -90,13 +68,8 @@ const priceFeeds = {
   },
 };
 
-const calculateOtherOdds = (x) => {
-  return x === 1 ? 1 : x / (x - 1);
-};
-
 export default function Write() {
-  // const woptionFactoryAddress = '0x97F8B3dDEF6C4bCB678dD85c1f04AD01A4506B9B';
-
+  const [template, setTemplate] = useState(optionTemplates[0]);
   const writeOption = async (values) => {
     try {
       const { ethereum } = window;
@@ -164,20 +137,23 @@ export default function Write() {
     }
   };
 
+  const handleTemplateClick = async (optionTemplate) => {
+    setTemplate(optionTemplate);
+  };
+
   return (
     <OuterContainer>
       <InnerContainer>
         <Formik
+          enableReinitialize={true}
           initialValues={{
-            asset: 'eth',
-            strikePrice: 2500,
-            rightToBuy: 1,
+            asset: template.asset,
+            strikePrice: template.strikePrice,
+            rightToBuy: template.rightToBuy,
             type: 'call',
-            writerOdds: 2.0,
-            buyerOdds: 2.0,
-            expiry: '',
+            expiry: template.expiry,
             collateral: 1,
-            premium: 1,
+            premium: template.premium,
             numberOfOptions: 1,
           }}
           validationSchema={Yup.object({
@@ -259,28 +235,145 @@ export default function Write() {
           </Form>
         </Formik>
       </InnerContainer>
+      <Templates>
+        <h3>Call Templates</h3>
+        <OptionsHeader>
+          <span>Asset</span>
+          <span>Strike Price</span>
+          <span>Right to buy</span>
+          <span>Expiry</span>
+          <span>Premium</span>
+        </OptionsHeader>
+        {optionTemplates.map((optionTemplate) => {
+          return (
+            <Option
+              onClick={() => handleTemplateClick(optionTemplate)}
+              key={optionTemplate.asset + optionTemplate.strikePrice}
+            >
+              <span>
+                <img src={optionTemplate.img} />
+                {optionTemplate.priceFeed}
+              </span>
+              <span>{optionTemplate.strikePrice}</span>
+              <span>
+                {optionTemplate.rightToBuy} {optionTemplate.asset.toUpperCase()}
+              </span>
+              <span>{optionTemplate.expiry}</span>
+              <span>{optionTemplate.premium} ETH</span>
+            </Option>
+          );
+        })}
+
+        <h3>Put Templates</h3>
+        <OptionsHeader>
+          <span>Asset</span>
+          <span>Strike Price</span>
+          <span>Right to buy</span>
+          <span>Expiry</span>
+          <span>Premium</span>
+        </OptionsHeader>
+        <Option>
+          <span>
+            <img src="https://images.prismic.io/data-chain-link/931ba23b-1755-46be-a466-73af2fcafaf1_ICON_SOL.png?auto=compress,format" />
+            SOL/USD
+          </span>
+          <span>$500</span>
+          <span>1000 SOL</span>
+          <span>2024-01-01</span>
+          <span>1 ETH</span>
+        </Option>
+        <Option>
+          <span>
+            <img src="https://data-chain-link.cdn.prismic.io/data-chain-link/ad14983c-eec5-448e-b04c-d1396e644596_LINK.svg" />
+            LINK/USD
+          </span>
+          <span>$30</span>
+          <span>100 LINK</span>
+          <span>2023-01-01</span>
+          <span>1 ETH</span>
+        </Option>
+        <Option>
+          <span>
+            <img src="https://images.prismic.io/data-chain-link/63137341-c4d1-4825-b284-b8a5a8436d15_ICON_AVAX.png?auto=compress,format" />
+            AVAX/USD
+          </span>
+          <span>$300</span>
+          <span>10 AVAX</span>
+          <span>2023-06-14</span>
+          <span>0.2 ETH</span>
+        </Option>
+      </Templates>
     </OuterContainer>
   );
 }
 
-const Summary = styled.div`
+const Templates = styled.div`
+  width: 90%;
+  margin: 10px;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 10px;
+
+  margin-bottom: 20px;
+
   h3 {
-    margin: 5px;
+    margin-bottom: 5px;
   }
-  p {
-    margin: 3px;
-    font-size: 16px;
+`;
+
+const OptionsHeader = styled.div`
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+  justify-content: space-between;
+  align-items: center;
+  /* border: 1px solid #ecedef; */
+  border-radius: 6px;
+  cursor: pointer;
+  /* box-shadow: 0 8px 24px -16px rgba(12, 22, 44, 0.32); */
+
+  span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+`;
+
+const Option = styled.div`
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #ecedef;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px -16px rgba(12, 22, 44, 0.32);
+
+  img {
+    width: 19px;
+    height: 19px;
+  }
+
+  span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  :hover {
+    background: #fafafa;
   }
 `;
 
 const OuterContainer = styled.div`
   padding-top: 30px;
   display: flex;
-  justify-content: center;
-  align-items: start;
+  flex-direction: column;
+  justify-content: start;
+  align-items: center;
   /* height: 100vh; */
   color: black;
 `;
@@ -296,7 +389,9 @@ const StyledInput = styled.input`
 const InnerContainer = styled.div`
   display: flex;
   flex-direction: column;
-  border: 1px solid #b9b9b9;
+  border: 1px solid #ecedef;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px -16px rgba(12, 22, 44, 0.32);
   padding: 25px;
   font-size: 120%;
 `;
@@ -308,7 +403,7 @@ const Button = styled.button`
   margin-top: 20px;
   padding: 9px 25px;
   font-size: 100%;
-  border-radius: 3px;
+  border-radius: 6px;
   width: 100%;
   border: none;
   outline: none;

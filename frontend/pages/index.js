@@ -65,7 +65,7 @@ export default function home() {
             <span>$300</span>
             <span>2023-06-14</span>
           </Option>
-          <Link href="/buy">
+          <Link href="/options">
             <a>View more Call Options</a>
           </Link>
         </RecentOptions>
@@ -119,7 +119,7 @@ export default function home() {
             <span>$8</span>
             <span>2023-04-16</span>
           </Option>
-          <Link href="/buy">
+          <Link href="/options">
             <a>View more Put Options</a>
           </Link>
         </RecentOptions>
@@ -176,6 +176,9 @@ const Option = styled.div`
     display: flex;
     align-items: center;
     gap: 6px;
+  }
+  :hover {
+    background: #fafafa;
   }
 `;
 
