@@ -1,52 +1,9 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 const Header = () => {
-  const [currentAccount, setCurrentAccount] = useState('');
-  const checkIfWalletIsConnected = async () => {
-    try {
-      const { ethereum } = window;
-
-      if (!ethereum) {
-        console.log('Make sure you have metamask!');
-        return;
-      }
-
-      const accounts = await ethereum.request({ method: 'eth_accounts' });
-
-      if (accounts.length !== 0) {
-        const account = accounts[0];
-        setCurrentAccount(account);
-      } else {
-        console.log('No authorized account found');
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const connectWallet = async () => {
-    try {
-      const { ethereum } = window;
-      if (!ethereum) {
-        alert('Get MetaMask!');
-        return;
-      }
-
-      const accounts = await ethereum.request({
-        method: 'eth_requestAccounts',
-      });
-
-      setCurrentAccount(accounts[0]);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  useEffect(() => {
-    checkIfWalletIsConnected();
-  }, []);
   return (
     <HeaderContainer>
       <Title>
@@ -60,13 +17,7 @@ const Header = () => {
             <a>Positions</a>
           </Button>
         </Link>
-        <Button onClick={connectWallet}>
-          {currentAccount ? (
-            <span>Connected</span>
-          ) : (
-            <span>Connect Wallet</span>
-          )}
-        </Button>
+        <ConnectButton />
       </ButtonContainer>
     </HeaderContainer>
   );
@@ -97,18 +48,19 @@ const ButtonContainer = styled.div`
 `;
 
 const Button = styled.button`
-  background-color: #0f6cf7;
-  opacity: 75%;
+  background-color: #0e76fd;
   color: white;
   padding: 10px 20px;
-  font-size: 110%;
-  border-radius: 3px;
+  font-size: 100%;
+  font-weight: 700;
+  border-radius: 12px;
   min-width: 100px;
   border: none;
   outline: none;
   cursor: pointer;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
   :hover {
-    opacity: 100%;
+    transform: scale(1.03) perspective(1px);
   }
 `;
 
