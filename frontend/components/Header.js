@@ -24,7 +24,7 @@ const Header = () => {
 };
 
 const HeaderContainer = styled.div`
-  border-bottom: 1px solid #b9b9b9;
+  border-bottom: 1px solid #ecedef;
   display: flex;
   justify-content: space-between;
   align-items: center;

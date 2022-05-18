@@ -1,9 +1,9 @@
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-
+import { useAccount } from 'wagmi';
 export default function Rainbow() {
-  return (
-    <div>
-      <ConnectButton />
-    </div>
-  );
+  const { data, isLoading, error } = useAccount();
+  console.log(data);
+  console.log(isLoading);
+  console.log(error);
+  return <div>hey</div>;
 }

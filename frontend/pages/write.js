@@ -309,7 +309,7 @@ export default function Write() {
 
 const Templates = styled.div`
   width: 90%;
-  margin: 10px;
+  /* margin: 10px; */
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -369,13 +369,19 @@ const Option = styled.div`
 `;
 
 const OuterContainer = styled.div`
-  padding-top: 30px;
+  padding: 30px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   justify-content: start;
   align-items: center;
   /* height: 100vh; */
   color: black;
+  gap: 25px;
+
+  @media screen and (max-width: 1100px) {
+    flex-direction: column;
+    gap: 10px;
+  }
 `;
 
 const StyledInput = styled.input`
@@ -394,22 +400,25 @@ const InnerContainer = styled.div`
   box-shadow: 0 8px 24px -16px rgba(12, 22, 44, 0.32);
   padding: 25px;
   font-size: 120%;
+  min-width: 400px;
 `;
 
 const Button = styled.button`
-  background-color: #0f6cf7;
-  opacity: 75%;
+  background-color: #0e76fd;
   color: white;
   margin-top: 20px;
   padding: 9px 25px;
   font-size: 100%;
-  border-radius: 6px;
+  font-weight: 700;
+  border-radius: 12px;
   width: 100%;
   border: none;
   outline: none;
   cursor: pointer;
+
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
   :hover {
-    opacity: 100%;
+    transform: scale(1.01) perspective(1px);
   }
 `;
 
