@@ -2,7 +2,12 @@ import React from 'react';
 // WARNING: IF THE LINE BELOW IS REMOVED IT WONT COMPILE,
 // because of "ReferenceError: regeneratorRuntime is not defined"
 import regeneratorRuntime from 'regenerator-runtime'; // eslint-disable-line no-unused-vars
-import Table, { SelectColumnFilter } from '../components/Table';
+import Table, {
+  SelectColumnFilter,
+  StatusPill,
+  AvatarCell,
+} from '../components/Table';
+import styled from 'styled-components';
 
 const getData = () => {
   const data = [
@@ -82,6 +87,9 @@ function Tutorial() {
       {
         Header: 'Name',
         accessor: 'name',
+        Cell: AvatarCell,
+        imgAccessor: 'imgUrl',
+        emailAccessor: 'email',
       },
       {
         Header: 'Title',
@@ -90,6 +98,7 @@ function Tutorial() {
       {
         Header: 'Status',
         accessor: 'status',
+        Cell: StatusPill,
       },
       {
         Header: 'Age',
@@ -108,13 +117,40 @@ function Tutorial() {
   const data = React.useMemo(() => getData(), []);
 
   return (
-    <>
-      <h1>Hello React!</h1>
-      <div>
-        <Table columns={columns} data={data} />
-      </div>
-    </>
+    <OuterContainer>
+      <InnerContainer>
+        <div>
+          <Table columns={columns} data={data} />
+        </div>
+      </InnerContainer>
+    </OuterContainer>
   );
 }
+
+const OuterContainer = styled.div`
+  min-height: 100vh; // min-h-screen
+  /* background-color: rgb(243 244 246); // bg-gray-100 */
+  color: rgb(17 24 39); // text-gray-900
+`;
+
+const InnerContainer = styled.main`
+  max-width: 70rem; // max-w-4xl
+  margin: 0 auto; // mx-auto
+  padding-left: 1rem; // px-4
+  padding-right: 1rem; // px-4
+  // sm:px-6
+  // lg:px-8
+  padding-top: 1rem; // pt-4
+
+  h1 {
+    font-size: 1.25rem; // text-xl
+    line-height: 1.75rem; // text-xl
+    font-weight: 600; // font-semibold
+  }
+
+  .mt-4 {
+    margin-top: 1rem; // mt-4
+  }
+`;
 
 export default Tutorial;
