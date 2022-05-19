@@ -24,6 +24,7 @@ const Header = () => {
 };
 
 const HeaderContainer = styled.div`
+  /* position: fixed; */
   border-bottom: 1px solid #ecedef;
   display: flex;
   justify-content: space-between;

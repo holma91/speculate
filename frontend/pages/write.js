@@ -268,7 +268,7 @@ export default function Write() {
         <OptionsHeader>
           <span>Asset</span>
           <span>Strike Price</span>
-          <span>Right to buy</span>
+          <span>Right to sell</span>
           <span>Expiry</span>
           <span>Premium</span>
         </OptionsHeader>
@@ -301,6 +301,16 @@ export default function Write() {
           <span>10 AVAX</span>
           <span>2023-06-14</span>
           <span>0.2 ETH</span>
+        </Option>
+        <Option>
+          <span>
+            <img src="https://prismic-io.s3.amazonaws.com/data-chain-link/19a58483-b100-4d09-ab0d-7d221a491090_BTC.svg" />
+            BTC/USD
+          </span>
+          <span>$30000</span>
+          <span>1 BTC</span>
+          <span>2023-06-01</span>
+          <span>1 ETH</span>
         </Option>
       </Templates>
     </OuterContainer>
@@ -373,7 +383,7 @@ const OuterContainer = styled.div`
   display: flex;
   flex-direction: row;
   justify-content: start;
-  align-items: center;
+  align-items: start;
   /* height: 100vh; */
   color: black;
   gap: 25px;
@@ -381,6 +391,7 @@ const OuterContainer = styled.div`
   @media screen and (max-width: 1100px) {
     flex-direction: column;
     gap: 10px;
+    align-items: center;
   }
 `;
 
@@ -400,7 +411,7 @@ const InnerContainer = styled.div`
   box-shadow: 0 8px 24px -16px rgba(12, 22, 44, 0.32);
   padding: 25px;
   font-size: 120%;
-  min-width: 400px;
+  min-width: 500px;
 `;
 
 const Button = styled.button`
