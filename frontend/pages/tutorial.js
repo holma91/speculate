@@ -89,7 +89,7 @@ function Tutorial() {
         accessor: 'name',
         Cell: AvatarCell,
         imgAccessor: 'imgUrl',
-        emailAccessor: 'email',
+        // emailAccessor: 'email',
       },
       {
         Header: 'Title',

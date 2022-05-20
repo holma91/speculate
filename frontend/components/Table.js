@@ -107,7 +107,7 @@ const StyledSelect = styled.select`
   border-radius: 3px;
 `;
 
-function Table({ columns, data }) {
+function Table({ columns, data, initialState }) {
   // Use the state and functions returned from useTable to build your UI
   const {
     getTableProps,
@@ -130,6 +130,7 @@ function Table({ columns, data }) {
     {
       columns,
       data,
+      initialState,
     },
     useFilters,
     useGlobalFilter,
@@ -335,17 +336,18 @@ export function AvatarCell({ value, column, row }) {
 const AvatarCellDiv = styled.div`
   display: flex; // flex
   align-items: center; // items-center
+  text-transform: uppercase;
 
   img {
-    height: 2.5rem; // h-10
-    width: 2.5rem; // w-10
+    height: 1.75rem; // h-10
+    width: 1.75rem; // w-10
     border-radius: 9999px; // rounded-full
   }
 
   .avatarCellDiv-2 {
     flex-shrink: 0; // flex-shrink-0
-    height: 2.5rem; // h-10
-    width: 2.5rem; // w-10
+    height: 1.75rem; // h-10
+    width: 1.75rem; // w-10
   }
 
   .avatarCellDiv-3 {
@@ -369,8 +371,8 @@ const AvatarCellDiv = styled.div`
 `;
 
 const PaginationDiv = styled.div`
-  padding-top: 0.75rem; /* 12px */ // py-3
-  padding-bottom: 0.75rem; /* 12px */
+  /* padding-top: 0.75rem; 12px // py-3 */
+  /* padding-bottom: 0.75rem; 12px */
   display: flex; // flex
   align-items: center; // items-center
   justify-content: space-between; // justify-between
@@ -441,16 +443,12 @@ const GlobalFilterDiv = styled.div`
 `;
 
 const TableDivContainer = styled.div`
-  margin-top: 0.5rem; // mt-2
   display: flex; // flex: ;
   flex-direction: column; // flex-col
+  /* width: 100%; */
 
   .div-2 {
-    margin-top: 0.5rem; // -my-2
-    margin-bottom: 0.5rem; // -my-2
     overflow-x: auto; // overflow-x-auto
-    margin-left: 1rem; // -mx-4
-    margin-right: 1rem; // -mx-4
     // sm:-mx-6
     // lg:-mx-8
   }
@@ -510,11 +508,12 @@ const TableDivContainer = styled.div`
   td {
     padding-left: 1.5rem; /* 24px */ // px-6
     padding-right: 1.5rem; /* 24px */
-    padding-top: 1rem; // py-4
-    padding-bottom: 1rem;
+    padding-top: 0.5rem; // py-4
+    padding-bottom: 0.5rem;
     white-space: nowrap; // whitespace-nowrap
     color: rgb(107 114 128);
     font-weight: 300;
+    text-transform: uppercase;
   }
 
   tr {

@@ -1,2 +1,21 @@
 as a buyer:
 - important to be able to filter stuff
+
+
+
+
+
+todo:
+do frontend, then backend
+
+
+views
+- active positions
+  - view shorts/longs normally - DONE
+  - view longs as NFTs - 
+  - active position
+
+- buy options
+  - buy option - DONE
+
+- write option
