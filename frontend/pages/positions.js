@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useAccount } from 'wagmi';
 // WARNING: IF THE LINE BELOW IS REMOVED IT WONT COMPILE,
 // because of "ReferenceError: regeneratorRuntime is not defined"
 import regeneratorRuntime from 'regenerator-runtime'; // eslint-disable-line no-unused-vars
@@ -121,7 +122,33 @@ const getShorts = () => {
 };
 
 function Positions() {
+  const [nfts, setNfts] = useState([]);
   const [view, setView] = useState('longs');
+
+  const getNfts = async () => {
+    const { ethereum } = window;
+    if (ethereum) {
+      // const chain = 'avalanche%20testnet';
+      const chain = 'rinkeby';
+      const url = `https://deep-index.moralis.io/api/v2/${ethereum.selectedAddress}/nft?chain=${chain}&format=decimal`;
+      let response = await fetch(url, {
+        headers: { 'X-API-Key': process.env.MORALIS_API_KEY },
+      });
+
+      response = await response.json();
+      const receivedNFTs = response.result;
+
+      console.log(receivedNFTs);
+
+      // setNfts(allNfts);
+    } else {
+      console.log('ethereum object not found');
+    }
+  };
+
+  useEffect(() => {
+    getNfts();
+  }, []);
 
   const longColumns = useMemo(
     () => [
