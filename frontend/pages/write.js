@@ -1,39 +1,17 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
-import { Formik, Form, useField, useFormikContext } from 'formik';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { ethers } from 'ethers';
 import styled from 'styled-components';
-
+import Table, {
+  SelectColumnFilter,
+  StatusPill,
+  AvatarCell,
+} from '../components/Table';
 import { fuji } from '../utils/addresses';
 import OptionFactory from '../../contracts/out/OptionFactory.sol/OptionFactory.json';
 import { optionTemplates } from '../data/optionTemplates';
-
-const MyTextInput = ({ label, ...props }) => {
-  const [field, meta] = useField(props);
-
-  return (
-    <>
-      <label htmlFor={props.id || props.name}>{label}</label>
-      {meta.touched && meta.error ? (
-        <StyledMyTextInput {...field} {...props} error />
-      ) : (
-        <StyledMyTextInput {...field} {...props} />
-      )}
-    </>
-  );
-};
-
-const MySelect = ({ label, ...props }) => {
-  const [field, meta] = useField(props);
-  return (
-    <div>
-      <label htmlFor={props.id || props.name}>{label}</label>
-      <select {...field} {...props} />
-      {meta.touched && meta.error ? <div>{meta.error}</div> : null}
-    </div>
-  );
-};
 
 const priceFeeds = {
   RINKEBY: {
@@ -68,12 +46,100 @@ const priceFeeds = {
   },
 };
 
+const getShorts = () => {
+  const data = [
+    {
+      asset: 'eth',
+      priceFeed: 'ETH/USD',
+      type: 'call',
+      strikePrice: '$2000',
+      rightToBuy: 1,
+      expiry: '2023-01-01',
+      premium: '1 ETH',
+      collateral: 1,
+      numberOfOptions: 1,
+      filled: '80%',
+      CL: 'COVERED',
+      img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg',
+    },
+    {
+      asset: 'btc',
+      priceFeed: 'BTC/USD',
+      type: 'call',
+      strikePrice: '$30000',
+      rightToBuy: 2,
+      expiry: '2023-01-01',
+      premium: '1 ETH',
+      collateral: 1,
+      numberOfOptions: 1,
+      filled: '100%',
+      CL: '190%',
+      img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/19a58483-b100-4d09-ab0d-7d221a491090_BTC.svg',
+    },
+    {
+      asset: 'avax',
+      priceFeed: 'AVAX/USD',
+      type: 'put',
+      strikePrice: '$40',
+      rightToBuy: 5,
+      expiry: '2023-01-01',
+      premium: '0.25 ETH',
+      collateral: 1,
+      numberOfOptions: 1,
+      filled: '30%',
+      CL: '150%',
+      img: 'https://images.prismic.io/data-chain-link/63137341-c4d1-4825-b284-b8a5a8436d15_ICON_AVAX.png?auto=compress,format',
+    },
+    {
+      asset: 'link',
+      priceFeed: 'LINK/USD',
+      type: 'call',
+      strikePrice: '$5',
+      rightToBuy: 3,
+      expiry: '2023-01-01',
+      premium: '0.15 ETH',
+      collateral: 1,
+      numberOfOptions: 1,
+      filled: '25%',
+      CL: '120%',
+      img: 'https://data-chain-link.cdn.prismic.io/data-chain-link/ad14983c-eec5-448e-b04c-d1396e644596_LINK.svg',
+    },
+  ];
+  return [...data, ...data, ...data];
+};
+
 export default function Write() {
   const [template, setTemplate] = useState(optionTemplates[0]);
+
+  const formik = useFormik({
+    initialValues: {
+      asset: template.asset,
+      strikePrice: template.strikePrice,
+      rightToBuy: template.rightToBuy,
+      type: 'call',
+      expiry: template.expiry,
+      collateral: 1,
+      premium: template.premium,
+      numberOfOptions: 1,
+    },
+
+    validationSchema: Yup.object({
+      collateral: Yup.number()
+        .min(0.000000001, 'Must deposit atleast 1 gwei')
+        .required('Required'),
+      strikePrice: Yup.number().required('Required'),
+      expiry: Yup.date().required('Required'),
+    }),
+
+    onSubmit: (values) => {
+      writeOption(values);
+    },
+  });
   const writeOption = async (values) => {
     try {
       const { ethereum } = window;
       console.log(values);
+      return;
 
       if (ethereum) {
         const provider = new ethers.providers.Web3Provider(ethereum);
@@ -137,270 +203,257 @@ export default function Write() {
     }
   };
 
-  const handleTemplateClick = async (optionTemplate) => {
-    setTemplate(optionTemplate);
+  const imageMapper = {
+    eth: 'https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg',
+    btc: 'https://prismic-io.s3.amazonaws.com/data-chain-link/19a58483-b100-4d09-ab0d-7d221a491090_BTC.svg',
+    avax: 'https://images.prismic.io/data-chain-link/63137341-c4d1-4825-b284-b8a5a8436d15_ICON_AVAX.png?auto=compress,format',
+    link: 'https://data-chain-link.cdn.prismic.io/data-chain-link/ad14983c-eec5-448e-b04c-d1396e644596_LINK.svg',
+    sol: 'https://images.prismic.io/data-chain-link/931ba23b-1755-46be-a466-73af2fcafaf1_ICON_SOL.png?auto=compress,format',
+  };
+
+  const shortColumns = useMemo(
+    () => [
+      {
+        Header: 'Asset',
+        accessor: 'asset',
+        Cell: AvatarCell,
+        imgAccessor: 'img',
+      },
+      {
+        Header: 'Type',
+        accessor: 'type',
+      },
+      {
+        Header: 'Strike Price',
+        accessor: 'strikePrice',
+      },
+      {
+        Header: 'Amount',
+        accessor: 'rightToBuy',
+        // Cell: StatusPill,
+      },
+      {
+        Header: 'Expiry',
+        accessor: 'expiry',
+      },
+      {
+        Header: 'Premium',
+        accessor: 'premium',
+        // Filter: SelectColumnFilter, // new
+        // filter: 'includes', // new
+      },
+      {
+        Header: 'Filled',
+        accessor: 'filled',
+        // Filter: SelectColumnFilter, // new
+        // filter: 'includes', // new
+      },
+      {
+        Header: 'CL',
+        accessor: 'CL',
+      },
+    ],
+    []
+  );
+
+  const shorts = useMemo(() => getShorts(), []);
+
+  const initialState = {
+    sortBy: [
+      {
+        id: 'expiry',
+        desc: true,
+      },
+    ],
+    pageSize: 5,
   };
 
   return (
-    <OuterContainer>
-      <InnerContainer>
-        <Formik
-          enableReinitialize={true}
-          initialValues={{
-            asset: template.asset,
-            strikePrice: template.strikePrice,
-            rightToBuy: template.rightToBuy,
-            type: 'call',
-            expiry: template.expiry,
-            collateral: 1,
-            premium: template.premium,
-            numberOfOptions: 1,
-          }}
-          validationSchema={Yup.object({
-            collateral: Yup.number()
-              .min(0.000000001, 'Must deposit atleast 1 gwei')
-              .required('Required'),
-            strikePrice: Yup.number().required('Required'),
-            expiry: Yup.date().required('Required'),
-          })}
-          onSubmit={(values) => {
-            writeOption(values);
-          }}
-        >
-          <Form>
+    <>
+      <OuterContainer>
+        <InnerContainer>
+          <form onSubmit={formik.handleSubmit}>
             <InputContainer>
-              <StyledSelect label="Asset:" name="asset">
+              <label htmlFor="asset">Asset: </label>
+              <StyledSelect id="asset" {...formik.getFieldProps('asset')}>
                 <option value="eth">$ETH</option>
-                <option value="atom">$ATOM</option>
                 <option value="btc">$BTC</option>
+                <option value="avax">$AVAX</option>
                 <option value="link">$LINK</option>
-                <option value="matic">$MATIC</option>
+                <option value="sol">$SOL</option>
               </StyledSelect>
             </InputContainer>
             <InputContainer>
-              <StyledSelect label="Type:" name="type">
+              <label htmlFor="type">Type: </label>
+              <StyledSelect id="type" {...formik.getFieldProps('type')}>
                 <option value="call">CALL</option>
                 <option value="put">PUT</option>
               </StyledSelect>
             </InputContainer>
             <InputContainer>
-              <MyTextInput
-                label="Strike Price:"
+              <label htmlFor="strikePrice">Strike Price: </label>
+              <StyledMyTextInput
                 name="strikePrice"
                 type="number"
                 placeholder="3500"
+                {...formik.getFieldProps('strikePrice')}
               />
             </InputContainer>
             <InputContainer>
-              <MyTextInput
-                label="Right to buy (in Asset):"
+              <label htmlFor="rightToBuy">Amount: </label>
+              <StyledMyTextInput
                 name="rightToBuy"
                 type="number"
                 placeholder="1"
+                {...formik.getFieldProps('rightToBuy')}
               />
             </InputContainer>
             <InputContainer>
-              <MyTextInput
-                label="Expiry Date:"
+              <label htmlFor="expiry">Expiry Date: </label>
+              <StyledMyTextInput
                 name="expiry"
                 type="date"
                 placeholder=""
+                {...formik.getFieldProps('expiry')}
               />
             </InputContainer>
             <InputContainer>
-              <MyTextInput
-                label="Your Collateral (ETH):"
+              <label htmlFor="collateral">Your Collateral (ETH): </label>
+              <StyledMyTextInput
                 name="collateral"
                 type="number"
                 placeholder="1"
+                {...formik.getFieldProps('collateral')}
+                error={formik.touched.collateral && formik.errors.collateral}
               />
             </InputContainer>
             <InputContainer>
-              <MyTextInput
-                label="Premium (ETH):"
+              <label htmlFor="premium">Premium (ETH): </label>
+              <StyledMyTextInput
                 name="premium"
                 type="number"
                 placeholder="1"
+                {...formik.getFieldProps('premium')}
               />
             </InputContainer>
             <InputContainer>
-              <MyTextInput
-                label="Number of options:"
+              <label htmlFor="numberOfOptions">Number of options: </label>
+              <StyledMyTextInput
                 name="numberOfOptions"
                 type="number"
                 placeholder="1"
+                {...formik.getFieldProps('numberOfOptions')}
               />
             </InputContainer>
-            <Button type="submit">Write Option</Button>
-          </Form>
-        </Formik>
-      </InnerContainer>
-      <Templates>
-        <h3>Call Templates</h3>
-        <OptionsHeader>
-          <span>Asset</span>
-          <span>Strike Price</span>
-          <span>Right to buy</span>
-          <span>Expiry</span>
-          <span>Premium</span>
-        </OptionsHeader>
-        {optionTemplates.map((optionTemplate) => {
-          return (
-            <Option
-              onClick={() => handleTemplateClick(optionTemplate)}
-              key={optionTemplate.asset + optionTemplate.strikePrice}
-            >
-              <span>
-                <img src={optionTemplate.img} />
-                {optionTemplate.priceFeed}
-              </span>
-              <span>{optionTemplate.strikePrice}</span>
-              <span>
-                {optionTemplate.rightToBuy} {optionTemplate.asset.toUpperCase()}
-              </span>
-              <span>{optionTemplate.expiry}</span>
-              <span>{optionTemplate.premium} ETH</span>
-            </Option>
-          );
-        })}
 
-        <h3>Put Templates</h3>
-        <OptionsHeader>
-          <span>Asset</span>
-          <span>Strike Price</span>
-          <span>Right to sell</span>
-          <span>Expiry</span>
-          <span>Premium</span>
-        </OptionsHeader>
-        <Option>
-          <span>
-            <img src="https://images.prismic.io/data-chain-link/931ba23b-1755-46be-a466-73af2fcafaf1_ICON_SOL.png?auto=compress,format" />
-            SOL/USD
-          </span>
-          <span>$500</span>
-          <span>1000 SOL</span>
-          <span>2024-01-01</span>
-          <span>1 ETH</span>
-        </Option>
-        <Option>
-          <span>
-            <img src="https://data-chain-link.cdn.prismic.io/data-chain-link/ad14983c-eec5-448e-b04c-d1396e644596_LINK.svg" />
-            LINK/USD
-          </span>
-          <span>$30</span>
-          <span>100 LINK</span>
-          <span>2023-01-01</span>
-          <span>1 ETH</span>
-        </Option>
-        <Option>
-          <span>
-            <img src="https://images.prismic.io/data-chain-link/63137341-c4d1-4825-b284-b8a5a8436d15_ICON_AVAX.png?auto=compress,format" />
-            AVAX/USD
-          </span>
-          <span>$300</span>
-          <span>10 AVAX</span>
-          <span>2023-06-14</span>
-          <span>0.2 ETH</span>
-        </Option>
-        <Option>
-          <span>
-            <img src="https://prismic-io.s3.amazonaws.com/data-chain-link/19a58483-b100-4d09-ab0d-7d221a491090_BTC.svg" />
-            BTC/USD
-          </span>
-          <span>$30000</span>
-          <span>1 BTC</span>
-          <span>2023-06-01</span>
-          <span>1 ETH</span>
-        </Option>
-      </Templates>
-    </OuterContainer>
+            <Button type="submit">Write Option</Button>
+          </form>
+        </InnerContainer>
+        <NFTContainer>
+          <StyledSVG
+            width="350"
+            height="350"
+            version="1.1"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <image
+              href={imageMapper[formik.values.asset]}
+              x="100"
+              y="26"
+              height="28px"
+              width="28px"
+            />
+            <text
+              x={formik.values.asset === 'eth' ? '130' : '133'}
+              y="49"
+              fontSize="25"
+              fontWeight="300"
+            >
+              {formik.values.asset.toUpperCase()} CALL
+            </text>
+            <line
+              x1="40"
+              y1="65"
+              x2="310"
+              y2="65"
+              stroke="black"
+              strokeWidth="1.25"
+            />
+            <text x="80" y="105" fontSize="20" fontWeight="300">
+              Price Feed: {`${formik.values.asset.toUpperCase()}/USD`}
+            </text>
+            <text x="80" y="150" fontSize="20" fontWeight="300">
+              Strike Price: {`$${formik.values.strikePrice}`}
+            </text>
+            <text x="80" y="195" fontSize="20" fontWeight="300">
+              Amount: {`${formik.values.rightToBuy} ETH`}
+            </text>
+            <text x="80" y="240" fontSize="20" fontWeight="300">
+              Expiry: {formik.values.expiry}
+            </text>
+            <text x="80" y="285" fontSize="20" fontWeight="300">
+              American Style
+            </text>
+          </StyledSVG>
+        </NFTContainer>
+      </OuterContainer>
+      <TemplateContainer>
+        <Templates>
+          <p>Templates</p>
+          <Table
+            columns={shortColumns}
+            data={shorts}
+            initialState={initialState}
+          />
+        </Templates>
+      </TemplateContainer>
+    </>
   );
 }
 
-const Templates = styled.div`
-  width: 90%;
-  /* margin: 10px; */
+const TemplateContainer = styled.div`
+  padding: 10px 30px;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-
-  margin-bottom: 20px;
-
-  h3 {
-    margin-bottom: 5px;
-  }
+  justify-content: center;
 `;
 
-const OptionsHeader = styled.div`
-  padding: 10px;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 5px;
-  justify-content: space-between;
-  align-items: center;
-  /* border: 1px solid #ecedef; */
-  border-radius: 6px;
-  cursor: pointer;
-  /* box-shadow: 0 8px 24px -16px rgba(12, 22, 44, 0.32); */
-
-  span {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
+const Templates = styled.div`
+  /* max-width: 1000px; */
+  /* display: flex; */
+  /* flex-direction: column; */
+  /* justify-content: center; */
+  /* justify-content: start; */
 `;
 
-const Option = styled.div`
-  padding: 10px;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 5px;
-  justify-content: space-between;
-  align-items: center;
-  border: 1px solid #ecedef;
+const StyledSVG = styled.svg`
+  border: 2px solid black;
   border-radius: 6px;
-  cursor: pointer;
-  box-shadow: 0 8px 24px -16px rgba(12, 22, 44, 0.32);
+`;
 
-  img {
-    width: 19px;
-    height: 19px;
-  }
-
-  span {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  :hover {
-    background: #fafafa;
-  }
+const NFTContainer = styled.div`
+  /* height: 100%; */
+  /* width: 100%; */
+  margin-top: 70px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 `;
 
 const OuterContainer = styled.div`
   padding: 30px;
   display: flex;
   flex-direction: row;
-  justify-content: start;
+  justify-content: center;
   align-items: start;
   /* height: 100vh; */
   color: black;
-  gap: 25px;
+  gap: 35px;
 
-  @media screen and (max-width: 1100px) {
+  /* @media screen and (max-width: 1100px) {
     flex-direction: column;
     gap: 10px;
     align-items: center;
-  }
-`;
-
-const StyledInput = styled.input`
-  display: block;
-  margin: 10px 0px;
-  padding: 5px;
-  border: 1px solid lightblue;
-  border-radius: 3px;
+  } */
 `;
 
 const InnerContainer = styled.div`
@@ -408,7 +461,7 @@ const InnerContainer = styled.div`
   flex-direction: column;
   border: 1px solid #ecedef;
   border-radius: 6px;
-  box-shadow: 0 8px 24px -16px rgba(12, 22, 44, 0.32);
+  /* box-shadow: 0 8px 24px -16px rgba(12, 22, 44, 0.32); */
   padding: 25px;
   font-size: 120%;
   min-width: 500px;
@@ -427,7 +480,7 @@ const Button = styled.button`
   outline: none;
   cursor: pointer;
 
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  /* box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1); */
   :hover {
     transform: scale(1.01) perspective(1px);
   }
@@ -459,7 +512,7 @@ const InputContainer = styled.div`
   }
 `;
 
-const StyledSelect = styled(MySelect)`
+const StyledSelect = styled.select`
   margin: 10px 0px;
   padding: 3px;
   padding-right: 10px;
