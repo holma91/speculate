@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/solid';
 import { Button, PageButton } from '../components/Button';
 
+
 export function SelectColumnFilter({
   column: { filterValue, setFilter, preFilteredRows, id, render },
 }) {

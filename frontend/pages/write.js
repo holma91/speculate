@@ -9,9 +9,60 @@ import Table, {
   StatusPill,
   AvatarCell,
 } from '../components/Table';
+import { ArrowRightIcon, ArrowNarrowRightIcon } from '@heroicons/react/solid';
 import { fuji } from '../utils/addresses';
 import OptionFactory from '../../contracts/out/OptionFactory.sol/OptionFactory.json';
 import { optionTemplates } from '../data/optionTemplates';
+
+const aggregatorV3InterfaceABI = [
+  {
+    inputs: [],
+    name: 'decimals',
+    outputs: [{ internalType: 'uint8', name: '', type: 'uint8' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'description',
+    outputs: [{ internalType: 'string', name: '', type: 'string' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'uint80', name: '_roundId', type: 'uint80' }],
+    name: 'getRoundData',
+    outputs: [
+      { internalType: 'uint80', name: 'roundId', type: 'uint80' },
+      { internalType: 'int256', name: 'answer', type: 'int256' },
+      { internalType: 'uint256', name: 'startedAt', type: 'uint256' },
+      { internalType: 'uint256', name: 'updatedAt', type: 'uint256' },
+      { internalType: 'uint80', name: 'answeredInRound', type: 'uint80' },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'latestRoundData',
+    outputs: [
+      { internalType: 'uint80', name: 'roundId', type: 'uint80' },
+      { internalType: 'int256', name: 'answer', type: 'int256' },
+      { internalType: 'uint256', name: 'startedAt', type: 'uint256' },
+      { internalType: 'uint256', name: 'updatedAt', type: 'uint256' },
+      { internalType: 'uint80', name: 'answeredInRound', type: 'uint80' },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'version',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+];
 
 const priceFeeds = {
   RINKEBY: {
@@ -43,7 +94,18 @@ const priceFeeds = {
     AVAX: {
       USD: '0x5498BB86BC934c8D34FDA08E81D444153d0D06aD',
     },
+    LINK: {
+      USD: '0x34C4c526902d88a3Aa98DB8a9b802603EB1E3470',
+    },
   },
+};
+
+const imageMapper = {
+  eth: 'https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg',
+  btc: 'https://prismic-io.s3.amazonaws.com/data-chain-link/19a58483-b100-4d09-ab0d-7d221a491090_BTC.svg',
+  avax: 'https://images.prismic.io/data-chain-link/63137341-c4d1-4825-b284-b8a5a8436d15_ICON_AVAX.png?auto=compress,format',
+  link: 'https://data-chain-link.cdn.prismic.io/data-chain-link/ad14983c-eec5-448e-b04c-d1396e644596_LINK.svg',
+  sol: 'https://images.prismic.io/data-chain-link/931ba23b-1755-46be-a466-73af2fcafaf1_ICON_SOL.png?auto=compress,format',
 };
 
 const getShorts = () => {
@@ -110,6 +172,8 @@ const getShorts = () => {
 
 export default function Write() {
   const [template, setTemplate] = useState(optionTemplates[0]);
+  const [assetPrice, setAssetPrice] = useState('');
+  const [collateralPrice, setCollateralPrice] = useState('');
 
   const formik = useFormik({
     initialValues: {
@@ -203,76 +267,98 @@ export default function Write() {
     }
   };
 
-  const imageMapper = {
-    eth: 'https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg',
-    btc: 'https://prismic-io.s3.amazonaws.com/data-chain-link/19a58483-b100-4d09-ab0d-7d221a491090_BTC.svg',
-    avax: 'https://images.prismic.io/data-chain-link/63137341-c4d1-4825-b284-b8a5a8436d15_ICON_AVAX.png?auto=compress,format',
-    link: 'https://data-chain-link.cdn.prismic.io/data-chain-link/ad14983c-eec5-448e-b04c-d1396e644596_LINK.svg',
-    sol: 'https://images.prismic.io/data-chain-link/931ba23b-1755-46be-a466-73af2fcafaf1_ICON_SOL.png?auto=compress,format',
+  const getAssetPrice = async () => {
+    try {
+      const network = 'FUJI';
+      const priceFeedAddress =
+        priceFeeds[network][formik.values.asset.toUpperCase()].USD;
+
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+
+        const priceFeedContract = new ethers.Contract(
+          priceFeedAddress,
+          aggregatorV3InterfaceABI,
+          provider
+        );
+
+        const decimals = await priceFeedContract.decimals();
+        const price = await priceFeedContract.latestRoundData();
+
+        setAssetPrice(ethers.utils.formatUnits(price.answer, decimals));
+      } else {
+        console.log("Ethereum object doesn't exist!");
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
-  const shortColumns = useMemo(
-    () => [
-      {
-        Header: 'Asset',
-        accessor: 'asset',
-        Cell: AvatarCell,
-        imgAccessor: 'img',
-      },
-      {
-        Header: 'Type',
-        accessor: 'type',
-      },
-      {
-        Header: 'Strike Price',
-        accessor: 'strikePrice',
-      },
-      {
-        Header: 'Amount',
-        accessor: 'rightToBuy',
-        // Cell: StatusPill,
-      },
-      {
-        Header: 'Expiry',
-        accessor: 'expiry',
-      },
-      {
-        Header: 'Premium',
-        accessor: 'premium',
-        // Filter: SelectColumnFilter, // new
-        // filter: 'includes', // new
-      },
-      {
-        Header: 'Filled',
-        accessor: 'filled',
-        // Filter: SelectColumnFilter, // new
-        // filter: 'includes', // new
-      },
-      {
-        Header: 'CL',
-        accessor: 'CL',
-      },
-    ],
-    []
-  );
+  const getCollateralPrice = async () => {
+    try {
+      const network = 'FUJI';
+      const collateral = 'ETH'; // always ETH for the mvp
+      const priceFeedAddress = priceFeeds[network][collateral].USD;
 
-  const shorts = useMemo(() => getShorts(), []);
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
 
-  const initialState = {
-    sortBy: [
-      {
-        id: 'expiry',
-        desc: true,
-      },
-    ],
-    pageSize: 5,
+        const priceFeedContract = new ethers.Contract(
+          priceFeedAddress,
+          aggregatorV3InterfaceABI,
+          provider
+        );
+
+        const decimals = await priceFeedContract.decimals();
+        const price = await priceFeedContract.latestRoundData();
+
+        setCollateralPrice(ethers.utils.formatUnits(price.answer, decimals));
+      } else {
+        console.log("Ethereum object doesn't exist!");
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
+
+  const trimStr = (str) => {
+    let lock = true;
+    let j = 0;
+    let i = 0;
+    while (i < str.length) {
+      if (!lock) {
+        j++;
+        if (j >= 3) break;
+      }
+      if (str[i] === '.') {
+        lock = false;
+      }
+      i++;
+    }
+
+    return str.substring(0, i);
+  };
+
+  const calculateCRRatio = () => {
+    return (
+      ((collateralPrice * formik.values.collateral) / assetPrice) *
+      formik.values.numberOfOptions
+    ).toFixed(4);
+  };
+
+  useEffect(() => {
+    getAssetPrice();
+  }, [formik.values.asset]);
+
+  useEffect(() => {
+    getCollateralPrice();
+  }, []);
 
   return (
-    <>
+    <BaseContainer>
       <OuterContainer>
         <InnerContainer>
-          <form onSubmit={formik.handleSubmit}>
+          <form>
             <InputContainer>
               <label htmlFor="asset">Asset: </label>
               <StyledSelect id="asset" {...formik.getFieldProps('asset')}>
@@ -345,26 +431,25 @@ export default function Write() {
                 {...formik.getFieldProps('numberOfOptions')}
               />
             </InputContainer>
-
-            <Button type="submit">Write Option</Button>
           </form>
         </InnerContainer>
+        <StyledArrowRightIcon></StyledArrowRightIcon>
         <NFTContainer>
           <StyledSVG
-            width="350"
-            height="350"
+            width="320"
+            height="320"
             version="1.1"
             xmlns="http://www.w3.org/2000/svg"
           >
             <image
               href={imageMapper[formik.values.asset]}
-              x="100"
+              x="90"
               y="26"
               height="28px"
               width="28px"
             />
             <text
-              x={formik.values.asset === 'eth' ? '130' : '133'}
+              x={formik.values.asset === 'eth' ? '120' : '123'}
               y="49"
               fontSize="25"
               fontWeight="300"
@@ -372,32 +457,64 @@ export default function Write() {
               {formik.values.asset.toUpperCase()} CALL
             </text>
             <line
-              x1="40"
+              x1="20"
               y1="65"
-              x2="310"
+              x2="300"
               y2="65"
               stroke="black"
               strokeWidth="1.25"
             />
-            <text x="80" y="105" fontSize="20" fontWeight="300">
+            <text x="70" y="105" fontSize="20" fontWeight="300">
               Price Feed: {`${formik.values.asset.toUpperCase()}/USD`}
             </text>
-            <text x="80" y="150" fontSize="20" fontWeight="300">
+            <text x="70" y="150" fontSize="20" fontWeight="300">
               Strike Price: {`$${formik.values.strikePrice}`}
             </text>
-            <text x="80" y="195" fontSize="20" fontWeight="300">
+            <text x="70" y="195" fontSize="20" fontWeight="300">
               Amount: {`${formik.values.rightToBuy} ETH`}
             </text>
-            <text x="80" y="240" fontSize="20" fontWeight="300">
+            <text x="70" y="240" fontSize="20" fontWeight="300">
               Expiry: {formik.values.expiry}
             </text>
-            <text x="80" y="285" fontSize="20" fontWeight="300">
+            <text x="70" y="285" fontSize="20" fontWeight="300">
               American Style
             </text>
           </StyledSVG>
         </NFTContainer>
       </OuterContainer>
-      <TemplateContainer>
+
+      <Summary>
+        <InnerContainer>
+          <form onSubmit={formik.handleSubmit}>
+            {formik.values.asset !== 'eth' ? (
+              <p>
+                {formik.values.asset.toUpperCase()} Price = $
+                {trimStr(assetPrice)}
+              </p>
+            ) : null}
+            <p>ETH Price = ${trimStr(collateralPrice)}</p>
+            <p>
+              Current Risk = {formik.values.asset.toUpperCase()} Price x Sold
+              Longs = $0
+            </p>
+            <p>
+              Max Risk = {formik.values.asset.toUpperCase()} Price x Minted
+              Longs = $
+              {trimStr((assetPrice * formik.values.numberOfOptions).toString())}
+            </p>
+            <p>
+              Collateral = ETH Price x Deposit = $
+              {trimStr((collateralPrice * formik.values.collateral).toString())}
+            </p>
+            <p>
+              Collateral-to-Risk Ratio = Collateral / Max Risk ={' '}
+              {calculateCRRatio()}
+            </p>
+            <Button type="submit">Write Options</Button>
+          </form>
+        </InnerContainer>
+      </Summary>
+      {/* <TemplateContainer>
         <Templates>
           <p>Templates</p>
           <Table
@@ -406,13 +523,26 @@ export default function Write() {
             initialState={initialState}
           />
         </Templates>
-      </TemplateContainer>
-    </>
+      </TemplateContainer> */}
+    </BaseContainer>
   );
 }
 
-const TemplateContainer = styled.div`
+const BaseContainer = styled.div`
   padding: 10px 30px;
+`;
+
+const StyledArrowRightIcon = styled(ArrowNarrowRightIcon)`
+  height: 90px;
+`;
+
+const Summary = styled.div`
+  padding: 10px 30px;
+  display: flex;
+  justify-content: center;
+`;
+
+const TemplateContainer = styled.div`
   display: flex;
   justify-content: center;
 `;
@@ -433,21 +563,22 @@ const StyledSVG = styled.svg`
 const NFTContainer = styled.div`
   /* height: 100%; */
   /* width: 100%; */
-  margin-top: 70px;
+  /* margin-top: 70px; */
   display: flex;
   justify-content: center;
   align-items: center;
 `;
 
 const OuterContainer = styled.div`
-  padding: 30px;
   display: flex;
   flex-direction: row;
   justify-content: center;
-  align-items: start;
+  align-items: center;
   /* height: 100vh; */
   color: black;
   gap: 35px;
+
+  padding: 10px 0;
 
   /* @media screen and (max-width: 1100px) {
     flex-direction: column;
@@ -464,7 +595,10 @@ const InnerContainer = styled.div`
   /* box-shadow: 0 8px 24px -16px rgba(12, 22, 44, 0.32); */
   padding: 25px;
   font-size: 120%;
-  min-width: 500px;
+  /* min-width: 500px; */
+  p {
+    margin-top: 10px;
+  }
 `;
 
 const Button = styled.button`
