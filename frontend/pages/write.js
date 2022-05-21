@@ -341,8 +341,8 @@ export default function Write() {
 
   const calculateCRRatio = () => {
     return (
-      ((collateralPrice * formik.values.collateral) / assetPrice) *
-      formik.values.numberOfOptions
+      (collateralPrice * formik.values.collateral) /
+      (assetPrice * formik.values.rightToBuy * formik.values.numberOfOptions)
     ).toFixed(4);
   };
 
@@ -488,19 +488,25 @@ export default function Write() {
           <form onSubmit={formik.handleSubmit}>
             {formik.values.asset !== 'eth' ? (
               <p>
-                {formik.values.asset.toUpperCase()} Price = $
+                Current {formik.values.asset.toUpperCase()} Price = $
                 {trimStr(assetPrice)}
               </p>
             ) : null}
-            <p>ETH Price = ${trimStr(collateralPrice)}</p>
+            <p>Current ETH Price = ${trimStr(collateralPrice)}</p>
             <p>
-              Current Risk = {formik.values.asset.toUpperCase()} Price x Sold
-              Longs = $0
+              Current Risk = {formik.values.asset.toUpperCase()} Price x Amount
+              x Sold Longs = $0
             </p>
             <p>
-              Max Risk = {formik.values.asset.toUpperCase()} Price x Minted
-              Longs = $
-              {trimStr((assetPrice * formik.values.numberOfOptions).toString())}
+              Max Risk = {formik.values.asset.toUpperCase()} Price x Amount x
+              Minted Longs = $
+              {trimStr(
+                (
+                  assetPrice *
+                  formik.values.rightToBuy *
+                  formik.values.numberOfOptions
+                ).toString()
+              )}
             </p>
             <p>
               Collateral = ETH Price x Deposit = $
