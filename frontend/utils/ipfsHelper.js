@@ -1,7 +1,6 @@
-const fs = require('fs/promises');
-const path = require('path');
-const ipfsClient = require('ipfs-http-client');
-require('dotenv').config();
+// import * as fs from 'fs';
+// import * as path from 'path';
+import * as ipfsClient from 'ipfs-http-client';
 
 const ipfsAddOptions = {
   cidVersion: 1,
@@ -32,10 +31,8 @@ const makeNFTMetadata = async (assetURI, options) => {
   return options;
 };
 
-const uploadToIpfs = async (filename, options) => {
-  const content = await fs.readFile(filename);
-
-  const basename = path.basename(filename);
+const uploadToIpfs = async (image, basename, options) => {
+  // const content = await fs.readFile(filename);
   const ipfsPath = '/nft/' + basename;
 
   const ipfs = ipfsClient.create({
@@ -47,8 +44,12 @@ const uploadToIpfs = async (filename, options) => {
     },
   });
 
+  // console.log('image:', image);
+
+  // let baffa = (...image);
+
   const { cid: assetCid } = await ipfs.add(
-    { path: ipfsPath, content },
+    { path: ipfsPath, content: image },
     ipfsAddOptions
   );
 
@@ -66,4 +67,37 @@ const uploadToIpfs = async (filename, options) => {
   return metadataURI;
 };
 
-module.exports = uploadToIpfs;
+const generateMetadata = (values) => {
+  return {
+    description: `${values.type.toUpperCase()} option on ${values.asset.toUpperCase()}/USD`,
+    name: `${values.type.toUpperCase()} ${values.asset.toUpperCase()}/USD`,
+    attributes: [
+      {
+        trait_type: 'Asset',
+        value: values.asset.toUpperCase(),
+      },
+      {
+        trait_type: 'Strike Price',
+        value: `$${values.strikePrice.toString()}`,
+      },
+      {
+        trait_type: 'Right to buy',
+        value: `${values.rightToBuy.toString()} ${values.asset.toUpperCase()}`,
+      },
+      {
+        trait_type: 'Expiry',
+        value: values.expiry,
+      },
+      {
+        trait_type: 'Option Type',
+        value: values.type.toUpperCase(),
+      },
+      {
+        trait_type: 'Option Style',
+        value: 'American',
+      },
+    ],
+  };
+};
+
+export { generateMetadata, uploadToIpfs };

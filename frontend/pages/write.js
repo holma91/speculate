@@ -3,16 +3,17 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { ethers } from 'ethers';
+import * as buffer from 'buffer/';
 import styled from 'styled-components';
-import Table, {
-  SelectColumnFilter,
-  StatusPill,
-  AvatarCell,
-} from '../components/Table';
+import { Canvg } from 'canvg';
 import { ArrowRightIcon, ArrowNarrowRightIcon } from '@heroicons/react/solid';
+
+import { generateMetadata, uploadToIpfs } from '../utils/ipfsHelper';
 import { fuji } from '../utils/addresses';
 import OptionFactory from '../../contracts/out/OptionFactory.sol/OptionFactory.json';
 import { optionTemplates } from '../data/optionTemplates';
+
+const Buffer = buffer.Buffer;
 
 const aggregatorV3InterfaceABI = [
   {
@@ -108,72 +109,13 @@ const imageMapper = {
   sol: 'https://images.prismic.io/data-chain-link/931ba23b-1755-46be-a466-73af2fcafaf1_ICON_SOL.png?auto=compress,format',
 };
 
-const getShorts = () => {
-  const data = [
-    {
-      asset: 'eth',
-      priceFeed: 'ETH/USD',
-      type: 'call',
-      strikePrice: '$2000',
-      rightToBuy: 1,
-      expiry: '2023-01-01',
-      premium: '1 ETH',
-      collateral: 1,
-      numberOfOptions: 1,
-      filled: '80%',
-      CL: 'COVERED',
-      img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg',
-    },
-    {
-      asset: 'btc',
-      priceFeed: 'BTC/USD',
-      type: 'call',
-      strikePrice: '$30000',
-      rightToBuy: 2,
-      expiry: '2023-01-01',
-      premium: '1 ETH',
-      collateral: 1,
-      numberOfOptions: 1,
-      filled: '100%',
-      CL: '190%',
-      img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/19a58483-b100-4d09-ab0d-7d221a491090_BTC.svg',
-    },
-    {
-      asset: 'avax',
-      priceFeed: 'AVAX/USD',
-      type: 'put',
-      strikePrice: '$40',
-      rightToBuy: 5,
-      expiry: '2023-01-01',
-      premium: '0.25 ETH',
-      collateral: 1,
-      numberOfOptions: 1,
-      filled: '30%',
-      CL: '150%',
-      img: 'https://images.prismic.io/data-chain-link/63137341-c4d1-4825-b284-b8a5a8436d15_ICON_AVAX.png?auto=compress,format',
-    },
-    {
-      asset: 'link',
-      priceFeed: 'LINK/USD',
-      type: 'call',
-      strikePrice: '$5',
-      rightToBuy: 3,
-      expiry: '2023-01-01',
-      premium: '0.15 ETH',
-      collateral: 1,
-      numberOfOptions: 1,
-      filled: '25%',
-      CL: '120%',
-      img: 'https://data-chain-link.cdn.prismic.io/data-chain-link/ad14983c-eec5-448e-b04c-d1396e644596_LINK.svg',
-    },
-  ];
-  return [...data, ...data, ...data];
-};
-
 export default function Write() {
   const [template, setTemplate] = useState(optionTemplates[0]);
   const [assetPrice, setAssetPrice] = useState('');
   const [collateralPrice, setCollateralPrice] = useState('');
+
+  const canvasRef = useRef(null);
+  const imgRef = useRef(null);
 
   const formik = useFormik({
     initialValues: {
@@ -199,68 +141,42 @@ export default function Write() {
       writeOption(values);
     },
   });
+
+  const svgToPngBuffer = async () => {
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+    const v = Canvg.fromString(
+      context,
+      '<svg width="320" height="320" version="1.1" xmlns="http://www.w3.org/2000/svg" class="write__StyledSVG-sc-ez607g-5 eLMpVK"><image href="/BTC.svg" x="90" y="26" height="28px" width="28px"></image><text x="120" y="49" font-size="25" font-weight="300">ETH<!-- --> CALL<!-- --></text><line x1="20" y1="65" x2="300" y2="65" stroke="black" stroke-width="1.25"></line><text x="70" y="105" font-size="20" font-weight="300">Price Feed: <!-- -->ETH/USD<!-- --></text><text x="70" y="150" font-size="20" font-weight="300">Strike Price: <!-- -->$2000<!-- --></text><text x="70" y="195" font-size="20" font-weight="300">Amount: <!-- -->2 ETH<!-- --></text><text x="70" y="240" font-size="20" font-weight="300">Expiry: <!-- -->2023-01-01<!-- --></text><text x="70" y="285" font-size="20" font-weight="300">American Style</text></svg>'
+    );
+    await v.render();
+    let png = canvas.toDataURL('image/png');
+    png = png.replace(/^data:image\/png;base64,/, '');
+    let buf = Buffer.from(png, 'base64');
+    return buf;
+  };
+
   const writeOption = async (values) => {
     try {
       const { ethereum } = window;
-      console.log(values);
-      return;
-
       if (ethereum) {
-        const provider = new ethers.providers.Web3Provider(ethereum);
-        const signer = provider.getSigner();
+        // create a png from the svg
 
-        const optionFactory = new ethers.Contract(
-          fuji.optionFactory,
-          OptionFactory.abi,
-          signer
-        );
+        const image = await svgToPngBuffer();
+        // console.log(image);
 
-        console.log(optionFactory);
+        // console.log(image.toString('base64'));
 
-        const priceFeedAddress =
-          priceFeeds.FUJI[values.asset.toUpperCase()].USD;
+        const metadata = generateMetadata(values);
+        // turn svg into a png somehow
+        const options = metadata;
+        const filename = `${values.asset}${values.type}.png`;
 
-        const priceFeedDecimals = 8;
+        let metadataURI = await uploadToIpfs(image, filename, options);
 
-        const shortOption = {
-          underlyingPriceFeed: priceFeedAddress,
-          underlyingAmount: values.rightToBuy,
-          call: values.type === 'call',
-          long: false,
-          strikePrice: ethers.utils.parseUnits(
-            values.strikePrice.toString(),
-            priceFeedDecimals
-          ),
-          expiry: new Date(values.expiry).getTime() / 1000,
-        };
-
-        const longOption = shortOption;
-        longOption.long = true;
-
-        const collateral = {
-          priceFeed: priceFeedAddress,
-          amount: ethers.utils.parseEther(values.collateral.toString()),
-          mintedLongs: values.numberOfOptions,
-        };
-
-        console.log(shortOption);
-        const startingCollateral = ethers.utils.parseEther(
-          values.collateral.toString()
-        );
-
-        const tx = await optionFactory.createOption(
-          shortOption,
-          longOption,
-          collateral,
-          {
-            value: startingCollateral,
-            gasLimit: 3000000,
-          }
-        );
-        await tx.wait();
-        console.log(tx);
+        console.log(metadataURI);
       } else {
-        console.log("Ethereum object doesn't exist!");
+        console.log('cannot find ethereum object!');
       }
     } catch (error) {
       console.log(error);
@@ -530,9 +446,19 @@ export default function Write() {
           />
         </Templates>
       </TemplateContainer> */}
+      <StyledCanvas ref={canvasRef}></StyledCanvas>
+      <StyledImg ref={imgRef}></StyledImg>
     </BaseContainer>
   );
 }
+
+const StyledCanvas = styled.canvas`
+  display: none;
+`;
+
+const StyledImg = styled.img`
+  /* display: none; */
+`;
 
 const BaseContainer = styled.div`
   padding: 10px 30px;

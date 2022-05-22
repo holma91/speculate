@@ -9,6 +9,8 @@ const nextConfig = {
     MORALIS_API_KEY:
       'yX0WI4udu8OZHU9W6DNeOGeaTw40AKRYYIV8pY1cnCNIUpJTPJp39OyzxbCLRcXZ',
     ALCHEMY_ID: 'yMdJ2lfGieVh__vNl2R15y9Y9Vgdsg3f', // RINKEBY
+    ipfsProjectId: '28pSgJCPBGqrTcdPWVB0B1Yd6nC',
+    ipfsProjectSecret: '494c0284b39b11e5280a09bb7c0dae33',
   },
 };
 

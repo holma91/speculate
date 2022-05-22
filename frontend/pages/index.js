@@ -19,7 +19,7 @@ export default function home() {
 
           <Option>
             <span>
-              <img src="https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg" />
+              <img src="/ETH.svg" />
               ETH/USD
             </span>
             <span>$3000</span>
