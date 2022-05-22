@@ -1,6 +1,17 @@
 import styled from 'styled-components';
 
-export default function Short() {
+export default function Position({ clickedPosition }) {
+  const {
+    asset,
+    expiry,
+    img,
+    numberOfOptions,
+    premium,
+    priceFeed,
+    rightToBuy,
+    strikePrice,
+    type,
+  } = clickedPosition;
   return (
     <Container>
       <div className="left">
@@ -10,9 +21,15 @@ export default function Short() {
           version="1.1"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <image href={'/ETH.svg'} x="90" y="26" height="28px" width="28px" />
+          <image
+            href={`/${asset.toUpperCase()}.svg`}
+            x="90"
+            y="26"
+            height="28px"
+            width="28px"
+          />
           <text x="120" y="49" fontSize="25" fontWeight="300">
-            ETH CALL
+            {asset.toUpperCase()} {type.toUpperCase()}
           </text>
           <line
             x1="20"
@@ -23,16 +40,16 @@ export default function Short() {
             strokeWidth="1.25"
           />
           <text x="70" y="105" fontSize="20" fontWeight="300">
-            Price Feed: ETH/USD
+            Price Feed: {`${asset.toUpperCase()}/USD`}
           </text>
           <text x="70" y="150" fontSize="20" fontWeight="300">
-            Strike Price: $2000
+            Strike Price: {`${strikePrice}`}
           </text>
           <text x="70" y="195" fontSize="20" fontWeight="300">
-            Amount: 0.25 ETH
+            Amount: {`${rightToBuy} ${asset.toUpperCase()}`}
           </text>
           <text x="70" y="240" fontSize="20" fontWeight="300">
-            Expiry: 2023-01-01
+            Expiry: {expiry}
           </text>
           <text x="70" y="285" fontSize="20" fontWeight="300">
             American Style
@@ -44,13 +61,13 @@ export default function Short() {
         </DescriptionBox>
       </div>
       <div className="right">
-        <p className="header">ETH Options</p>
-        <p>ETH Price: $2019.33</p>
+        <p className="header">{asset.toUpperCase()} Options</p>
+        <p>{asset.toUpperCase()} Price: $2019.33</p>
         <p>Collateral: 2 ETH</p>
         <p>Collateral value: $4038.66</p>
         <p>
           You minted 10 longs and have sold 8, making you 80% filled and short 8
-          ETH 2000 calls.
+          {asset.toUpperCase()} 2000 calls.
         </p>
         <p>Risk: 0.25 x 8 = 2 ETH</p>
         <p>Risk value: $4038.66</p>
@@ -76,7 +93,8 @@ const DescriptionBox = styled.div`
 `;
 
 const Container = styled.div`
-  margin: 20px;
+  /* margin: 20px; */
+  margin-bottom: 20px;
   display: flex;
   justify-content: center;
   gap: 20px;

@@ -3,12 +3,13 @@ import { useAccount } from 'wagmi';
 // WARNING: IF THE LINE BELOW IS REMOVED IT WONT COMPILE,
 // because of "ReferenceError: regeneratorRuntime is not defined"
 import regeneratorRuntime from 'regenerator-runtime'; // eslint-disable-line no-unused-vars
+import styled from 'styled-components';
 import Table, {
   SelectColumnFilter,
   StatusPill,
   AvatarCell,
 } from '../components/Table';
-import styled from 'styled-components';
+import Position from '../components/Position';
 
 const getLongs = () => {
   const data = [
@@ -124,6 +125,7 @@ const getShorts = () => {
 function Positions() {
   const [nfts, setNfts] = useState([]);
   const [view, setView] = useState('longs');
+  const [clickedPosition, setClickedPosition] = useState(null);
 
   const getNfts = async () => {
     const { ethereum } = window;
@@ -244,6 +246,10 @@ function Positions() {
   return (
     <OuterContainer>
       <InnerContainer>
+        {clickedPosition ? (
+          <Position clickedPosition={clickedPosition} />
+        ) : null}
+
         <Header>
           <p>backe.eth</p>
           <p>0x30...4d02</p>
@@ -276,12 +282,16 @@ function Positions() {
             columns={longColumns}
             data={longs}
             initialState={initialState}
+            clickedPosition={clickedPosition}
+            setClickedPosition={setClickedPosition}
           />
         ) : view === 'shorts' ? (
           <Table
             columns={shortColumns}
             data={shorts}
             initialState={initialState}
+            clickedPosition={clickedPosition}
+            setClickedPosition={setClickedPosition}
           />
         ) : (
           <p>nft view</p>

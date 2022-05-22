@@ -16,7 +16,6 @@ import {
 } from '@heroicons/react/solid';
 import { Button, PageButton } from '../components/Button';
 
-
 export function SelectColumnFilter({
   column: { filterValue, setFilter, preFilteredRows, id, render },
 }) {
@@ -108,7 +107,13 @@ const StyledSelect = styled.select`
   border-radius: 3px;
 `;
 
-function Table({ columns, data, initialState }) {
+function Table({
+  columns,
+  data,
+  initialState,
+  clickedPosition,
+  setClickedPosition,
+}) {
   // Use the state and functions returned from useTable to build your UI
   const {
     getTableProps,
@@ -193,7 +198,10 @@ function Table({ columns, data, initialState }) {
                   {page.map((row, i) => {
                     prepareRow(row);
                     return (
-                      <tr {...row.getRowProps()}>
+                      <tr
+                        {...row.getRowProps()}
+                        onClick={() => setClickedPosition(row.original)}
+                      >
                         {row.cells.map((cell) => {
                           return (
                             <td {...cell.getCellProps()}>
@@ -519,6 +527,11 @@ const TableDivContainer = styled.div`
 
   tr {
     border-bottom: 1px solid rgb(229 231 235);
+    cursor: pointer;
+
+    :hover {
+      background-color: rgb(249 250 251);
+    }
   }
 `;
 
