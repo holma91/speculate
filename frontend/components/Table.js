@@ -112,7 +112,7 @@ function Table({
   data,
   initialState,
   clickedPosition,
-  setClickedPosition,
+  onClickedPosition,
 }) {
   // Use the state and functions returned from useTable to build your UI
   const {
@@ -200,7 +200,7 @@ function Table({
                     return (
                       <tr
                         {...row.getRowProps()}
-                        onClick={() => setClickedPosition(row.original)}
+                        onClick={() => onClickedPosition(row.original)}
                       >
                         {row.cells.map((cell) => {
                           return (

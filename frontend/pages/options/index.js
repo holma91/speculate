@@ -1,212 +1,242 @@
-import Link from 'next/link';
+import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/router';
+import { useAccount } from 'wagmi';
+// WARNING: IF THE LINE BELOW IS REMOVED IT WONT COMPILE,
+// because of "ReferenceError: regeneratorRuntime is not defined"
+import regeneratorRuntime from 'regenerator-runtime'; // eslint-disable-line no-unused-vars
 import styled from 'styled-components';
+import Table, {
+  SelectColumnFilter,
+  StatusPill,
+  AvatarCell,
+} from '../../components/Table';
+import Position from '../../components/Position';
 
-export default function Options() {
+const getOptions = () => {
+  const data = [
+    {
+      asset: 'eth',
+      priceFeed: 'ETH/USD',
+      type: 'call',
+      strikePrice: '$2000',
+      rightToBuy: 1,
+      expiry: '2023-01-01',
+      price: '1 ETH',
+      bid: '0.5 ETH',
+      numberOfOptions: 1,
+      img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg',
+    },
+    {
+      asset: 'btc',
+      priceFeed: 'BTC/USD',
+      type: 'call',
+      strikePrice: '$30000',
+      rightToBuy: 2,
+      expiry: '2023-01-01',
+      price: '1 ETH',
+      bid: '0.55 ETH',
+      numberOfOptions: 1,
+      img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/19a58483-b100-4d09-ab0d-7d221a491090_BTC.svg',
+    },
+    {
+      asset: 'avax',
+      priceFeed: 'AVAX/USD',
+      type: 'put',
+      strikePrice: '$40',
+      rightToBuy: 5,
+      expiry: '2023-01-01',
+      price: '0.25 ETH',
+      bid: '0.05 ETH',
+      numberOfOptions: 1,
+      img: 'https://images.prismic.io/data-chain-link/63137341-c4d1-4825-b284-b8a5a8436d15_ICON_AVAX.png?auto=compress,format',
+    },
+    {
+      asset: 'link',
+      priceFeed: 'LINK/USD',
+      type: 'call',
+      strikePrice: '$5',
+      rightToBuy: 3,
+      expiry: '2023-01-01',
+      price: '0.15 ETH',
+      bid: '0.053 ETH',
+      numberOfOptions: 1,
+      img: 'https://data-chain-link.cdn.prismic.io/data-chain-link/ad14983c-eec5-448e-b04c-d1396e644596_LINK.svg',
+    },
+  ];
+  return [...data, ...data, ...data];
+};
+
+function Positions() {
+  const router = useRouter();
+  const [nfts, setNfts] = useState([]);
+  const [view, setView] = useState('list-view');
+  const [clickedPosition, setClickedPosition] = useState(null);
+
+  const getNfts = async () => {
+    const { ethereum } = window;
+    if (ethereum) {
+      // const chain = 'avalanche%20testnet';
+      const chain = 'rinkeby';
+      const url = `https://deep-index.moralis.io/api/v2/${ethereum.selectedAddress}/nft?chain=${chain}&format=decimal`;
+      let response = await fetch(url, {
+        headers: { 'X-API-Key': process.env.MORALIS_API_KEY },
+      });
+
+      response = await response.json();
+      const receivedNFTs = response.result;
+
+      console.log(receivedNFTs);
+
+      // setNfts(allNfts);
+    } else {
+      console.log('ethereum object not found');
+    }
+  };
+
+  useEffect(() => {
+    getNfts();
+  }, []);
+
+  const optionColumns = useMemo(
+    () => [
+      {
+        Header: 'Asset',
+        accessor: 'asset',
+        Cell: AvatarCell,
+        imgAccessor: 'img',
+      },
+      {
+        Header: 'Type',
+        accessor: 'type',
+      },
+      {
+        Header: 'Strike Price',
+        accessor: 'strikePrice',
+      },
+      {
+        Header: 'Amount',
+        accessor: 'rightToBuy',
+      },
+      {
+        Header: 'Expiry',
+        accessor: 'expiry',
+      },
+      {
+        Header: 'Price',
+        accessor: 'price',
+      },
+      {
+        Header: 'Bid',
+        accessor: 'bid',
+      },
+    ],
+    []
+  );
+
+  const options = useMemo(() => getOptions(), []);
+
+  const initialState = {
+    sortBy: [
+      {
+        id: 'expiry',
+        desc: true,
+      },
+    ],
+    pageSize: 10,
+  };
+
+  const onClickedPosition = (position) => {
+    console.log(position);
+    const { pathname } = router;
+    router.push(`/${pathname}/${position.asset}`);
+  };
+
   return (
-    <RecentContainer>
-      <RecentOptions>
-        <p>Recent Calls</p>
-
-        <OptionsHeader>
-          <span>Asset</span>
-          <span>Strike Price</span>
-          <span>Current Price</span>
-          <span>Right to buy</span>
-          <span>Expiry</span>
-          <span>Premium</span>
-        </OptionsHeader>
-        <Option>
-          <span>
-            <img src="https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg" />
-            ETH/USD
-          </span>
-          <span>$3000</span>
-          <span>$2000</span>
-          <span>10 ETH</span>
-          <span>2022-12-14</span>
-          <span>1 ETH</span>
-        </Option>
-        <Option>
-          <span>
-            <img src="https://prismic-io.s3.amazonaws.com/data-chain-link/19a58483-b100-4d09-ab0d-7d221a491090_BTC.svg" />
-            BTC/USD
-          </span>
-          <span>$300000</span>
-          <span>$30000</span>
-          <span>5 BTC</span>
-          <span>2025-12-14</span>
-          <span>0.5 ETH</span>
-        </Option>
-        <Option>
-          <span>
-            <img src="https://images.prismic.io/data-chain-link/63137341-c4d1-4825-b284-b8a5a8436d15_ICON_AVAX.png?auto=compress,format" />
-            AVAX/USD
-          </span>
-          <span>$300</span>
-          <span>$30</span>
-          <span>10 AVAX</span>
-          <span>2023-06-14</span>
-          <span>0.05 ETH</span>
-        </Option>
-        <Option>
-          <span>
-            <img src="https://data-chain-link.cdn.prismic.io/data-chain-link/ad14983c-eec5-448e-b04c-d1396e644596_LINK.svg" />
-            LINK/USD
-          </span>
-          <span>$30</span>
-          <span>$5</span>
-          <span>100 LINK</span>
-          <span>2023-01-01</span>
-          <span>1 ETH</span>
-        </Option>
-        <Option>
-          <span>
-            <img src="https://images.prismic.io/data-chain-link/931ba23b-1755-46be-a466-73af2fcafaf1_ICON_SOL.png?auto=compress,format" />
-            SOL/USD
-          </span>
-          <span>$500</span>
-          <span>$50</span>
-          <span>1000 SOL</span>
-          <span>2024-01-01</span>
-          <span>1 ETH</span>
-        </Option>
-        <Option>
-          <span>
-            <img src="https://images.prismic.io/data-chain-link/63137341-c4d1-4825-b284-b8a5a8436d15_ICON_AVAX.png?auto=compress,format" />
-            AVAX/USD
-          </span>
-          <span>$300</span>
-          <span>$30</span>
-          <span>10 AVAX</span>
-          <span>2023-06-14</span>
-          <span>0.2 ETH</span>
-        </Option>
-      </RecentOptions>
-      <RecentOptions>
-        <p>Recent Puts</p>
-        <Option>
-          <span>
-            <img src="https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg" />
-            ETH/USD
-          </span>
-          <span>$3000</span>
-          <span>2022-07-01</span>
-        </Option>
-        <Option>
-          <span>
-            <img src="https://images.prismic.io/data-chain-link/931ba23b-1755-46be-a466-73af2fcafaf1_ICON_SOL.png?auto=compress,format" />
-            SOL/USD
-          </span>
-          <span>$100</span>
-          <span>2022-11-14</span>
-        </Option>
-        <Option>
-          <span>
-            <img src="https://data-chain-link.cdn.prismic.io/data-chain-link/53abc2bf-a078-40d5-9f46-835968837ee4_DOT.svg" />
-            DOT/USD
-          </span>
-          <span>$8</span>
-          <span>2022-10-14</span>
-        </Option>
-        <Option>
-          <span>
-            <img src="https://prismic-io.s3.amazonaws.com/data-chain-link/19a58483-b100-4d09-ab0d-7d221a491090_BTC.svg" />
-            BTC/USD
-          </span>
-          <span>$30000</span>
-          <span>2022-11-19</span>
-        </Option>
-        <Option>
-          <span>
-            <img src="https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg" />
-            ETH/USD
-          </span>
-          <span>$2200</span>
-          <span>2023-01-17</span>
-        </Option>
-        <Option>
-          <span>
-            <img src="https://data-chain-link.cdn.prismic.io/data-chain-link/53abc2bf-a078-40d5-9f46-835968837ee4_DOT.svg" />
-            DOT/USD
-          </span>
-          <span>$8</span>
-          <span>2023-04-16</span>
-        </Option>
-      </RecentOptions>
-    </RecentContainer>
+    <OuterContainer>
+      <InnerContainer>
+        <Header>
+          <h2>Available Options</h2>
+          <Menu>
+            <ViewDiv
+              onClick={() => setView('list-view')}
+              clicked={view === 'list-view'}
+            >
+              <p>Normal View</p>
+            </ViewDiv>
+            <ViewDiv
+              onClick={() => setView('nft-view')}
+              clicked={view === 'nft-view'}
+            >
+              <p>NFT View</p>
+            </ViewDiv>
+          </Menu>
+        </Header>
+        {view === 'list-view' ? (
+          <Table
+            columns={optionColumns}
+            data={options}
+            initialState={initialState}
+            onClickedPosition={onClickedPosition}
+          />
+        ) : (
+          <p>nft view</p>
+        )}
+      </InnerContainer>
+    </OuterContainer>
   );
 }
 
-const RecentContainer = styled.div`
-  margin: 40px;
+const Header = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 50px;
-
-  @media screen and (max-width: 1000px) {
-    gap: 10px;
-  }
+  gap: 5px;
 `;
 
-const RecentOptions = styled.div`
+const Menu = styled.div`
+  margin: 10px 0;
+  border: 1px solid rgb(229 231 235);
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  /* width: 450px; */
-
-  p {
-    font-size: 20px;
-    font-weight: 600;
-  }
-
-  a {
-    padding: 10px;
-    font-weight: 500;
-  }
+  /* gap: 30px; */
 `;
 
-const OptionsHeader = styled.div`
-  padding: 10px;
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 5px;
-  justify-content: space-between;
-  align-items: center;
-  /* border: 1px solid #ecedef; */
-  border-radius: 6px;
+const ViewDiv = styled.div`
+  padding: 15px 20px;
+  height: 100%;
+  border-bottom: ${(props) =>
+    props.clicked ? '2px solid #0e76fd' : '2px solid white'};
+
   cursor: pointer;
-  /* box-shadow: 0 8px 24px -16px rgba(12, 22, 44, 0.32); */
-
-  span {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-`;
-
-const Option = styled.div`
-  padding: 10px;
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 5px;
-  justify-content: space-between;
-  align-items: center;
-  border: 1px solid #ecedef;
-  border-radius: 6px;
-  cursor: pointer;
-  box-shadow: 0 8px 24px -16px rgba(12, 22, 44, 0.32);
-
-  img {
-    width: 19px;
-    height: 19px;
-  }
-
-  span {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
   :hover {
-    background: #fafafa;
+    background-color: ${(props) => (props.clicked ? 'white' : '#fafafa')};
+    border-bottom: ${(props) =>
+      props.clicked ? '2px solid #0e76fd' : '2px solid #fafafa'};
   }
 `;
+
+const OuterContainer = styled.div`
+  min-height: 100vh; // min-h-screen
+  /* background-color: rgb(243 244 246); // bg-gray-100 */
+  color: rgb(17 24 39); // text-gray-900
+`;
+
+const InnerContainer = styled.main`
+  max-width: 70rem; // max-w-4xl
+  margin: 0 auto; // mx-auto
+  padding-left: 1rem; // px-4
+  padding-right: 1rem; // px-4
+  // sm:px-6
+  // lg:px-8
+  padding-top: 1rem; // pt-4
+
+  h1 {
+    font-size: 1.25rem; // text-xl
+    line-height: 1.75rem; // text-xl
+    font-weight: 600; // font-semibold
+  }
+
+  .mt-4 {
+    margin-top: 1rem; // mt-4
+  }
+`;
+
+export default Positions;

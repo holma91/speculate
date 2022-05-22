@@ -243,6 +243,11 @@ function Positions() {
     pageSize: 10,
   };
 
+  const onClickedPosition = (position) => {
+    console.log(position);
+    setClickedPosition(position);
+  };
+
   return (
     <OuterContainer>
       <InnerContainer>
@@ -283,7 +288,7 @@ function Positions() {
             data={longs}
             initialState={initialState}
             clickedPosition={clickedPosition}
-            setClickedPosition={setClickedPosition}
+            onClickedPosition={onClickedPosition}
           />
         ) : view === 'shorts' ? (
           <Table
@@ -291,7 +296,7 @@ function Positions() {
             data={shorts}
             initialState={initialState}
             clickedPosition={clickedPosition}
-            setClickedPosition={setClickedPosition}
+            onClickedPosition={onClickedPosition}
           />
         ) : (
           <p>nft view</p>
