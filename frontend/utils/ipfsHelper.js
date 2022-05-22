@@ -32,7 +32,6 @@ const makeNFTMetadata = async (assetURI, options) => {
 };
 
 const uploadToIpfs = async (pngBuffer, basename, options) => {
-  // const content = await fs.readFile(filename);
   const ipfsPath = '/nft/' + basename;
 
   const ipfs = ipfsClient.create({

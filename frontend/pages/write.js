@@ -68,8 +68,6 @@ const aggregatorV3InterfaceABI = [
 const priceFeeds = {
   RINKEBY: {
     ETH: {
-      // gets back price with 8 decimals
-      // scale the input by 10^8
       USD: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e',
     },
     BTC: {
@@ -107,6 +105,8 @@ const imageMapper = {
   avax: '/AVAX.svg',
   link: '/LINK.svg',
   sol: '/SOL.svg',
+  matic: '/MATIC.svg',
+  atom: '/ATOM.svg',
 };
 
 export default function Write() {
@@ -163,11 +163,13 @@ export default function Write() {
       if (ethereum) {
         const pngBuffer = await svgToPngBuffer();
 
-        const options = generateMetadata(values);
-        const filename = `${values.asset}${values.type}.png`;
-        let metadataURI = await uploadToIpfs(pngBuffer, filename, options);
+        // const options = generateMetadata(values);
+        // const filename = `${values.asset}${values.type}.png`;
+        // let metadataURI = await uploadToIpfs(pngBuffer, filename, options);
 
-        console.log(metadataURI);
+        // console.log(metadataURI);
+
+        console.log(values);
       } else {
         console.log('cannot find ethereum object!');
       }
@@ -178,7 +180,7 @@ export default function Write() {
 
   const getAssetPrice = async () => {
     try {
-      const network = 'FUJI';
+      const network = 'RINKEBY';
       const priceFeedAddress =
         priceFeeds[network][formik.values.asset.toUpperCase()].USD;
 
@@ -205,7 +207,7 @@ export default function Write() {
 
   const getCollateralPrice = async () => {
     try {
-      const network = 'FUJI';
+      const network = 'RINKEBY';
       const collateral = 'ETH'; // always ETH for the mvp
       const priceFeedAddress = priceFeeds[network][collateral].USD;
 
@@ -273,9 +275,9 @@ export default function Write() {
               <StyledSelect id="asset" {...formik.getFieldProps('asset')}>
                 <option value="eth">$ETH</option>
                 <option value="btc">$BTC</option>
-                <option value="avax">$AVAX</option>
+                <option value="atom">$ATOM</option>
                 <option value="link">$LINK</option>
-                <option value="sol">$SOL</option>
+                <option value="matic">$MATIC</option>
               </StyledSelect>
             </InputContainer>
             <InputContainer>
