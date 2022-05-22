@@ -31,7 +31,7 @@ const makeNFTMetadata = async (assetURI, options) => {
   return options;
 };
 
-const uploadToIpfs = async (image, basename, options) => {
+const uploadToIpfs = async (pngBuffer, basename, options) => {
   // const content = await fs.readFile(filename);
   const ipfsPath = '/nft/' + basename;
 
@@ -44,12 +44,8 @@ const uploadToIpfs = async (image, basename, options) => {
     },
   });
 
-  // console.log('image:', image);
-
-  // let baffa = (...image);
-
   const { cid: assetCid } = await ipfs.add(
-    { path: ipfsPath, content: image },
+    { path: ipfsPath, content: pngBuffer },
     ipfsAddOptions
   );
 

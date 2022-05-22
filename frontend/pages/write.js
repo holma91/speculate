@@ -102,11 +102,11 @@ const priceFeeds = {
 };
 
 const imageMapper = {
-  eth: 'https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg',
-  btc: 'https://prismic-io.s3.amazonaws.com/data-chain-link/19a58483-b100-4d09-ab0d-7d221a491090_BTC.svg',
-  avax: 'https://images.prismic.io/data-chain-link/63137341-c4d1-4825-b284-b8a5a8436d15_ICON_AVAX.png?auto=compress,format',
-  link: 'https://data-chain-link.cdn.prismic.io/data-chain-link/ad14983c-eec5-448e-b04c-d1396e644596_LINK.svg',
-  sol: 'https://images.prismic.io/data-chain-link/931ba23b-1755-46be-a466-73af2fcafaf1_ICON_SOL.png?auto=compress,format',
+  eth: '/ETH.svg',
+  btc: '/BTC.svg',
+  avax: '/AVAX.svg',
+  link: '/LINK.svg',
+  sol: '/SOL.svg',
 };
 
 export default function Write() {
@@ -115,7 +115,7 @@ export default function Write() {
   const [collateralPrice, setCollateralPrice] = useState('');
 
   const canvasRef = useRef(null);
-  const imgRef = useRef(null);
+  const svgRef = useRef(null);
 
   const formik = useFormik({
     initialValues: {
@@ -145,34 +145,27 @@ export default function Write() {
   const svgToPngBuffer = async () => {
     const canvas = canvasRef.current;
     const context = canvas.getContext('2d');
-    const v = Canvg.fromString(
-      context,
-      '<svg width="320" height="320" version="1.1" xmlns="http://www.w3.org/2000/svg" class="write__StyledSVG-sc-ez607g-5 eLMpVK"><image href="/BTC.svg" x="90" y="26" height="28px" width="28px"></image><text x="120" y="49" font-size="25" font-weight="300">ETH<!-- --> CALL<!-- --></text><line x1="20" y1="65" x2="300" y2="65" stroke="black" stroke-width="1.25"></line><text x="70" y="105" font-size="20" font-weight="300">Price Feed: <!-- -->ETH/USD<!-- --></text><text x="70" y="150" font-size="20" font-weight="300">Strike Price: <!-- -->$2000<!-- --></text><text x="70" y="195" font-size="20" font-weight="300">Amount: <!-- -->2 ETH<!-- --></text><text x="70" y="240" font-size="20" font-weight="300">Expiry: <!-- -->2023-01-01<!-- --></text><text x="70" y="285" font-size="20" font-weight="300">American Style</text></svg>'
-    );
+
+    const v = Canvg.fromString(context, svgRef.current.outerHTML);
     await v.render();
-    let png = canvas.toDataURL('image/png');
-    png = png.replace(/^data:image\/png;base64,/, '');
-    let buf = Buffer.from(png, 'base64');
-    return buf;
+
+    let pngInBase64 = canvas.toDataURL('image/png');
+
+    // trim the base64 string
+    pngInBase64 = pngInBase64.replace(/^data:image\/png;base64,/, '');
+
+    return Buffer.from(pngInBase64, 'base64');
   };
 
   const writeOption = async (values) => {
     try {
       const { ethereum } = window;
       if (ethereum) {
-        // create a png from the svg
+        const pngBuffer = await svgToPngBuffer();
 
-        const image = await svgToPngBuffer();
-        // console.log(image);
-
-        // console.log(image.toString('base64'));
-
-        const metadata = generateMetadata(values);
-        // turn svg into a png somehow
-        const options = metadata;
+        const options = generateMetadata(values);
         const filename = `${values.asset}${values.type}.png`;
-
-        let metadataURI = await uploadToIpfs(image, filename, options);
+        let metadataURI = await uploadToIpfs(pngBuffer, filename, options);
 
         console.log(metadataURI);
       } else {
@@ -352,6 +345,7 @@ export default function Write() {
         <StyledArrowRightIcon></StyledArrowRightIcon>
         <NFTContainer>
           <StyledSVG
+            ref={svgRef}
             width="320"
             height="320"
             version="1.1"
@@ -387,7 +381,10 @@ export default function Write() {
               Strike Price: {`$${formik.values.strikePrice}`}
             </text>
             <text x="70" y="195" fontSize="20" fontWeight="300">
-              Amount: {`${formik.values.rightToBuy} ETH`}
+              Amount:{' '}
+              {`${
+                formik.values.rightToBuy
+              } ${formik.values.asset.toUpperCase()}`}
             </text>
             <text x="70" y="240" fontSize="20" fontWeight="300">
               Expiry: {formik.values.expiry}
@@ -447,7 +444,6 @@ export default function Write() {
         </Templates>
       </TemplateContainer> */}
       <StyledCanvas ref={canvasRef}></StyledCanvas>
-      <StyledImg ref={imgRef}></StyledImg>
     </BaseContainer>
   );
 }
