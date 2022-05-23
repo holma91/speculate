@@ -97,7 +97,10 @@ function NFTView({ nfts, listOption, acceptOffer }) {
       {nfts.map((nft) => {
         return nft.metadata && nft.metadata.image ? (
           <NFTCard key={Math.random() * 10}>
-            <ListImage src={nft.metadata.image} alt={`ugly nft`} />
+            <ListImage
+              src={`data:image/svg+xml;utf8,${nft.metadata.image}`}
+              alt={`ugly nft`}
+            />
             <Price>{nft.listed ? nft.listPrice : 'unlisted'}</Price>
             <Offer>
               <p>{nft.bidded ? nft.highestBid : 'no offer'}</p>

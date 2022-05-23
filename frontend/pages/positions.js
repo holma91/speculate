@@ -10,56 +10,9 @@ import Table, {
   AvatarCell,
 } from '../components/Table';
 import Position from '../components/Position';
+import { rinkeby } from '../utils/addresses';
+import { NormalView, NFTView } from '../components/OptionViews';
 
-const getLongs = () => {
-  const data = [
-    {
-      asset: 'eth',
-      priceFeed: 'ETH/USD',
-      type: 'call',
-      strikePrice: '$2000',
-      rightToBuy: 1,
-      expiry: '2023-01-01',
-      premium: '1 ETH',
-      numberOfOptions: 1,
-      img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg',
-    },
-    {
-      asset: 'btc',
-      priceFeed: 'BTC/USD',
-      type: 'call',
-      strikePrice: '$30000',
-      rightToBuy: 2,
-      expiry: '2023-01-01',
-      premium: '1 ETH',
-      numberOfOptions: 1,
-      img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/19a58483-b100-4d09-ab0d-7d221a491090_BTC.svg',
-    },
-    {
-      asset: 'avax',
-      priceFeed: 'AVAX/USD',
-      type: 'put',
-      strikePrice: '$40',
-      rightToBuy: 5,
-      expiry: '2023-01-01',
-      premium: '0.25 ETH',
-      numberOfOptions: 1,
-      img: 'https://images.prismic.io/data-chain-link/63137341-c4d1-4825-b284-b8a5a8436d15_ICON_AVAX.png?auto=compress,format',
-    },
-    {
-      asset: 'link',
-      priceFeed: 'LINK/USD',
-      type: 'call',
-      strikePrice: '$5',
-      rightToBuy: 3,
-      expiry: '2023-01-01',
-      premium: '0.15 ETH',
-      numberOfOptions: 1,
-      img: 'https://data-chain-link.cdn.prismic.io/data-chain-link/ad14983c-eec5-448e-b04c-d1396e644596_LINK.svg',
-    },
-  ];
-  return [...data, ...data, ...data];
-};
 const getShorts = () => {
   const data = [
     {
@@ -123,16 +76,32 @@ const getShorts = () => {
 };
 
 function Positions() {
+  const [makerAsks, setMakerAsks] = useState([]);
+  const [makerBids, setMakerBids] = useState([]);
   const [nfts, setNfts] = useState([]);
   const [view, setView] = useState('longs');
   const [clickedPosition, setClickedPosition] = useState(null);
 
+  const getLongs = () => {
+    let processedNfts = nfts.map((nft) => {
+      return {
+        asset: nft.metadata.attributes[0].value,
+        img: `${nft.metadata.attributes[0].value}.svg`,
+        strikePrice: nft.metadata.attributes[1].value,
+        rightToBuy: nft.metadata.attributes[2].value,
+        expiry: nft.metadata.attributes[3].value,
+        type: nft.metadata.attributes[4].value,
+        id: nft.token_id,
+      };
+    });
+    return processedNfts;
+  };
+
   const getNfts = async () => {
     const { ethereum } = window;
     if (ethereum) {
-      // const chain = 'avalanche%20testnet';
       const chain = 'rinkeby';
-      const url = `https://deep-index.moralis.io/api/v2/${ethereum.selectedAddress}/nft?chain=${chain}&format=decimal`;
+      const url = `https://deep-index.moralis.io/api/v2/${ethereum.selectedAddress}/nft/${rinkeby.optionFactory}?chain=${chain}&format=decimal`;
       let response = await fetch(url, {
         headers: { 'X-API-Key': process.env.MORALIS_API_KEY },
       });
@@ -140,9 +109,18 @@ function Positions() {
       response = await response.json();
       const receivedNFTs = response.result;
 
-      console.log(receivedNFTs);
+      let filteredNFTs = receivedNFTs.filter((nft) => nft.metadata);
 
-      // setNfts(allNfts);
+      filteredNFTs = filteredNFTs.map((nft) => {
+        return {
+          ...nft,
+          metadata: JSON.parse(nft.metadata),
+        };
+      });
+
+      console.log(filteredNFTs);
+
+      setNfts(filteredNFTs);
     } else {
       console.log('ethereum object not found');
     }
@@ -150,6 +128,19 @@ function Positions() {
 
   useEffect(() => {
     getNfts();
+  }, [makerAsks, makerBids]);
+
+  useEffect(() => {
+    const setUpMakerOrders = async () => {
+      const responseMakerAsks = await fetch('http://localhost:3001/makerAsks/');
+      const responseMakerBids = await fetch('http://localhost:3001/makerBids/');
+      let makerAsks = await responseMakerAsks.json();
+      let makerBids = await responseMakerBids.json();
+
+      setMakerAsks(makerAsks);
+      setMakerBids(makerBids);
+    };
+    setUpMakerOrders();
   }, []);
 
   const longColumns = useMemo(
@@ -179,8 +170,6 @@ function Positions() {
       {
         Header: 'Premium',
         accessor: 'premium',
-        // Filter: SelectColumnFilter, // new
-        // filter: 'includes', // new
       },
     ],
     []
@@ -230,7 +219,7 @@ function Positions() {
     []
   );
 
-  const longs = useMemo(() => getLongs(), []);
+  const longs = useMemo(() => getLongs(), [nfts]);
   const shorts = useMemo(() => getShorts(), []);
 
   const initialState = {
@@ -246,6 +235,24 @@ function Positions() {
   const onClickedPosition = (position) => {
     console.log(position);
     setClickedPosition(position);
+  };
+
+  const listOption = async (collectionAddress, collectionId) => {
+    const { ethereum } = window;
+    if (ethereum) {
+      console.log('hey');
+    } else {
+      console.log('ethereum object not found');
+    }
+  };
+
+  const acceptOffer = async (collectionAddress, collectionId) => {
+    const { ethereum } = window;
+    if (ethereum) {
+      console.log('hey');
+    } else {
+      console.log('ethereum object not found');
+    }
   };
 
   return (
@@ -299,7 +306,11 @@ function Positions() {
             onClickedPosition={onClickedPosition}
           />
         ) : (
-          <p>nft view</p>
+          <NFTView
+            nfts={nfts}
+            listOption={listOption}
+            acceptOffer={acceptOffer}
+          />
         )}
       </InnerContainer>
     </OuterContainer>
