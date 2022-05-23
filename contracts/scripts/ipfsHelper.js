@@ -3,7 +3,7 @@
 const fs = require('fs');
 const ipfsClient = require('ipfs-http-client');
 const { Canvg, presets } = require('canvg');
-const { DOMParser } = require('xmldom');
+const { DOMParser } = require('@xmldom/xmldom');
 const canvas = require('canvas');
 const fetch = require('node-fetch');
 const ethers = require('ethers');

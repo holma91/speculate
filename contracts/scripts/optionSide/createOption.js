@@ -21,7 +21,7 @@ const main = async () => {
     underlyingPriceFeed: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e',
     underlyingAmount: ethers.utils.parseUnits('0.01'),
     call: true,
-    strikePrice: 2000,
+    strikePrice: 2200,
     expiry: 1000000,
   };
   const collateral = {

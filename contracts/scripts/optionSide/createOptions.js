@@ -1,11 +1,23 @@
 const ethers = require('ethers');
 const OptionFactory = require('../../out/OptionFactory.sol/OptionFactory.json');
+const { createSvg, uploadToIpfs, generateMetadata } = require('../ipfsHelper');
 const { fuji, mumbai, rinkeby } = require('../addresses');
 require('dotenv').config();
 
 const assets = ['ETH', 'BTC', 'ATOM', 'LINK', 'MATIC'];
-const prices = [2000, 200, 211, 4322, 9888, 50000, 20000, 5, 9, 100];
-const amounts = ['0.01', '0.02', '0.04', '0.025', '0.05'];
+const prices = [
+  '2000',
+  '200',
+  '211',
+  '4322',
+  '9888',
+  '50000',
+  '20000',
+  '5',
+  '9',
+  '100',
+];
+const amounts = ['0.001', '0.002', '0.004', '0.0025', '0.01'];
 const timestamps = [1653384630, 1653384830, 1653284610, 1653384635, 1653384830];
 
 const priceFeeds = {
@@ -53,19 +65,19 @@ const main = async () => {
 
   const optionFactory = factory.attach(rinkeby.optionFactory);
 
-  for (let i = 0; i < 30; i++) {
-    let asset = Math.floor(Math.random() * assets.length);
+  for (let i = 0; i < 15; i++) {
+    let asset = assets[Math.floor(Math.random() * assets.length)];
     let option = {
       underlyingPriceFeed: priceFeeds.RINKEBY[asset].USD,
       underlyingAmount: ethers.utils.parseUnits(
-        Math.floor(Math.random() * amounts.length)
+        amounts[Math.floor(Math.random() * amounts.length)]
       ),
       call: Math.random() > 0.35,
       strikePrice: ethers.utils.parseUnits(
-        Math.floor(Math.random() * prices.length),
+        prices[Math.floor(Math.random() * prices.length)],
         8
       ),
-      expiry: Math.floor(Math.random() * timestamps.length),
+      expiry: timestamps[Math.floor(Math.random() * timestamps.length)],
     };
     let mintedLongs = Math.floor(Math.random() * 5 + 1);
     let collateral = {
@@ -73,16 +85,23 @@ const main = async () => {
       amount:
         Math.random() > 0.35
           ? option.underlyingAmount.mul(mintedLongs)
-          : option.underlyingAmount.mul(mintedLongs).mul(1.5),
+          : option.underlyingAmount.mul(mintedLongs).mul(2),
       mintedLongs,
     };
 
-    let metadataURI = '';
-    optionFactory.createOption(option, collateral, metadataURI, {
+    let svg = createSvg(option, asset);
+
+    const options = generateMetadata(option, asset);
+    options.image = svg;
+    let metadataURI = await uploadToIpfs(options);
+    console.log('metadataURI:', metadataURI);
+
+    let tx = await optionFactory.createOption(option, collateral, metadataURI, {
       value: collateral.amount,
     });
 
-    break;
+    await tx.wait();
+    console.log(tx.hash);
   }
 
   console.log('finished');
