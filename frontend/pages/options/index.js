@@ -93,7 +93,7 @@ function Positions() {
     if (ethereum) {
       // const chain = 'avalanche%20testnet';
       const chain = 'rinkeby';
-      const url = `https://deep-index.moralis.io/api/v2/${ethereum.selectedAddress}/nft?chain=${chain}&format=decimal`;
+      const url = `https://deep-index.moralis.io/api/v2/nft/${rinkeby.optionFactory}?chain=${chain}&format=decimal`;
       let response = await fetch(url, {
         headers: { 'X-API-Key': process.env.MORALIS_API_KEY },
       });
