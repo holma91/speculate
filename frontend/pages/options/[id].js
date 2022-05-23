@@ -1,8 +1,10 @@
 import { useMemo, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import { ethers } from 'ethers';
 import styled from 'styled-components';
 import SmallTable, { AvatarCell } from '../../components/SmallTable';
 import { rinkeby } from '../../utils/addresses';
+import aggregatorV3Interface from '../../../contracts/out/AggregatorV3Interface.sol/AggregatorV3Interface.json';
 
 const getOffers = () => {
   const data = [
@@ -35,8 +37,43 @@ const getOffers = () => {
   return data;
 };
 
+const priceFeeds = {
+  RINKEBY: {
+    ETH: {
+      USD: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e',
+    },
+    BTC: {
+      USD: '0xECe365B379E1dD183B20fc5f022230C044d51404',
+    },
+    ATOM: {
+      USD: '0x3539F2E214d8BC7E611056383323aC6D1b01943c',
+    },
+    LINK: {
+      USD: '0xd8bd0a1cb028a31aa859a21a3758685a95de4623',
+    },
+    MATIC: {
+      USD: '0x7794ee502922e2b723432DDD852B3C30A911F021',
+    },
+  },
+  FUJI: {
+    ETH: {
+      USD: '0x86d67c3D38D2bCeE722E601025C25a575021c6EA',
+    },
+    BTC: {
+      USD: '0x31CF013A08c6Ac228C94551d535d5BAfE19c602a',
+    },
+    AVAX: {
+      USD: '0x5498BB86BC934c8D34FDA08E81D444153d0D06aD',
+    },
+    LINK: {
+      USD: '0x34C4c526902d88a3Aa98DB8a9b802603EB1E3470',
+    },
+  },
+};
+
 export default function Option({ position }) {
   const [nft, setNft] = useState(null);
+  const [assetPrice, setAssetPrice] = useState(0);
   const router = useRouter();
   const { id } = router.query;
 
@@ -97,17 +134,65 @@ export default function Option({ position }) {
         metadata: JSON.parse(response.metadata),
       };
 
+      console.log(actualNft);
+
       setNft(actualNft);
     } else {
       console.log('ethereum object not found');
     }
   };
 
+  const getAssetPrice = async () => {
+    try {
+      if (!nft) {
+        return;
+      }
+      const network = 'RINKEBY';
+      const asset = nft.metadata.attributes[0].value;
+      console.log(asset);
+
+      const priceFeedAddress = priceFeeds[network][asset].USD;
+
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+
+        const priceFeedContract = new ethers.Contract(
+          priceFeedAddress,
+          aggregatorV3Interface.abi,
+          provider
+        );
+
+        const decimals = await priceFeedContract.decimals();
+        const price = await priceFeedContract.latestRoundData();
+
+        console.log(price);
+
+        setAssetPrice(ethers.utils.formatUnits(price.answer, decimals));
+      } else {
+        console.log("Ethereum object doesn't exist!");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    getAssetPrice();
+  }, [nft]);
+
   useEffect(() => {
     getNft();
   }, [id]);
 
   const offers = useMemo(() => getOffers(), []);
+
+  const styleAddress = (address) => {
+    return (
+      address.substring(0, 5) +
+      '...' +
+      address.substring(address.length - 3, address.length)
+    );
+  };
 
   return (
     <OuterContainer>
@@ -121,14 +206,18 @@ export default function Option({ position }) {
 
           <DescriptionBox>
             <p>Description</p>
-            <p>Created by 0xABCD...1337</p>
+            {nft ? <p>Created by {styleAddress(nft.token_address)}</p> : null}
           </DescriptionBox>
         </div>
         <div className="right">
           <p className="collection-header">ETH Options</p>
           <p className="header">ETH 2000 CALL</p>
-          <p className="owned-by">Owned by 0x133...7ab</p>
-          <p>ETH Price: $2019.33</p>
+          <p className="owned-by">
+            {nft ? `Owned by ${styleAddress(nft.owner_of)}` : 'Owned by '}
+          </p>
+          {assetPrice > 0
+            ? `${nft.metadata.attributes[0].value} price: $${assetPrice}`
+            : null}
           <PriceBox>
             <div className="time">
               <p>Sale ends May 23, 2022</p>
