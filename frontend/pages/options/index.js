@@ -11,8 +11,9 @@ import Table, {
   AvatarCell,
 } from '../../components/Table';
 import Position from '../../components/Position';
+import { rinkeby } from '../../utils/addresses';
 
-const getOptions = () => {
+const getOptionsOld = () => {
   const data = [
     {
       asset: 'eth',
@@ -72,6 +73,20 @@ function Positions() {
   const [view, setView] = useState('list-view');
   const [clickedPosition, setClickedPosition] = useState(null);
 
+  const getOptions = () => {
+    let processedNfts = nfts.map((nft) => {
+      return {
+        asset: nft.metadata.attributes[0].value,
+        img: `${nft.metadata.attributes[0].value}.svg`,
+        strikePrice: nft.metadata.attributes[1].value,
+        rightToBuy: nft.metadata.attributes[2].value,
+        expiry: nft.metadata.attributes[3].value,
+        type: nft.metadata.attributes[4].value,
+      };
+    });
+    return processedNfts;
+  };
+
   const getNfts = async () => {
     const { ethereum } = window;
     if (ethereum) {
@@ -85,9 +100,21 @@ function Positions() {
       response = await response.json();
       const receivedNFTs = response.result;
 
-      console.log(receivedNFTs);
+      let filteredNFTs = receivedNFTs.filter(
+        (nft) =>
+          nft.token_address.toLowerCase() ===
+            rinkeby.optionFactory.toLowerCase() && nft.metadata
+      );
 
-      // setNfts(allNfts);
+      let allNfts = filteredNFTs.map((nft) => {
+        return {
+          ...nft,
+          metadata: JSON.parse(nft.metadata),
+        };
+      });
+
+      console.log(allNfts);
+      setNfts(allNfts);
     } else {
       console.log('ethereum object not found');
     }
@@ -133,7 +160,9 @@ function Positions() {
     []
   );
 
-  const options = useMemo(() => getOptions(), []);
+  const options = useMemo(() => getOptions(), [nfts]);
+
+  console.log(options);
 
   const initialState = {
     sortBy: [
