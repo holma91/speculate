@@ -82,6 +82,7 @@ function Positions() {
         rightToBuy: nft.metadata.attributes[2].value,
         expiry: nft.metadata.attributes[3].value,
         type: nft.metadata.attributes[4].value,
+        id: nft.token_id,
       };
     });
     return processedNfts;
@@ -162,8 +163,6 @@ function Positions() {
 
   const options = useMemo(() => getOptions(), [nfts]);
 
-  console.log(options);
-
   const initialState = {
     sortBy: [
       {
@@ -177,7 +176,7 @@ function Positions() {
   const onClickedPosition = (position) => {
     console.log(position);
     const { pathname } = router;
-    router.push(`/${pathname}/${position.asset}`);
+    router.push(`${pathname}/${position.id}`);
   };
 
   return (
