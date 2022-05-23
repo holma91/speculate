@@ -44,6 +44,26 @@ contract OptionFactory is ERC1155URIStorage {
         return currentOptionId++;
     }
 
+    function addCollateral(uint256 optionId) public payable {
+        Collateral storage collateral = collateralById[optionId];
+        collateral.amount += msg.value;
+    }
+
+    function withdrawCollateral(uint256 optionId, uint256 amount) public {
+        Collateral storage collateral = collateralById[optionId];
+        require(
+            amount < collateral.amount,
+            "cannot withdraw more than what you have"
+        );
+        collateral.amount -= amount;
+
+        int256 ratio = getCollateralToRiskRatio(optionId);
+        require(ratio >= 1000, "cannot go below 1 in collateral-to-risk ratio");
+
+        (bool sent, ) = msg.sender.call{value: amount}("");
+        require(sent, "failed ether transfer");
+    }
+
     function exerciseOption(uint256 optionId, uint256 amount) public {
         // msg.sender needs to hold the corresponding nft
         uint256 balance = balanceOf(msg.sender, optionId);

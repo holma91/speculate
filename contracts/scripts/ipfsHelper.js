@@ -71,7 +71,7 @@ const createSvg = (option, asset) => {
         Price Feed: ${asset.toUpperCase()}/USD
       </text>
       <text x="70" y="150" fontSize="20" fontWeight="300">
-        Strike Price: $${option.strikePrice}
+        Strike Price: $${ethers.utils.formatUnits(option.strikePrice, 8)}
       </text>
       <text x="70" y="195" fontSize="20" fontWeight="300">
         Amount: ${ethers.utils.formatEther(

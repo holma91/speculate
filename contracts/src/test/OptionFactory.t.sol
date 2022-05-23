@@ -136,10 +136,6 @@ contract OptionFactoryTest is DSTest, ERC1155Holder {
         assertTrue(optionFactory.canBeLiquidated(btc20CallId));
     }
 
-    // 0.1 * 10 = 1btc in risk = $40_000
-    // 10 = 20eth in collateral = $60_000
-    // hf = 60_0000/40_000 = 1.5
-
     function testCanTransferOption() public {
         uint256 long_btc20CallId = optionFactory.createOption{value: 20 ether}(
             btc20Call,
@@ -182,6 +178,69 @@ contract OptionFactoryTest is DSTest, ERC1155Holder {
 
         uint256 balanceEnd = address(this).balance;
         assertEq(balanceStart, balanceEnd);
+    }
+
+    function testCanAddCollateral() public {
+        uint256 eth1CallId = optionFactory.createOption{value: 10 ether}(
+            eth1Call,
+            collateral_eth1Call,
+            metadata_eth1Call
+        );
+
+        OptionFactory.Collateral memory collateralBefore = optionFactory
+            .getCollateralById(eth1CallId);
+
+        optionFactory.addCollateral{value: 1 ether}(eth1CallId);
+
+        OptionFactory.Collateral memory collateralAfter = optionFactory
+            .getCollateralById(eth1CallId);
+
+        assertEq(collateralBefore.amount, collateralAfter.amount - 1 ether);
+    }
+
+    function testCanWithdrawCollateral() public {
+        collateral_eth1Call.amount += 1 ether;
+
+        uint256 eth1CallId = optionFactory.createOption{value: 11 ether}(
+            eth1Call,
+            collateral_eth1Call,
+            metadata_eth1Call
+        );
+
+        OptionFactory.Collateral memory collateralBefore = optionFactory
+            .getCollateralById(eth1CallId);
+
+        emit log_uint(collateralBefore.amount);
+
+        optionFactory.withdrawCollateral(eth1CallId, 1 ether);
+
+        OptionFactory.Collateral memory collateralAfter = optionFactory
+            .getCollateralById(eth1CallId);
+
+        assertEq(collateralBefore.amount, collateralAfter.amount + 1 ether);
+    }
+
+    function testCannotWithdrawToARatioBelow1() public {
+        collateral_eth1Call.amount += 1 ether;
+
+        uint256 eth1CallId = optionFactory.createOption{value: 11 ether}(
+            eth1Call,
+            collateral_eth1Call,
+            metadata_eth1Call
+        );
+
+        OptionFactory.Collateral memory collateralBefore = optionFactory
+            .getCollateralById(eth1CallId);
+
+        emit log_uint(collateralBefore.amount);
+
+        cheats.expectRevert("cannot go below 1 in collateral-to-risk ratio");
+        optionFactory.withdrawCollateral(eth1CallId, 2 ether);
+
+        OptionFactory.Collateral memory collateralAfter = optionFactory
+            .getCollateralById(eth1CallId);
+
+        assertEq(collateralBefore.amount, collateralAfter.amount);
     }
 
     receive() external payable {}
