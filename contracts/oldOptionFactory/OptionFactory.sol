@@ -3,11 +3,9 @@ pragma solidity 0.8.13;
 
 import "openzeppelin-contracts/contracts/token/ERC1155/ERC1155.sol";
 import "openzeppelin-contracts/contracts/token/ERC1155/extensions/ERC1155URIStorage.sol";
-import "openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
-import "openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-contract OptionFactory is ERC721URIStorage {
+contract OptionFactory is ERC1155URIStorage {
     uint256 public currentOptionId;
 
     mapping(uint256 => Option) public optionById;
@@ -24,9 +22,10 @@ contract OptionFactory is ERC721URIStorage {
     struct Collateral {
         address priceFeed;
         uint256 amount;
+        uint256 mintedLongs;
     }
 
-    constructor() ERC721("nejm", "smbl") {
+    constructor() ERC1155("") {
         currentOptionId = 0;
     }
 
@@ -39,8 +38,8 @@ contract OptionFactory is ERC721URIStorage {
         collateralById[currentOptionId] = collateral;
 
         optionById[currentOptionId] = option;
-        _safeMint(msg.sender, currentOptionId);
-        _setTokenURI(currentOptionId, metadataURI);
+        _mint(msg.sender, currentOptionId, collateral.mintedLongs, "");
+        _setURI(currentOptionId, metadataURI);
 
         return currentOptionId++;
     }
@@ -65,8 +64,10 @@ contract OptionFactory is ERC721URIStorage {
         require(sent, "failed ether transfer");
     }
 
-    function exerciseOption(uint256 optionId) public {
-        require(ownerOf(optionId) == msg.sender, "only owner can exercise");
+    function exerciseOption(uint256 optionId, uint256 amount) public {
+        // msg.sender needs to hold the corresponding nft
+        uint256 balance = balanceOf(msg.sender, optionId);
+        require(balance >= amount, "too small balance");
 
         Option memory option = getOptionById(optionId);
 
@@ -78,10 +79,10 @@ contract OptionFactory is ERC721URIStorage {
             option.underlyingPriceFeed
         ).latestRoundData();
 
-        uint256 total = option.underlyingAmount;
+        uint256 total = option.underlyingAmount * amount;
 
         // burn the exercised options
-        _burn(optionId);
+        _burn(msg.sender, optionId, amount);
 
         // settle in cash
         (bool sent, ) = msg.sender.call{value: total}("");
@@ -103,7 +104,9 @@ contract OptionFactory is ERC721URIStorage {
             collateral.priceFeed
         ).latestRoundData();
 
-        int256 riskUsd = int256(option.underlyingAmount) * underlyingPrice;
+        int256 riskUsd = int256(option.underlyingAmount) *
+            int256(collateral.mintedLongs) *
+            underlyingPrice;
         int256 collateralUsd = int256(collateral.amount) * collateralPrice;
 
         return (collateralUsd * 10**3) / riskUsd;

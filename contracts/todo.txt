@@ -2,12 +2,20 @@
 
 
 
-- deploy on rinkeby
-- make it possible to create
+user should be able to
+on exchange:
+- list (makerAsk)
+- bid (makerBid)
+- sell (takerAsk)
+- buy (takerBid)
 
-- design active position page
-- design buy option page
+
+on factory
+- create
+- exercise
+- add collateral
+- withdraw collateral
 
 
-- do stuff with wagmi
+
   

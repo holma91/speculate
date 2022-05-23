@@ -133,11 +133,6 @@ contract SpeculateExchange {
     function createMakerAsk(OrderTypes.MakerOrder calldata makerAsk) external {
         require(makerAsk.isOrderAsk, "order is not an ask");
         require(msg.sender == makerAsk.signer, "maker must be the sender");
-        require(
-            IERC721(makerAsk.collection).ownerOf(makerAsk.tokenId) ==
-                msg.sender,
-            "caller is not the owner"
-        );
 
         makerAskByNFT[makerAsk.collection][makerAsk.tokenId] = makerAsk;
 

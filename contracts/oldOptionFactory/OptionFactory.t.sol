@@ -65,7 +65,8 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
         // covered call
         collateral_eth1Call = OptionFactory.Collateral(
             address(ethUsdPriceFeed),
-            10 * 10**18
+            10 * 10**18,
+            10
         );
 
         metadata_eth1Call = "ipfs://bafybeiemm2araludhwycruo6j34szn3gr5jkuqycj47k67mdesgndpirbm/metadata.json";
@@ -80,7 +81,8 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
 
         collateral_btc20Call = OptionFactory.Collateral(
             address(ethUsdPriceFeed),
-            20 * 10**18 // 20 eth collateral
+            20 * 10**18, // 20 eth collateral
+            10
         );
 
         metadata_btc20Call = "ipfs://bafybeiemm2araludhwycruo6j34szn3gr5jkuqycj47k67mdesgndpirbm/metadata.json";
@@ -103,7 +105,7 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
             retrievedOption.underlyingPriceFeed
         );
         assertEq(collateral_eth1Call.priceFeed, retrievedCollateral.priceFeed);
-        assertEq(optionFactory.ownerOf(eth1CallId), address(this));
+        assertEq(optionFactory.balanceOf(address(this), eth1CallId), 10);
     }
 
     function testCanCheckIfLiquidateable() public {
@@ -141,14 +143,16 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
             collateral_btc20Call,
             metadata_btc20Call
         );
-        assertEq(optionFactory.ownerOf(long_btc20CallId), address(this));
+        assertEq(optionFactory.balanceOf(address(this), long_btc20CallId), 10);
         optionFactory.safeTransferFrom(
             address(this),
             alice,
             long_btc20CallId,
+            5,
             ""
         );
-        assertEq(optionFactory.ownerOf(long_btc20CallId), alice);
+        assertEq(optionFactory.balanceOf(address(this), long_btc20CallId), 5);
+        assertEq(optionFactory.balanceOf(alice, long_btc20CallId), 5);
     }
 
     function testCanExercise() public {
@@ -161,7 +165,7 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
         uint256 balanceMid = address(this).balance;
         assertEq(balanceStart, balanceMid + 10 ether);
 
-        assertEq(optionFactory.ownerOf(eth1CallId), address(this));
+        assertEq(optionFactory.balanceOf(address(this), eth1CallId), 10);
 
         // eth rises
         ethUsdPriceFeed.updateAnswer(4000 * 10**8);
@@ -169,9 +173,9 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
 
         // emit log_uint(address(optionFactory).balance);
 
-        optionFactory.exerciseOption(eth1CallId);
+        optionFactory.exerciseOption(eth1CallId, 10);
 
-        assertEq(optionFactory.ownerOf(eth1CallId), address(0x0));
+        assertEq(optionFactory.balanceOf(address(this), eth1CallId), 0);
 
         uint256 balanceEnd = address(this).balance;
         assertEq(balanceStart, balanceEnd);
@@ -206,6 +210,8 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
 
         OptionFactory.Collateral memory collateralBefore = optionFactory
             .getCollateralById(eth1CallId);
+
+        emit log_uint(collateralBefore.amount);
 
         optionFactory.withdrawCollateral(eth1CallId, 1 ether);
 

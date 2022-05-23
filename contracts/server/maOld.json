@@ -1,0 +1,204 @@
+{
+  "0x075c91fec12269fdb6fb2b869a1ec70a062412da": {
+    "3": {
+      "maker": "0x30429a2ffae3be74032b6add7ac4a971abad4d02",
+      "collection": "0x075c91fec12269fdb6fb2b869a1ec70a062412da",
+      "tokenId": { "type": "BigNumber", "hex": "0x03" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0x2386f26fc10000" }
+    },
+    "4": {
+      "maker": "0x30429a2ffae3be74032b6add7ac4a971abad4d02",
+      "collection": "0x075c91fec12269fdb6fb2b869a1ec70a062412da",
+      "tokenId": { "type": "BigNumber", "hex": "0x04" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0x0ed96754b5ab0000" }
+    },
+    "5": {
+      "maker": "0x30429a2ffae3be74032b6add7ac4a971abad4d02",
+      "collection": "0x075c91fec12269fdb6fb2b869a1ec70a062412da",
+      "tokenId": { "type": "BigNumber", "hex": "0x05" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0x0e27c49886e60000" }
+    },
+    "9": {
+      "maker": "0x30429a2ffae3be74032b6add7ac4a971abad4d02",
+      "collection": "0x075c91fec12269fdb6fb2b869a1ec70a062412da",
+      "tokenId": { "type": "BigNumber", "hex": "0x09" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0x2386f26fc10000" }
+    },
+    "11": {
+      "maker": "0x30429a2ffae3be74032b6add7ac4a971abad4d02",
+      "collection": "0x075c91fec12269fdb6fb2b869a1ec70a062412da",
+      "tokenId": { "type": "BigNumber", "hex": "0x0b" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0x2386f26fc10000" }
+    },
+    "12": {
+      "maker": "0x30429a2ffae3be74032b6add7ac4a971abad4d02",
+      "collection": "0x075c91fec12269fdb6fb2b869a1ec70a062412da",
+      "tokenId": { "type": "BigNumber", "hex": "0x0c" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0x2386f26fc10000" }
+    },
+    "15": {
+      "maker": "0x30429a2ffae3be74032b6add7ac4a971abad4d02",
+      "collection": "0x075c91fec12269fdb6fb2b869a1ec70a062412da",
+      "tokenId": { "type": "BigNumber", "hex": "0x0f" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0x2386f26fc10000" }
+    },
+    "16": {
+      "maker": "0x30429a2ffae3be74032b6add7ac4a971abad4d02",
+      "collection": "0x075c91fec12269fdb6fb2b869a1ec70a062412da",
+      "tokenId": { "type": "BigNumber", "hex": "0x10" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0x2386f26fc10000" }
+    },
+    "18": {
+      "maker": "0x30429a2ffae3be74032b6add7ac4a971abad4d02",
+      "collection": "0x075c91fec12269fdb6fb2b869a1ec70a062412da",
+      "tokenId": { "type": "BigNumber", "hex": "0x12" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0x2386f26fc10000" }
+    },
+    "19": {
+      "maker": "0x30429a2ffae3be74032b6add7ac4a971abad4d02",
+      "collection": "0x075c91fec12269fdb6fb2b869a1ec70a062412da",
+      "tokenId": { "type": "BigNumber", "hex": "0x13" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0x2386f26fc10000" }
+    },
+    "21": {
+      "maker": "0x30429a2ffae3be74032b6add7ac4a971abad4d02",
+      "collection": "0x075c91fec12269fdb6fb2b869a1ec70a062412da",
+      "tokenId": { "type": "BigNumber", "hex": "0x15" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0x2386f26fc10000" }
+    },
+    "22": {
+      "maker": "0x30429a2ffae3be74032b6add7ac4a971abad4d02",
+      "collection": "0x075c91fec12269fdb6fb2b869a1ec70a062412da",
+      "tokenId": { "type": "BigNumber", "hex": "0x16" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0xf8b0a10e470000" }
+    },
+    "23": {
+      "maker": "0x30429a2ffae3be74032b6add7ac4a971abad4d02",
+      "collection": "0x075c91fec12269fdb6fb2b869a1ec70a062412da",
+      "tokenId": { "type": "BigNumber", "hex": "0x17" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0x2386f26fc10000" }
+    },
+    "24": {
+      "maker": "0x30429a2ffae3be74032b6add7ac4a971abad4d02",
+      "collection": "0x075c91fec12269fdb6fb2b869a1ec70a062412da",
+      "tokenId": { "type": "BigNumber", "hex": "0x18" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0xf8b0a10e470000" }
+    },
+    "25": {
+      "maker": "0x30429a2ffae3be74032b6add7ac4a971abad4d02",
+      "collection": "0x075c91fec12269fdb6fb2b869a1ec70a062412da",
+      "tokenId": { "type": "BigNumber", "hex": "0x19" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0x2386f26fc10000" }
+    },
+    "27": {
+      "maker": "0x30429a2ffae3be74032b6add7ac4a971abad4d02",
+      "collection": "0x075c91fec12269fdb6fb2b869a1ec70a062412da",
+      "tokenId": { "type": "BigNumber", "hex": "0x1b" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0x2386f26fc10000" }
+    },
+    "28": {
+      "maker": "0x30429a2ffae3be74032b6add7ac4a971abad4d02",
+      "collection": "0x075c91fec12269fdb6fb2b869a1ec70a062412da",
+      "tokenId": { "type": "BigNumber", "hex": "0x1c" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0x2386f26fc10000" }
+    },
+    "31": {
+      "maker": "0x30429a2ffae3be74032b6add7ac4a971abad4d02",
+      "collection": "0x075c91fec12269fdb6fb2b869a1ec70a062412da",
+      "tokenId": { "type": "BigNumber", "hex": "0x1f" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0x2386f26fc10000" }
+    },
+    "32": {
+      "maker": "0x30429a2ffae3be74032b6add7ac4a971abad4d02",
+      "collection": "0x075c91fec12269fdb6fb2b869a1ec70a062412da",
+      "tokenId": { "type": "BigNumber", "hex": "0x20" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0x2386f26fc10000" }
+    },
+    "34": {
+      "maker": "0x30429a2ffae3be74032b6add7ac4a971abad4d02",
+      "collection": "0x075c91fec12269fdb6fb2b869a1ec70a062412da",
+      "tokenId": { "type": "BigNumber", "hex": "0x22" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0x2386f26fc10000" }
+    },
+    "38": {
+      "maker": "0xb06903728e09748e3d941b83f1657b147ba045d2",
+      "collection": "0x075c91fec12269fdb6fb2b869a1ec70a062412da",
+      "tokenId": { "type": "BigNumber", "hex": "0x26" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0x2386f26fc10000" }
+    }
+  },
+  "0xf5de760f2e916647fd766b4ad9e85ff943ce3a2b": {
+    "524695": {
+      "maker": "0x30429a2ffae3be74032b6add7ac4a971abad4d02",
+      "collection": "0xf5de760f2e916647fd766b4ad9e85ff943ce3a2b",
+      "tokenId": { "type": "BigNumber", "hex": "0x080197" },
+      "currency": "0xd00ae08403b9bbb9124bb305c09058e32c39a48c",
+      "strategy": "0x6efcb3fd4b8da690e1689e224fa3f44a0909a696",
+      "amount": { "type": "BigNumber", "hex": "0x01" },
+      "price": { "type": "BigNumber", "hex": "0x2386f26fc10000" }
+    }
+  }
+}
