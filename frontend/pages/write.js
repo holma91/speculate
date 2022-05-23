@@ -126,7 +126,6 @@ export default function Write() {
       expiry: template.expiry,
       collateral: 1,
       premium: template.premium,
-      numberOfOptions: 1,
     },
 
     validationSchema: Yup.object({
@@ -333,15 +332,6 @@ export default function Write() {
                 {...formik.getFieldProps('premium')}
               />
             </InputContainer>
-            <InputContainer>
-              <label htmlFor="numberOfOptions">Number of options: </label>
-              <StyledMyTextInput
-                name="numberOfOptions"
-                type="number"
-                placeholder="1"
-                {...formik.getFieldProps('numberOfOptions')}
-              />
-            </InputContainer>
           </form>
         </InnerContainer>
         <StyledArrowRightIcon></StyledArrowRightIcon>
@@ -410,18 +400,11 @@ export default function Write() {
             <p>Current ETH Price = ${trimStr(collateralPrice)}</p>
             <p>
               Current Risk = {formik.values.asset.toUpperCase()} Price x Amount
-              x Sold Longs = $0
+              = $0
             </p>
             <p>
-              Max Risk = {formik.values.asset.toUpperCase()} Price x Amount x
-              Minted Longs = $
-              {trimStr(
-                (
-                  assetPrice *
-                  formik.values.rightToBuy *
-                  formik.values.numberOfOptions
-                ).toString()
-              )}
+              Max Risk = {formik.values.asset.toUpperCase()} Price x Amount = $
+              {trimStr((assetPrice * formik.values.rightToBuy).toString())}
             </p>
             <p>
               Collateral = ETH Price x Deposit = $

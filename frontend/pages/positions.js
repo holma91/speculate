@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAccount } from 'wagmi';
+import { ethers } from 'ethers';
 // WARNING: IF THE LINE BELOW IS REMOVED IT WONT COMPILE,
 // because of "ReferenceError: regeneratorRuntime is not defined"
 import regeneratorRuntime from 'regenerator-runtime'; // eslint-disable-line no-unused-vars
@@ -12,6 +13,7 @@ import Table, {
 import Position from '../components/Position';
 import { rinkeby } from '../utils/addresses';
 import { NormalView, NFTView } from '../components/OptionViews';
+import SpeculateExchange from '../../contracts/out/SpeculateExchange.sol/SpeculateExchange.json';
 
 const getShorts = () => {
   const data = [
@@ -76,6 +78,7 @@ const getShorts = () => {
 };
 
 function Positions() {
+  const [exchangeContract, setExchangeContract] = useState(null);
   const [makerAsks, setMakerAsks] = useState([]);
   const [makerBids, setMakerBids] = useState([]);
   const [nfts, setNfts] = useState([]);
@@ -112,9 +115,40 @@ function Positions() {
       let filteredNFTs = receivedNFTs.filter((nft) => nft.metadata);
 
       filteredNFTs = filteredNFTs.map((nft) => {
+        let listed = false;
+        let listPrice = '';
+        let bidded = false;
+        let highestBid = '';
+
+        if (
+          makerAsks[nft.token_address] &&
+          makerAsks[nft.token_address][nft.token_id]
+        ) {
+          // makerAsk exists, nft is listed
+          listed = true;
+          listPrice = ethers.utils.formatEther(
+            makerAsks[nft.token_address][nft.token_id].price
+          );
+        }
+
+        if (
+          makerBids[nft.token_address] &&
+          makerBids[nft.token_address][nft.token_id]
+        ) {
+          // makerBid exists, nft have offer(s)
+          bidded = true;
+          highestBid = ethers.utils.formatEther(
+            makerBids[nft.token_address][nft.token_id].price
+          );
+        }
+
         return {
           ...nft,
           metadata: JSON.parse(nft.metadata),
+          listed,
+          listPrice,
+          bidded,
+          highestBid,
         };
       });
 
@@ -237,10 +271,43 @@ function Positions() {
     setClickedPosition(position);
   };
 
+  useEffect(() => {
+    const { ethereum } = window;
+    if (ethereum) {
+      const provider = new ethers.providers.Web3Provider(ethereum);
+      const signer = provider.getSigner();
+      let contract = new ethers.Contract(
+        rinkeby.speculateExchange,
+        SpeculateExchange.abi,
+        signer
+      );
+      setExchangeContract(contract);
+    } else {
+      console.log('ethereum object not found');
+    }
+  }, []);
+
   const listOption = async (collectionAddress, collectionId) => {
     const { ethereum } = window;
     if (ethereum) {
-      console.log('hey');
+      const makerAsk = {
+        isOrderAsk: true,
+        signer: ethereum.selectedAddress,
+        collection: collectionAddress,
+        price: ethers.BigNumber.from(ethers.utils.parseEther('0.001')),
+        tokenId: collectionId,
+        amount: 1,
+        strategy: rinkeby.strategy,
+        currency: rinkeby.weth,
+        startTime: 1651301377,
+        endTime: 1660995560,
+      };
+
+      let tx = await exchangeContract.createMakerAsk(makerAsk, {
+        gasLimit: 500000,
+      });
+      await tx.wait();
+      console.log(tx);
     } else {
       console.log('ethereum object not found');
     }
