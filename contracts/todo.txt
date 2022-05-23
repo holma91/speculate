@@ -1,25 +1,13 @@
-create user interface for fast nft marketplace
-
-listing (makerAsk)
-unlisting (undo makerAsk)
-bidding (makerBid)
-cancel bid (undo makerBid)
-buying (takerBid)
-selling (takerAsk)
-
-
-
-get listing
-- query the server
 
 
 
 
+- deploy on rinkeby
+- make it possible to create
 
-todo in contract
-- events
-  - makerOrders
+- design active position page
+- design buy option page
 
-- remove makerAsks after match
-  - overwrite with empty order
+
+- do stuff with wagmi
   

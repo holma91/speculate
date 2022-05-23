@@ -38,10 +38,12 @@ contract OptionFactoryTest is DSTest, ERC1155Holder {
     OptionFactory internal optionFactory;
     MockV3Aggregator internal btcUsdPriceFeed;
     MockV3Aggregator internal ethUsdPriceFeed;
-    OptionFactory.Option internal eth4Call;
-    OptionFactory.Option internal btc50Call;
-    OptionFactory.Collateral internal collateral_eth4Call;
-    OptionFactory.Collateral internal collateral_btc50Call;
+    OptionFactory.Option internal eth1Call;
+    OptionFactory.Option internal btc20Call;
+    OptionFactory.Collateral internal collateral_eth1Call;
+    OptionFactory.Collateral internal collateral_btc20Call;
+    string internal metadata_eth1Call;
+    string internal metadata_btc20Call;
 
     function setUp() public {
         alice = address(0x1337);
@@ -51,80 +53,87 @@ contract OptionFactoryTest is DSTest, ERC1155Holder {
         btcUsdPriceFeed = new MockV3Aggregator(8, 40_000 * 10**8);
         ethUsdPriceFeed = new MockV3Aggregator(8, 3_000 * 10**8);
 
-        eth4Call = OptionFactory.Option(
+        eth1Call = OptionFactory.Option(
             address(ethUsdPriceFeed),
             1 * 10**18,
             true,
-            4_000 * 10**8,
+            1_000 * 10**8,
             1_000
         );
 
         // covered call
-        collateral_eth4Call = OptionFactory.Collateral(
+        collateral_eth1Call = OptionFactory.Collateral(
             address(ethUsdPriceFeed),
             10 * 10**18,
             10
         );
 
-        btc50Call = OptionFactory.Option(
+        metadata_eth1Call = "ipfs://bafybeiemm2araludhwycruo6j34szn3gr5jkuqycj47k67mdesgndpirbm/metadata.json";
+
+        btc20Call = OptionFactory.Option(
             address(btcUsdPriceFeed),
             0.1 * 10**18,
             true,
-            50_000 * 10**8,
+            20_000 * 10**8,
             1_000
         );
 
-        collateral_btc50Call = OptionFactory.Collateral(
+        collateral_btc20Call = OptionFactory.Collateral(
             address(ethUsdPriceFeed),
             20 * 10**18, // 20 eth collateral
             10
         );
+
+        metadata_btc20Call = "ipfs://bafybeiemm2araludhwycruo6j34szn3gr5jkuqycj47k67mdesgndpirbm/metadata.json";
     }
 
     function testCanCreateOption() public {
-        uint256 eth4CallId = optionFactory.createOption{value: 10 ether}(
-            eth4Call,
-            collateral_eth4Call
+        uint256 eth1CallId = optionFactory.createOption{value: 10 ether}(
+            eth1Call,
+            collateral_eth1Call,
+            metadata_eth1Call
         );
         OptionFactory.Option memory retrievedOption = optionFactory
-            .getOptionById(eth4CallId);
+            .getOptionById(eth1CallId);
 
         OptionFactory.Collateral memory retrievedCollateral = optionFactory
-            .getCollateralById(eth4CallId);
+            .getCollateralById(eth1CallId);
 
         assertEq(
-            eth4Call.underlyingPriceFeed,
+            eth1Call.underlyingPriceFeed,
             retrievedOption.underlyingPriceFeed
         );
-        assertEq(collateral_eth4Call.priceFeed, retrievedCollateral.priceFeed);
-        assertEq(optionFactory.balanceOf(address(this), eth4CallId), 10);
+        assertEq(collateral_eth1Call.priceFeed, retrievedCollateral.priceFeed);
+        assertEq(optionFactory.balanceOf(address(this), eth1CallId), 10);
     }
 
     function testCanCheckIfLiquidateable() public {
-        uint256 eth4CallId = optionFactory.createOption{value: 10 ether}(
-            eth4Call,
-            collateral_eth4Call
+        uint256 eth1CallId = optionFactory.createOption{value: 10 ether}(
+            eth1Call,
+            collateral_eth1Call,
+            metadata_eth1Call
         );
         cheats.expectRevert("liquidate: covered call cannot be liquidated");
-        optionFactory.canBeLiquidated(eth4CallId);
+        optionFactory.canBeLiquidated(eth1CallId);
         // ethUsdPriceFeed.updateAnswer(2500);
 
-        uint256 btc50CallId = optionFactory.createOption{value: 20 ether}(
-            btc50Call,
-            collateral_btc50Call
+        uint256 btc20CallId = optionFactory.createOption{value: 20 ether}(
+            btc20Call,
+            collateral_btc20Call,
+            metadata_btc20Call
         );
 
-        int256 CR = optionFactory.getCollateralToRiskRatio(btc50CallId);
+        int256 CR = optionFactory.getCollateralToRiskRatio(btc20CallId);
         assertEq(CR, 1500);
-        assertTrue(!optionFactory.canBeLiquidated(btc50CallId));
+        assertTrue(!optionFactory.canBeLiquidated(btc20CallId));
 
         // eth plummets against btc
         ethUsdPriceFeed.updateAnswer(2100 * 10**8);
 
-        CR = optionFactory.getCollateralToRiskRatio(btc50CallId);
+        CR = optionFactory.getCollateralToRiskRatio(btc20CallId);
         assertEq(CR, 1050);
 
-        assertTrue(optionFactory.canBeLiquidated(btc50CallId));
+        assertTrue(optionFactory.canBeLiquidated(btc20CallId));
     }
 
     // 0.1 * 10 = 1btc in risk = $40_000
@@ -132,32 +141,34 @@ contract OptionFactoryTest is DSTest, ERC1155Holder {
     // hf = 60_0000/40_000 = 1.5
 
     function testCanTransferOption() public {
-        uint256 long_btc50CallId = optionFactory.createOption{value: 20 ether}(
-            btc50Call,
-            collateral_btc50Call
+        uint256 long_btc20CallId = optionFactory.createOption{value: 20 ether}(
+            btc20Call,
+            collateral_btc20Call,
+            metadata_btc20Call
         );
-        assertEq(optionFactory.balanceOf(address(this), long_btc50CallId), 10);
+        assertEq(optionFactory.balanceOf(address(this), long_btc20CallId), 10);
         optionFactory.safeTransferFrom(
             address(this),
             alice,
-            long_btc50CallId,
+            long_btc20CallId,
             5,
             ""
         );
-        assertEq(optionFactory.balanceOf(address(this), long_btc50CallId), 5);
-        assertEq(optionFactory.balanceOf(alice, long_btc50CallId), 5);
+        assertEq(optionFactory.balanceOf(address(this), long_btc20CallId), 5);
+        assertEq(optionFactory.balanceOf(alice, long_btc20CallId), 5);
     }
 
     function testCanExercise() public {
         uint256 balanceStart = address(this).balance;
-        uint256 eth4CallId = optionFactory.createOption{value: 10 ether}(
-            eth4Call,
-            collateral_eth4Call
+        uint256 eth1CallId = optionFactory.createOption{value: 10 ether}(
+            eth1Call,
+            collateral_eth1Call,
+            metadata_eth1Call
         );
         uint256 balanceMid = address(this).balance;
         assertEq(balanceStart, balanceMid + 10 ether);
 
-        assertEq(optionFactory.balanceOf(address(this), eth4CallId), 10);
+        assertEq(optionFactory.balanceOf(address(this), eth1CallId), 10);
 
         // eth rises
         ethUsdPriceFeed.updateAnswer(4000 * 10**8);
@@ -165,9 +176,9 @@ contract OptionFactoryTest is DSTest, ERC1155Holder {
 
         // emit log_uint(address(optionFactory).balance);
 
-        optionFactory.exerciseOption(eth4CallId, 10);
+        optionFactory.exerciseOption(eth1CallId, 10);
 
-        assertEq(optionFactory.balanceOf(address(this), eth4CallId), 0);
+        assertEq(optionFactory.balanceOf(address(this), eth1CallId), 0);
 
         uint256 balanceEnd = address(this).balance;
         assertEq(balanceStart, balanceEnd);
@@ -175,6 +186,3 @@ contract OptionFactoryTest is DSTest, ERC1155Holder {
 
     receive() external payable {}
 }
-
-// creator gets 1 erc1155 that represents the sell side
-// creator gets 10 erc1155 that represent the buy side

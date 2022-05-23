@@ -29,17 +29,17 @@ contract OptionFactory is ERC1155URIStorage {
         currentOptionId = 0;
     }
 
-    function createOption(Option memory option, Collateral memory collateral)
-        public
-        payable
-        returns (uint256)
-    {
+    function createOption(
+        Option memory option,
+        Collateral memory collateral,
+        string memory metadataURI
+    ) public payable returns (uint256) {
         require(collateral.amount == msg.value, "wrong collateral amount");
         collateralById[currentOptionId] = collateral;
 
         optionById[currentOptionId] = option;
-        _mint(msg.sender, currentOptionId, collateral.mintedLongs, ""); // longs
-        // _setURI(currentOptionId, metadataURI);
+        _mint(msg.sender, currentOptionId, collateral.mintedLongs, "");
+        _setURI(currentOptionId, metadataURI);
 
         return currentOptionId++;
     }
@@ -58,7 +58,7 @@ contract OptionFactory is ERC1155URIStorage {
         (, int256 currentPrice, , , ) = AggregatorV3Interface(
             option.underlyingPriceFeed
         ).latestRoundData();
-        int256 totalValue = currentPrice * int256(amount);
+
         uint256 total = option.underlyingAmount * amount;
 
         // burn the exercised options
