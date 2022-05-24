@@ -16,6 +16,7 @@ import SmallTable, { AvatarCell } from '../../components/SmallTable';
 import { rinkeby } from '../../utils/addresses';
 import aggregatorV3Interface from '../../../contracts/out/AggregatorV3Interface.sol/AggregatorV3Interface.json';
 import SpeculateExchange from '../../../contracts/out/SpeculateExchange.sol/SpeculateExchange.json';
+import wethABI from '../../../contracts/wethABI.json';
 
 const getOffers2 = () => {
   const data = [
@@ -100,6 +101,47 @@ export default function Option() {
   const [assetPrice, setAssetPrice] = useState(0);
   const router = useRouter();
   const { id } = router.query;
+
+  const allowanceFunc = useContractRead(
+    {
+      addressOrName: rinkeby.weth,
+      contractInterface: wethABI,
+    },
+    'allowance',
+    {
+      args: [activeAccount?.address, rinkeby.speculateExchange],
+    }
+  );
+
+  console.log(allowanceFunc?.data?.toString());
+
+  const approveSpendingFunc = useContractWrite(
+    {
+      addressOrName: rinkeby.weth,
+      contractInterface: wethABI,
+    },
+    'approve'
+  );
+
+  const waitForApproveSpendingFunc = useWaitForTransaction({
+    hash: approveSpendingFunc.data?.hash,
+    onSuccess(data) {
+      // necessary to make approve button disappear after approval
+      allowanceFunc.refetch();
+    },
+  });
+
+  const buyNowFunc = useContractWrite(
+    {
+      addressOrName: rinkeby.speculateExchange,
+      contractInterface: SpeculateExchange.abi,
+    },
+    'matchAskWithTakerBid'
+  );
+
+  const waitForBuyNowFunc = useWaitForTransaction({
+    hash: buyNowFunc.data?.hash,
+  });
 
   const bidFunc = useContractWrite(
     {
@@ -488,7 +530,27 @@ export default function Option() {
 
   const buyNow = async () => {
     if (activeAccount) {
-      console.log('do buy now function later');
+      console.log(makerAsk);
+      const takerBid = {
+        isOrderAsk: false,
+        taker: activeAccount.address,
+        price: ethers.BigNumber.from(makerAsk.price),
+        tokenId: makerAsk.tokenId,
+      };
+
+      buyNowFunc.write({
+        args: [takerBid, makerAsk],
+      });
+    } else {
+      console.log('connect your wallet!');
+    }
+  };
+
+  const approveSpending = async () => {
+    if (activeAccount) {
+      approveSpendingFunc.write({
+        args: [rinkeby.speculateExchange, ethers.utils.parseEther('10000000')], // 10 million WETH
+      });
     } else {
       console.log('connect your wallet!');
     }
@@ -569,22 +631,46 @@ export default function Option() {
                           {...offerFormik.getFieldProps('until')}
                         />
                       </InputContainer>
-                      {bidFunc.isLoading ? (
-                        <>
+                      {listed && allowanceFunc?.data?.lt(makerAsk.price) ? (
+                        <ApproveDiv>
+                          {approveSpendingFunc.isLoading ? (
+                            <Button type="button" onClick={approveSpending}>
+                              Loading...
+                            </Button>
+                          ) : waitForApproveSpendingFunc.isLoading ? (
+                            <Button type="button" onClick={approveSpending}>
+                              Pending...
+                            </Button>
+                          ) : (
+                            <Button type="button" onClick={approveSpending}>
+                              Approve spending
+                            </Button>
+                          )}
+                        </ApproveDiv>
+                      ) : null}
+                      <BuyDiv>
+                        {bidFunc.isLoading ? (
                           <Button type="submit">Loading...</Button>
-                          <Button onClick={buyNow}>Buy now</Button>
-                        </>
-                      ) : waitForBidFunc.isLoading ? (
-                        <>
+                        ) : waitForBidFunc.isLoading ? (
                           <Button type="submit">Pending...</Button>
-                          <Button onClick={buyNow}>Buy now</Button>
-                        </>
-                      ) : (
-                        <>
+                        ) : (
                           <Button type="submit">Make Offer</Button>
-                          <Button onClick={buyNow}>Buy now</Button>
-                        </>
-                      )}
+                        )}
+
+                        {buyNowFunc.isLoading ? (
+                          <Button onClick={buyNow} type="button">
+                            Loading...
+                          </Button>
+                        ) : waitForBuyNowFunc.isLoading ? (
+                          <Button onClick={buyNow} type="button">
+                            Pending...
+                          </Button>
+                        ) : (
+                          <Button onClick={buyNow} type="button">
+                            Buy now
+                          </Button>
+                        )}
+                      </BuyDiv>
                     </form>
                   </>
                 )}
@@ -653,6 +739,20 @@ export default function Option() {
     </OuterContainer>
   );
 }
+
+const BuyDiv = styled.div`
+  width: 50%;
+  button {
+    width: 47%;
+  }
+`;
+const ApproveDiv = styled.div`
+  width: 50%;
+
+  button {
+    width: 97%;
+  }
+`;
 
 const StyledMyTextInput = styled.input`
   margin: 10px 0px;
