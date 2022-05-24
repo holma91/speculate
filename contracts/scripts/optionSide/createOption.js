@@ -27,7 +27,6 @@ const main = async () => {
   const collateral = {
     priceFeed: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e',
     amount: ethers.utils.parseUnits('0.01'),
-    mintedLongs: 1,
   };
 
   let svg = createSvg(option, asset);
@@ -38,15 +37,17 @@ const main = async () => {
 
   console.log('metadataURI:', metadataURI);
 
+  console.log(collateral.amount);
+
   let tx = await optionFactory.createOption(option, collateral, metadataURI, {
     value: collateral.amount,
   });
-  await tx.wait();
-  console.log('option created:', tx.hash);
-  const retrievedOption = await optionFactory.getOptionById(1);
-  const retrievedCollateral = await optionFactory.getCollateralById(1);
-  console.log(retrievedOption);
-  console.log(retrievedCollateral);
+  // await tx.wait();
+  // console.log('option created:', tx.hash);
+  // const retrievedOption = await optionFactory.getOptionById(0);
+  // const retrievedCollateral = await optionFactory.getCollateralById(0);
+  // console.log(retrievedOption);
+  // console.log(retrievedCollateral);
 };
 
 const runMain = async () => {

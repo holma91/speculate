@@ -53,7 +53,7 @@ contract OptionFactory is ERC721URIStorage {
     function withdrawCollateral(uint256 optionId, uint256 amount) public {
         Collateral storage collateral = collateralById[optionId];
         require(
-            amount < collateral.amount,
+            amount <= collateral.amount,
             "cannot withdraw more than what you have"
         );
         collateral.amount -= amount;
@@ -114,7 +114,8 @@ contract OptionFactory is ERC721URIStorage {
 
         Collateral memory collateral = collateralById[optionId];
         require(
-            option.underlyingPriceFeed != collateral.priceFeed,
+            option.underlyingPriceFeed != collateral.priceFeed &&
+                option.underlyingAmount <= collateral.amount,
             "liquidate: covered call cannot be liquidated"
         );
 

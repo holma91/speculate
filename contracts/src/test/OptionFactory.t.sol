@@ -65,14 +65,14 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
         // covered call
         collateral_eth1Call = OptionFactory.Collateral(
             address(ethUsdPriceFeed),
-            10 * 10**18
+            1 * 10**18
         );
 
         metadata_eth1Call = "ipfs://bafybeiemm2araludhwycruo6j34szn3gr5jkuqycj47k67mdesgndpirbm/metadata.json";
 
         btc20Call = OptionFactory.Option(
             address(btcUsdPriceFeed),
-            0.1 * 10**18,
+            1 * 10**18,
             true,
             20_000 * 10**8,
             1_000
@@ -87,7 +87,7 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
     }
 
     function testCanCreateOption() public {
-        uint256 eth1CallId = optionFactory.createOption{value: 10 ether}(
+        uint256 eth1CallId = optionFactory.createOption{value: 1 ether}(
             eth1Call,
             collateral_eth1Call,
             metadata_eth1Call
@@ -107,7 +107,7 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
     }
 
     function testCanCheckIfLiquidateable() public {
-        uint256 eth1CallId = optionFactory.createOption{value: 10 ether}(
+        uint256 eth1CallId = optionFactory.createOption{value: 1 ether}(
             eth1Call,
             collateral_eth1Call,
             metadata_eth1Call
@@ -123,6 +123,7 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
         );
 
         int256 CR = optionFactory.getCollateralToRiskRatio(btc20CallId);
+
         assertEq(CR, 1500);
         assertTrue(!optionFactory.canBeLiquidated(btc20CallId));
 
@@ -130,6 +131,7 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
         ethUsdPriceFeed.updateAnswer(2100 * 10**8);
 
         CR = optionFactory.getCollateralToRiskRatio(btc20CallId);
+        emit log_int(CR);
         assertEq(CR, 1050);
 
         assertTrue(optionFactory.canBeLiquidated(btc20CallId));
@@ -153,13 +155,13 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
 
     function testCanExercise() public {
         uint256 balanceStart = address(this).balance;
-        uint256 eth1CallId = optionFactory.createOption{value: 10 ether}(
+        uint256 eth1CallId = optionFactory.createOption{value: 1 ether}(
             eth1Call,
             collateral_eth1Call,
             metadata_eth1Call
         );
         uint256 balanceMid = address(this).balance;
-        assertEq(balanceStart, balanceMid + 10 ether);
+        assertEq(balanceStart, balanceMid + 1 ether);
 
         assertEq(optionFactory.ownerOf(eth1CallId), address(this));
 
@@ -171,14 +173,15 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
 
         optionFactory.exerciseOption(eth1CallId);
 
-        assertEq(optionFactory.ownerOf(eth1CallId), address(0x0));
+        cheats.expectRevert("ERC721: owner query for nonexistent token");
+        optionFactory.ownerOf(eth1CallId);
 
         uint256 balanceEnd = address(this).balance;
         assertEq(balanceStart, balanceEnd);
     }
 
     function testCanAddCollateral() public {
-        uint256 eth1CallId = optionFactory.createOption{value: 10 ether}(
+        uint256 eth1CallId = optionFactory.createOption{value: 1 ether}(
             eth1Call,
             collateral_eth1Call,
             metadata_eth1Call
@@ -198,7 +201,7 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
     function testCanWithdrawCollateral() public {
         collateral_eth1Call.amount += 1 ether;
 
-        uint256 eth1CallId = optionFactory.createOption{value: 11 ether}(
+        uint256 eth1CallId = optionFactory.createOption{value: 2 ether}(
             eth1Call,
             collateral_eth1Call,
             metadata_eth1Call
@@ -218,7 +221,7 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
     function testCannotWithdrawToARatioBelow1() public {
         collateral_eth1Call.amount += 1 ether;
 
-        uint256 eth1CallId = optionFactory.createOption{value: 11 ether}(
+        uint256 eth1CallId = optionFactory.createOption{value: 2 ether}(
             eth1Call,
             collateral_eth1Call,
             metadata_eth1Call
@@ -236,6 +239,20 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
             .getCollateralById(eth1CallId);
 
         assertEq(collateralBefore.amount, collateralAfter.amount);
+    }
+
+    function testCanGetRatio() public {
+        uint256 eth1CallId = optionFactory.createOption{value: 1 ether}(
+            eth1Call,
+            collateral_eth1Call,
+            metadata_eth1Call
+        );
+
+        int256 ratio = optionFactory.getCollateralToRiskRatio(eth1CallId);
+        assertEq(ratio, 1000);
+        optionFactory.addCollateral{value: 0.5 ether}(eth1CallId);
+        int256 ratio2 = optionFactory.getCollateralToRiskRatio(eth1CallId);
+        assertEq(ratio2, 1500);
     }
 
     receive() external payable {}
