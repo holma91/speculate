@@ -1,5 +1,10 @@
 import { useRef, useState } from 'react';
-import { useSendTransaction, useContractWrite, useContractRead } from 'wagmi';
+import {
+  useSendTransaction,
+  useContractWrite,
+  useContractRead,
+  useWaitForTransaction,
+} from 'wagmi';
 import { ethers } from 'ethers';
 import styled from 'styled-components';
 import { rinkeby } from '../utils/addresses';
@@ -20,38 +25,74 @@ export function readContract() {
 }
 
 export default function WriteContract() {
-  const { txData, isIdle, isErrorTx, isLoadingTx, isSuccess, sendTransaction } =
-    useSendTransaction({
-      request: {
-        to: 'backe.eth',
-        value: ethers.BigNumber.from('1000000000000000000'), // 1 ETH
-      },
-    });
+  const tx = useSendTransaction({
+    request: {
+      to: 'backe.eth',
+      value: ethers.BigNumber.from('10000000000000000'), // 0.01 ETH
+    },
+  });
 
-  const { cwData, isErrorCw, isLoadingCw, write } = useContractWrite(
+  const wethContract = useContractWrite(
     {
       addressOrName: '0xc778417E063141139Fce010982780140Aa0cD5Ab',
       contractInterface: wethABI,
     },
     'deposit',
     {
-      overrides: { value: ethers.BigNumber.from('1000000000000000000') },
+      overrides: { value: ethers.BigNumber.from('100000000000000000') },
     }
   );
 
+  const waitForTransaction = useWaitForTransaction({
+    hash: wethContract.data?.hash,
+  });
+
+  const optionContract = useContractRead(
+    {
+      addressOrName: rinkeby.optionFactory,
+      contractInterface: optionFactory.abi,
+    },
+    'getOptionById',
+    {
+      args: 1,
+    }
+  );
+
+  console.log(optionContract.data);
+
   return (
     <div>
-      {isIdle && (
-        <Button disabled={isLoadingTx} onClick={() => sendTransaction()}>
+      {tx.isIdle && (
+        <Button disabled={tx.isLoading} onClick={() => tx.sendTransaction()}>
           Send Transaction
         </Button>
       )}
-      {isLoadingTx && <div>Check Wallet</div>}
-      {isSuccess && <div>Transaction: {JSON.stringify(txData)}</div>}
-      {isErrorTx && <div>Error sending transaction</div>}
-      <button disabled={isLoadingCw} onClick={() => write()}>
-        write
-      </button>
+      {tx.isLoading && <div>Check Wallet</div>}
+      {tx.isSuccess && <div>Transaction: {JSON.stringify(tx.data)}</div>}
+      {tx.isError && <div>Error sending transaction</div>}
+      {wethContract.isLoading ? (
+        <Button>loading...</Button>
+      ) : waitForTransaction.isLoading ? (
+        <Button>pending...</Button>
+      ) : (
+        <Button
+          disabled={wethContract.isLoading}
+          onClick={() =>
+            wethContract.write({
+              overrides: { value: ethers.BigNumber.from('5000000000000000') },
+            })
+          }
+        >
+          write
+        </Button>
+      )}
+      <Button
+        onClick={() =>
+          optionContract.refetch({ args: Math.floor(Math.random() * 20) })
+        }
+      >
+        getOption
+      </Button>
     </div>
   );
 }

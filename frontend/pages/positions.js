@@ -144,9 +144,14 @@ function Positions() {
         ) {
           // makerBid exists, nft have offer(s)
           bidded = true;
-          highestBid = ethers.utils.formatEther(
-            makerBids[nft.token_address][nft.token_id].price
-          );
+          let max = ethers.BigNumber.from(0);
+          for (const bid of makerBids[nft.token_address][nft.token_id]) {
+            let cur = ethers.BigNumber.from(bid.price);
+            if (cur.gt(max)) {
+              max = cur;
+            }
+          }
+          highestBid = ethers.utils.formatEther(max.toString());
         }
 
         return {

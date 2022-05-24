@@ -1,6 +1,13 @@
 import { useMemo, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { useAccount } from 'wagmi';
+import {
+  useSendTransaction,
+  useContractWrite,
+  useContractRead,
+  useWaitForTransaction,
+  useAccount,
+  useContractEvent,
+} from 'wagmi';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { ethers } from 'ethers';
@@ -94,6 +101,50 @@ export default function Option() {
   const [assetPrice, setAssetPrice] = useState(0);
   const router = useRouter();
   const { id } = router.query;
+
+  const listFunc = useContractWrite(
+    {
+      addressOrName: rinkeby.speculateExchange,
+      contractInterface: SpeculateExchange.abi,
+    },
+    'createMakerAsk'
+  );
+
+  const waitForListFunc = useWaitForTransaction({
+    hash: listFunc.data?.hash,
+  });
+
+  useContractEvent(
+    {
+      addressOrName: rinkeby.speculateExchange,
+      contractInterface: SpeculateExchange.abi,
+    },
+    'MakerAsk',
+    ([
+      maker,
+      collection,
+      tokenId,
+      currency,
+      strategy,
+      amount,
+      price,
+      endTime,
+    ]) => {
+      console.log(tokenId.toString());
+      const makerAsk = {
+        maker: maker.toLowerCase(),
+        collection: collection.toLowerCase(),
+        tokenId: tokenId.toString(),
+        currency: currency.toLowerCase(),
+        strategy: strategy.toLowerCase(),
+        amount: amount.toString(),
+        price: price.toString(),
+        endTime: endTime.toString(),
+      };
+      setMakerAsk(makerAsk);
+      setListed(true);
+    }
+  );
 
   const getOffers = () => {
     let processedOffers = makerBids.map((bid) => {
@@ -277,11 +328,9 @@ export default function Option() {
         endTime: 1660995560,
       };
 
-      let tx = await exchangeContract.createMakerAsk(makerAsk, {
-        gasLimit: 500000,
+      listFunc.write({
+        args: [makerAsk],
       });
-      await tx.wait();
-      console.log(tx);
     } else {
       console.log('ethereum object not found');
     }
@@ -396,7 +445,13 @@ export default function Option() {
                           {...formik.getFieldProps('until')}
                         />
                       </InputContainer>
-                      <Button type="submit">List Option</Button>
+                      {listFunc.isLoading ? (
+                        <Button type="submit">Loading...</Button>
+                      ) : waitForListFunc.isLoading ? (
+                        <Button type="submit">Pending...</Button>
+                      ) : (
+                        <Button type="submit">List Option</Button>
+                      )}
                     </form>
                   </>
                 ) : (
