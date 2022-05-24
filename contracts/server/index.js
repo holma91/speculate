@@ -31,7 +31,16 @@ fs.readFile('./server/makerBids.json', 'utf8', (_, storedMakerBids) => {
 
 speculateExchange.on(
   'MakerAsk',
-  async (maker, collection, tokenId, currency, strategy, amount, price) => {
+  async (
+    maker,
+    collection,
+    tokenId,
+    currency,
+    strategy,
+    amount,
+    price,
+    endTime
+  ) => {
     console.log('MakerAsk received');
     collection = collection.toLowerCase();
     if (!makerAsks[collection]) {
@@ -46,6 +55,7 @@ speculateExchange.on(
       strategy: strategy.toLowerCase(),
       amount,
       price,
+      endTime,
     };
 
     fs.writeFile(
@@ -60,21 +70,47 @@ speculateExchange.on(
 
 speculateExchange.on(
   'MakerBid',
-  async (maker, collection, tokenId, currency, strategy, amount, price) => {
+  async (
+    maker,
+    collection,
+    tokenId,
+    currency,
+    strategy,
+    amount,
+    price,
+    endTime
+  ) => {
     console.log('MakerBid received');
     collection = collection.toLowerCase();
     if (!makerBids[collection]) {
       makerBids[collection] = {};
     }
-    makerBids[collection][tokenId] = {
-      maker: maker.toLowerCase(),
-      collection: collection.toLowerCase(),
-      tokenId,
-      currency: currency.toLowerCase(),
-      strategy: strategy.toLowerCase(),
-      amount,
-      price,
-    };
+
+    if (!makerBids[collection][tokenId]) {
+      makerBids[collection][tokenId] = [
+        {
+          maker: maker.toLowerCase(),
+          collection: collection.toLowerCase(),
+          tokenId,
+          currency: currency.toLowerCase(),
+          strategy: strategy.toLowerCase(),
+          amount,
+          price,
+          endTime,
+        },
+      ];
+    } else {
+      makerBids[collection][tokenId].push({
+        maker: maker.toLowerCase(),
+        collection: collection.toLowerCase(),
+        tokenId,
+        currency: currency.toLowerCase(),
+        strategy: strategy.toLowerCase(),
+        amount,
+        price,
+        endTime,
+      });
+    }
 
     fs.writeFile(
       './server/makerBids.json',

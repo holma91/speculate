@@ -247,7 +247,13 @@ contract SpeculateExchangeTest is DSTest {
         );
         speculateExchange.createMakerBid(makerBid);
         OrderTypes.MakerOrder memory retrievedMakerBid = speculateExchange
-            .getMakerBid(makerBid.collection, makerBid.tokenId);
+            .getMakerBid(
+                makerBid.collection,
+                makerBid.tokenId,
+                makerBid.signer
+            );
+        emit log_address(makerBid.signer);
+        emit log_address(retrievedMakerBid.signer);
         assertEq(makerBid.signer, retrievedMakerBid.signer);
         assertEq(makerBid.strategy, retrievedMakerBid.strategy);
         assertEq(makerBid.endTime, retrievedMakerBid.endTime);
@@ -268,7 +274,11 @@ contract SpeculateExchangeTest is DSTest {
 
         speculateExchange.createMakerBid(makerBid2);
         OrderTypes.MakerOrder memory retrievedMakerBid2 = speculateExchange
-            .getMakerBid(makerBid.collection, makerBid.tokenId);
+            .getMakerBid(
+                makerBid2.collection,
+                makerBid2.tokenId,
+                makerBid2.signer
+            );
 
         assertEq(makerBid2.signer, retrievedMakerBid2.signer);
         assertEq(makerBid2.strategy, retrievedMakerBid2.strategy);
@@ -276,7 +286,7 @@ contract SpeculateExchangeTest is DSTest {
         cheats.stopPrank();
     }
 
-    function testCanOverBidSomeoneElse() public {
+    function testCanMultipleAddressesBid() public {
         OrderTypes.MakerOrder memory makerBid = OrderTypes.MakerOrder(
             false,
             alice,
@@ -292,7 +302,6 @@ contract SpeculateExchangeTest is DSTest {
         cheats.prank(alice);
         speculateExchange.createMakerBid(makerBid);
 
-        // can overwrite previous bid with higher price
         OrderTypes.MakerOrder memory makerBid2 = OrderTypes.MakerOrder(
             false,
             bob,
@@ -309,73 +318,21 @@ contract SpeculateExchangeTest is DSTest {
         speculateExchange.createMakerBid(makerBid2);
 
         OrderTypes.MakerOrder memory retrievedMakerBid = speculateExchange
-            .getMakerBid(makerBid.collection, makerBid.tokenId);
-
-        assertEq(makerBid2.signer, retrievedMakerBid.signer);
-        assertEq(makerBid2.price, retrievedMakerBid.price);
-
-        // can overwrite previous bid when previous bid is stale
-        OrderTypes.MakerOrder memory makerBid3 = OrderTypes.MakerOrder(
-            false,
-            alice,
-            address(collection),
-            0.01 ether,
-            1,
-            1,
-            address(strategyStandardSaleForFixedPrice),
-            address(WETH),
-            1650718512,
-            1650719920
-        );
-        cheats.warp(1650719913);
-        cheats.prank(alice);
-        speculateExchange.createMakerBid(makerBid3);
+            .getMakerBid(
+                makerBid.collection,
+                makerBid.tokenId,
+                makerBid.signer
+            );
 
         OrderTypes.MakerOrder memory retrievedMakerBid2 = speculateExchange
-            .getMakerBid(makerBid.collection, makerBid.tokenId);
+            .getMakerBid(
+                makerBid2.collection,
+                makerBid2.tokenId,
+                makerBid2.signer
+            );
 
-        assertEq(makerBid3.signer, retrievedMakerBid2.signer);
-        assertEq(makerBid3.price, retrievedMakerBid2.price);
-    }
-
-    function testCannotOverBidWithLowerPrice() public {
-        OrderTypes.MakerOrder memory makerBid = OrderTypes.MakerOrder(
-            false,
-            alice,
-            address(collection),
-            0.01 ether,
-            1,
-            1,
-            address(strategyStandardSaleForFixedPrice),
-            address(WETH),
-            1650718512,
-            1650719912
-        );
-        cheats.prank(alice);
-        speculateExchange.createMakerBid(makerBid);
-
-        // cannot overwrite previous bid with lower or same price
-        OrderTypes.MakerOrder memory makerBid2 = OrderTypes.MakerOrder(
-            false,
-            bob,
-            address(collection),
-            0.01 ether,
-            1,
-            1,
-            address(strategyStandardSaleForFixedPrice),
-            address(WETH),
-            1650718512,
-            1650719912
-        );
-        cheats.prank(bob);
-        cheats.expectRevert("cannot overwrite previous bid");
-        speculateExchange.createMakerBid(makerBid2);
-
-        OrderTypes.MakerOrder memory retrievedMakerBid = speculateExchange
-            .getMakerBid(makerBid.collection, makerBid.tokenId);
-
-        assertEq(makerBid.signer, retrievedMakerBid.signer);
         assertEq(makerBid.price, retrievedMakerBid.price);
+        assertEq(makerBid2.signer, retrievedMakerBid2.signer);
     }
 
     function testCanCanMatchMakerAskWithTakerBid() public {
@@ -462,17 +419,11 @@ contract SpeculateExchangeTest is DSTest {
             0x0000000000000000000000000000000000000000
         );
 
+        // makerBid is not deleted
         OrderTypes.MakerOrder memory oldMakerBid = speculateExchange
-            .getMakerBid(address(collection), 1);
+            .getMakerBid(address(collection), 1, alice);
 
-        assertEq(
-            oldMakerBid.signer,
-            0x0000000000000000000000000000000000000000
-        );
-        assertEq(
-            oldMakerBid.collection,
-            0x0000000000000000000000000000000000000000
-        );
+        assertEq(oldMakerBid.signer, alice);
     }
 
     function testCanMatchMakerBidWithTakerAsk() public {

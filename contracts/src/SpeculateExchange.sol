@@ -47,8 +47,8 @@ contract SpeculateExchange {
 
     mapping(address => mapping(uint256 => OrderTypes.MakerOrder))
         public makerAskByNFT;
-    mapping(address => mapping(uint256 => OrderTypes.MakerOrder))
-        public makerBidByNFT;
+    mapping(address => mapping(uint256 => mapping(address => OrderTypes.MakerOrder)))
+        public makerBidByNFTAndMaker;
 
     event TakerBid(
         address indexed taker,
@@ -124,12 +124,12 @@ contract SpeculateExchange {
         return makerAskByNFT[collection][id];
     }
 
-    function getMakerBid(address collection, uint256 id)
-        public
-        view
-        returns (OrderTypes.MakerOrder memory)
-    {
-        return makerBidByNFT[collection][id];
+    function getMakerBid(
+        address collection,
+        uint256 id,
+        address maker
+    ) public view returns (OrderTypes.MakerOrder memory) {
+        return makerBidByNFTAndMaker[collection][id][maker];
     }
 
     function createMakerAsk(OrderTypes.MakerOrder calldata makerAsk) external {
@@ -153,17 +153,19 @@ contract SpeculateExchange {
     function createMakerBid(OrderTypes.MakerOrder calldata makerBid) external {
         require(!makerBid.isOrderAsk, "order is not a bid");
         require(msg.sender == makerBid.signer, "maker must be the sender");
-        require(
-            makerBid.price >
-                makerBidByNFT[makerBid.collection][makerBid.tokenId].price ||
-                block.timestamp >
-                makerBidByNFT[makerBid.collection][makerBid.tokenId].endTime,
-            "cannot overwrite previous bid"
-        );
+        // require(
+        //     makerBid.price >
+        //         makerBidByNFT[makerBid.collection][makerBid.tokenId].price ||
+        //         block.timestamp >
+        //         makerBidByNFT[makerBid.collection][makerBid.tokenId].endTime,
+        //     "cannot overwrite previous bid"
+        // );
         // check that msg.sender have the funds?
         // check that the nft exists?
 
-        makerBidByNFT[makerBid.collection][makerBid.tokenId] = makerBid;
+        makerBidByNFTAndMaker[makerBid.collection][makerBid.tokenId][
+            makerBid.signer
+        ] = makerBid;
 
         emit MakerBid(
             makerBid.signer,
@@ -232,7 +234,6 @@ contract SpeculateExchange {
             takerBid.price
         );
 
-        delete makerBidByNFT[makerAsk.collection][makerAsk.tokenId];
         delete makerAskByNFT[makerAsk.collection][makerAsk.tokenId];
     }
 
@@ -297,7 +298,9 @@ contract SpeculateExchange {
         );
 
         delete makerAskByNFT[makerBid.collection][makerBid.tokenId];
-        delete makerBidByNFT[makerBid.collection][makerBid.tokenId];
+        delete makerBidByNFTAndMaker[makerBid.collection][makerBid.tokenId][
+            makerBid.signer
+        ];
     }
 
     /**

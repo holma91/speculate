@@ -1,12 +1,19 @@
 const ethers = require('ethers');
 const SpeculateExchange = require('../../out/SpeculateExchange.sol/SpeculateExchange.json');
 const WETH_ABI = require('../../wethABI.json');
-const { fuji, mumbai, rinkeby, ADDRESS3, ADDRESS2 } = require('../addresses');
+const {
+  fuji,
+  mumbai,
+  rinkeby,
+  ADDRESS3,
+  ADDRESS2,
+  ADDRESS4,
+} = require('../addresses');
 require('dotenv').config();
 
 const main = async () => {
   provider = new ethers.providers.JsonRpcProvider(process.env.rpc_rinkeby);
-  const wallet = new ethers.Wallet(process.env.pk3, provider);
+  const wallet = new ethers.Wallet(process.env.pk4, provider);
   const factory = new ethers.ContractFactory(
     SpeculateExchange.abi,
     SpeculateExchange.bytecode,
@@ -15,7 +22,7 @@ const main = async () => {
 
   const speculateExchange = factory.attach(rinkeby.speculateExchange);
 
-  const BID = ethers.BigNumber.from(ethers.utils.parseEther('0.05'));
+  const BID = ethers.BigNumber.from(ethers.utils.parseEther('0.03'));
 
   const weth = new ethers.Contract(rinkeby.weth, WETH_ABI, wallet);
   let approveTx = await weth.approve(
@@ -27,7 +34,7 @@ const main = async () => {
 
   const makerBid = {
     isOrderAsk: false,
-    signer: ADDRESS3,
+    signer: ADDRESS4,
     collection: rinkeby.optionFactory,
     price: BID,
     tokenId: 2,
@@ -42,7 +49,7 @@ const main = async () => {
     gasLimit: 500000,
   });
   await tx.wait();
-  console.log(tx);
+  console.log(tx.hash);
 };
 
 const runMain = async () => {
