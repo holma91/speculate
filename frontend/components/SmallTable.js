@@ -305,7 +305,7 @@ const TableDivContainer = styled.div`
     white-space: nowrap; // whitespace-nowrap
     color: rgb(107 114 128);
     font-weight: 300;
-    text-transform: uppercase;
+    /* text-transform: uppercase; */
   }
 
   tr {

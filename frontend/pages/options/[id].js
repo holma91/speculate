@@ -10,7 +10,7 @@ import { rinkeby } from '../../utils/addresses';
 import aggregatorV3Interface from '../../../contracts/out/AggregatorV3Interface.sol/AggregatorV3Interface.json';
 import SpeculateExchange from '../../../contracts/out/SpeculateExchange.sol/SpeculateExchange.json';
 
-const getOffers = () => {
+const getOffers2 = () => {
   const data = [
     {
       price: '0.36 WETH',
@@ -75,9 +75,17 @@ const priceFeeds = {
   },
 };
 
+const styleAddress = (address) => {
+  return (
+    address.substring(0, 5) +
+    '...' +
+    address.substring(address.length - 3, address.length)
+  );
+};
+
 export default function Option() {
   const [exchangeContract, setExchangeContract] = useState(null);
-  const [makerAsks, setMakerAsks] = useState([]);
+  const [makerAsk, setMakerAsk] = useState(null);
   const [makerBids, setMakerBids] = useState([]);
   const [listed, setListed] = useState(false);
   const [bidded, setBidded] = useState(false);
@@ -86,6 +94,20 @@ export default function Option() {
   const [assetPrice, setAssetPrice] = useState(0);
   const router = useRouter();
   const { id } = router.query;
+
+  const getOffers = () => {
+    let processedOffers = makerBids.map((bid) => {
+      return {
+        price: ethers.utils.formatEther(bid.price),
+        usdPrice: '$100', //bid.price.mul(10),
+        expiration: bid.endTime,
+        priceTreshold: '$2020',
+        from: styleAddress(bid.maker),
+        img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg',
+      };
+    });
+    return processedOffers;
+  };
 
   const offerColumns = useMemo(
     () => [
@@ -199,23 +221,21 @@ export default function Option() {
       return;
     }
     const setUpMakerOrders = async () => {
-      const responseMakerAsks = await fetch(
+      const responseMakerAsk = await fetch(
         `http://localhost:3001/makerAsks/${rinkeby.optionFactory.toLowerCase()}/${id}`
       );
       const responseMakerBids = await fetch(
         `http://localhost:3001/makerBids/${rinkeby.optionFactory.toLowerCase()}/${id}`
       );
-      let makerAsks = await responseMakerAsks.json();
+      let makerAsk = await responseMakerAsk.json();
       let makerBids = await responseMakerBids.json();
 
-      console.log('ma:', makerAsks);
-      console.log('mb:', makerBids);
-
-      setMakerAsks(makerAsks);
-      setMakerBids(makerBids);
-      if (makerAsks.collection) {
+      if (makerAsk.collection) {
         setListed(true);
+        setMakerAsk(makerAsk);
       }
+
+      setMakerBids(makerBids);
       if (makerBids.length > 0) {
         setBidded(true);
       }
@@ -223,15 +243,7 @@ export default function Option() {
     setUpMakerOrders();
   }, [id]);
 
-  const offers = useMemo(() => getOffers(), []);
-
-  const styleAddress = (address) => {
-    return (
-      address.substring(0, 5) +
-      '...' +
-      address.substring(address.length - 3, address.length)
-    );
-  };
+  const offers = useMemo(() => getOffers(), [makerBids]);
 
   useEffect(() => {
     const { ethereum } = window;
@@ -323,10 +335,22 @@ export default function Option() {
                 <p>Option expires in 20 days & the sale ends May 23, 2022</p>
               </div>
               <div className="price">
-                <span>Buy now price:</span>
-                <p>1.47 ETH</p>
-                <span>Highest Offer:</span>
-                <p>0.36 ETH</p>
+                {listed ? (
+                  <>
+                    <span>Buy now price:</span>
+                    <p>{ethers.utils.formatEther(makerAsk.price)} ETH</p>
+                  </>
+                ) : (
+                  <p>Unlisted</p>
+                )}
+                {bidded ? (
+                  <>
+                    <span>Highest Offer:</span>
+                    <p>{ethers.utils.formatEther(makerBids[0].price)} ETH</p>
+                  </>
+                ) : (
+                  <p> No Offers </p>
+                )}
                 {!isLoading &&
                 nft &&
                 nft.owner_of.toLowerCase() === data.address.toLowerCase() ? (
