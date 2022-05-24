@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAccount } from 'wagmi';
 import { ethers } from 'ethers';
+import { useRouter } from 'next/router';
 // WARNING: IF THE LINE BELOW IS REMOVED IT WONT COMPILE,
 // because of "ReferenceError: regeneratorRuntime is not defined"
 import regeneratorRuntime from 'regenerator-runtime'; // eslint-disable-line no-unused-vars
@@ -78,6 +79,7 @@ const getShorts = () => {
 };
 
 function Positions() {
+  const router = useRouter();
   const [exchangeContract, setExchangeContract] = useState(null);
   const [makerAsks, setMakerAsks] = useState([]);
   const [makerBids, setMakerBids] = useState([]);
@@ -89,12 +91,15 @@ function Positions() {
     let processedNfts = nfts.map((nft) => {
       return {
         asset: nft.metadata.attributes[0].value,
-        img: `${nft.metadata.attributes[0].value}.svg`,
+        assetImg: `${nft.metadata.attributes[0].value}.svg`,
         strikePrice: nft.metadata.attributes[1].value,
         rightToBuy: nft.metadata.attributes[2].value,
         expiry: nft.metadata.attributes[3].value,
         type: nft.metadata.attributes[4].value,
         id: nft.token_id,
+        nftImg: nft.metadata.image,
+        createdBy: nft.token_address,
+        owner: nft.owner_of,
       };
     });
     return processedNfts;
@@ -183,7 +188,7 @@ function Positions() {
         Header: 'Asset',
         accessor: 'asset',
         Cell: AvatarCell,
-        imgAccessor: 'img',
+        imgAccessor: 'assetImg',
       },
       {
         Header: 'Type',
@@ -266,9 +271,15 @@ function Positions() {
     pageSize: 10,
   };
 
+  // const onClickedPosition = (position) => {
+  //   console.log(position);
+  //   setClickedPosition(position);
+  // };
+
   const onClickedPosition = (position) => {
     console.log(position);
-    setClickedPosition(position);
+    const { pathname } = router;
+    router.push(`options/${position.id}`);
   };
 
   useEffect(() => {
@@ -418,7 +429,7 @@ const OuterContainer = styled.div`
 `;
 
 const InnerContainer = styled.main`
-  max-width: 70rem; // max-w-4xl
+  max-width: 75rem; // max-w-4xl
   margin: 0 auto; // mx-auto
   padding-left: 1rem; // px-4
   padding-right: 1rem; // px-4

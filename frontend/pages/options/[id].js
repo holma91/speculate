@@ -1,5 +1,6 @@
 import { useMemo, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import { useAccount } from 'wagmi';
 import { ethers } from 'ethers';
 import styled from 'styled-components';
 import SmallTable, { AvatarCell } from '../../components/SmallTable';
@@ -72,6 +73,7 @@ const priceFeeds = {
 };
 
 export default function Option({ position }) {
+  const { data, isError, isLoading } = useAccount();
   const [nft, setNft] = useState(null);
   const [assetPrice, setAssetPrice] = useState(0);
   const router = useRouter();
@@ -198,6 +200,7 @@ export default function Option({ position }) {
     <OuterContainer>
       <Container>
         <div className="left">
+          {/* {!isLoading ? <p>{data.address}</p> : <p>yo</p>} */}
           {nft ? (
             <StyledImg src={`data:image/svg+xml;utf8,${nft.metadata.image}`} />
           ) : (
@@ -225,8 +228,21 @@ export default function Option({ position }) {
             <div className="price">
               <span>Buy now price:</span>
               <p>1.47 ETH</p>
-              <Button>Buy now</Button>
-              <Button>Make offer</Button>
+              <span>Highest Offer:</span>
+              <p>0.36 ETH</p>
+              {!isLoading &&
+              nft &&
+              nft.owner_of.toLowerCase() === data.address.toLowerCase() ? (
+                <>
+                  <Button>Accept Offer</Button>
+                  <Button>Cancel Listing</Button>
+                </>
+              ) : (
+                <>
+                  <Button>Buy now</Button>
+                  <Button>Make offer</Button>
+                </>
+              )}
             </div>
           </PriceBox>
           <OfferBox>

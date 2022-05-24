@@ -1,103 +1,198 @@
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { ethers } from 'ethers';
+import aggregatorV3Interface from '../../contracts/out/AggregatorV3Interface.sol/AggregatorV3Interface.json';
+
+const priceFeeds = {
+  RINKEBY: {
+    ETH: {
+      USD: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e',
+    },
+    BTC: {
+      USD: '0xECe365B379E1dD183B20fc5f022230C044d51404',
+    },
+    ATOM: {
+      USD: '0x3539F2E214d8BC7E611056383323aC6D1b01943c',
+    },
+    LINK: {
+      USD: '0xd8bd0a1cb028a31aa859a21a3758685a95de4623',
+    },
+    MATIC: {
+      USD: '0x7794ee502922e2b723432DDD852B3C30A911F021',
+    },
+  },
+  FUJI: {
+    ETH: {
+      USD: '0x86d67c3D38D2bCeE722E601025C25a575021c6EA',
+    },
+    BTC: {
+      USD: '0x31CF013A08c6Ac228C94551d535d5BAfE19c602a',
+    },
+    AVAX: {
+      USD: '0x5498BB86BC934c8D34FDA08E81D444153d0D06aD',
+    },
+    LINK: {
+      USD: '0x34C4c526902d88a3Aa98DB8a9b802603EB1E3470',
+    },
+  },
+};
 
 export default function Position({ clickedPosition }) {
+  const [assetPrice, setAssetPrice] = useState(0);
+
   const {
     asset,
     expiry,
-    img,
-    numberOfOptions,
+    assetImg,
     premium,
     priceFeed,
     rightToBuy,
     strikePrice,
     type,
+    nftImg,
+    createdBy,
+    owner,
   } = clickedPosition;
+
+  const styleAddress = (address) => {
+    return (
+      address.substring(0, 5) +
+      '...' +
+      address.substring(address.length - 3, address.length)
+    );
+  };
+
+  const getAssetPrice = async () => {
+    try {
+      if (!asset) {
+        return;
+      }
+      const network = 'RINKEBY';
+
+      const priceFeedAddress = priceFeeds[network][asset].USD;
+
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+
+        const priceFeedContract = new ethers.Contract(
+          priceFeedAddress,
+          aggregatorV3Interface.abi,
+          provider
+        );
+
+        const decimals = await priceFeedContract.decimals();
+        const price = await priceFeedContract.latestRoundData();
+
+        console.log(price);
+
+        setAssetPrice(ethers.utils.formatUnits(price.answer, decimals));
+      } else {
+        console.log("Ethereum object doesn't exist!");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    getAssetPrice();
+  }, [asset]);
+
   return (
-    <Container>
-      <div className="left">
-        <StyledSVG
-          width="320"
-          height="320"
-          version="1.1"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <image
-            href={`/${asset.toUpperCase()}.svg`}
-            x="90"
-            y="26"
-            height="28px"
-            width="28px"
-          />
-          <text x="120" y="49" fontSize="25" fontWeight="300">
-            {asset.toUpperCase()} {type.toUpperCase()}
-          </text>
-          <line
-            x1="20"
-            y1="65"
-            x2="300"
-            y2="65"
-            stroke="black"
-            strokeWidth="1.25"
-          />
-          <text x="70" y="105" fontSize="20" fontWeight="300">
-            Price Feed: {`${asset.toUpperCase()}/USD`}
-          </text>
-          <text x="70" y="150" fontSize="20" fontWeight="300">
-            Strike Price: {`${strikePrice}`}
-          </text>
-          <text x="70" y="195" fontSize="20" fontWeight="300">
-            Amount: {`${rightToBuy} ${asset.toUpperCase()}`}
-          </text>
-          <text x="70" y="240" fontSize="20" fontWeight="300">
-            Expiry: {expiry}
-          </text>
-          <text x="70" y="285" fontSize="20" fontWeight="300">
-            American Style
-          </text>
-        </StyledSVG>
-        <DescriptionBox>
-          <p>Description</p>
-          <p>Created by 0xABCD...1337</p>
-        </DescriptionBox>
-      </div>
-      <div className="right">
-        <p className="header">{asset.toUpperCase()} Options</p>
-        <p>{asset.toUpperCase()} Price: $2019.33</p>
-        <p>Collateral: 2 ETH</p>
-        <p>Collateral value: $4038.66</p>
-        <p>
-          You minted 10 longs and have sold 8, making you 80% filled and short 8
-          {asset.toUpperCase()} 2000 calls.
-        </p>
-        <p>Risk: 0.25 x 8 = 2 ETH</p>
-        <p>Risk value: $4038.66</p>
-        <p>Collateral Ratio: COVERED</p>
-      </div>
-    </Container>
+    <OuterContainer>
+      <Container>
+        <div className="left">
+          <StyledImg src={`data:image/svg+xml;utf8,${nftImg}`} />
+          <DescriptionBox>
+            <p>Description</p>
+            <p>Created by {styleAddress(createdBy)}</p>
+          </DescriptionBox>
+        </div>
+        <div className="right">
+          <p className="collection-header">ETH Options</p>
+          <p className="header">ETH 2000 CALL</p>
+          <p className="owned-by">Owned by {styleAddress(owner)}</p>
+          {assetPrice > 0 ? `${asset} price: $${assetPrice}` : null}
+          <PriceBox>
+            <div className="time">
+              <p>Sale ends May 23, 2022</p>
+            </div>
+            <div className="price">
+              <span>Buy now price:</span>
+              <p>1.47 ETH</p>
+              <Button>Buy now</Button>
+              <Button>Make offer</Button>
+            </div>
+          </PriceBox>
+          <OfferBox>
+            <div className="heading">
+              <p>Offers</p>
+            </div>
+            {/* <SmallTable
+              columns={offerColumns}
+              data={offers}
+              initialState={initialState}
+            /> */}
+          </OfferBox>
+        </div>
+      </Container>
+    </OuterContainer>
   );
 }
+
+const OuterContainer = styled.div`
+  display: flex;
+  justify-content: center;
+`;
 
 const PriceBox = styled.div`
   display: flex;
   flex-direction: column;
   gap: 5px;
+  border: 1px solid #ecedef;
+  padding: 15px;
+  border-radius: 6px;
+  width: 100%;
+
+  .time {
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ecedef;
+  }
+
+  .price {
+    span {
+      font-size: 14px;
+    }
+
+    p {
+      margin-top: 5px;
+      font-size: 22px;
+    }
+  }
 `;
 
-const DescriptionBox = styled.div`
+const OfferBox = styled.div`
   display: flex;
   flex-direction: column;
   gap: 5px;
-  border: 1px solid black;
+  border: 1px solid #ecedef;
+  padding: 15px;
   border-radius: 6px;
-  padding: 10px;
+  width: 100%;
+
+  .heading {
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ecedef;
+  }
 `;
 
 const Container = styled.div`
-  /* margin: 20px; */
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: center;
+  margin: 20px;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  /* align-items: center; */
   gap: 20px;
+  max-width: 1200px;
 
   .left {
     display: flex;
@@ -110,13 +205,59 @@ const Container = styled.div`
     flex-direction: column;
     gap: 10px;
 
+    .collection-header {
+      font-size: 16px;
+    }
+
     .header {
-      font-size: 24px;
+      font-size: 30px;
+    }
+
+    .owned-by {
+      font-size: 14px;
     }
   }
+`;
+
+const DescriptionBox = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border: 1px solid black;
+  border-radius: 6px;
+  padding: 10px;
+  width: 320px;
 `;
 
 const StyledSVG = styled.svg`
   border: 1px solid black;
   border-radius: 6px;
+`;
+
+const StyledImg = styled.img`
+  border: 1px solid black;
+  border-radius: 6px;
+  width: 320px;
+  height: 320px;
+`;
+
+const Button = styled.button`
+  background-color: #0e76fd;
+  color: white;
+  margin-top: 10px;
+  margin-right: 10px;
+  margin-left: 0;
+  padding: 9px 25px;
+  font-size: 100%;
+  font-weight: 700;
+  border-radius: 12px;
+  /* width: 50%; */
+  border: none;
+  outline: none;
+  cursor: pointer;
+
+  /* box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1); */
+  :hover {
+    transform: scale(1.01) perspective(1px);
+  }
 `;
