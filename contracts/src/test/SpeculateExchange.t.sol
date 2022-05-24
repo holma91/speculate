@@ -70,7 +70,8 @@ contract SpeculateExchangeTest is DSTest {
         address currency,
         address strategy,
         uint256 amount,
-        uint256 price
+        uint256 price,
+        uint256 endTime
     );
     event MakerBid(
         address indexed maker,
@@ -79,7 +80,8 @@ contract SpeculateExchangeTest is DSTest {
         address currency,
         address strategy,
         uint256 amount,
-        uint256 price
+        uint256 price,
+        uint256 endTime
     );
     event TakerBid(
         address indexed taker,
@@ -184,7 +186,8 @@ contract SpeculateExchangeTest is DSTest {
             makerAsk.currency,
             makerAsk.strategy,
             makerAsk.amount,
-            makerAsk.price
+            makerAsk.price,
+            makerAsk.endTime
         );
         speculateExchange.createMakerAsk(makerAsk);
         OrderTypes.MakerOrder memory retrievedMakerAsk = speculateExchange
@@ -239,7 +242,8 @@ contract SpeculateExchangeTest is DSTest {
             makerBid.currency,
             makerBid.strategy,
             makerBid.amount,
-            makerBid.price
+            makerBid.price,
+            makerBid.endTime
         );
         speculateExchange.createMakerBid(makerBid);
         OrderTypes.MakerOrder memory retrievedMakerBid = speculateExchange

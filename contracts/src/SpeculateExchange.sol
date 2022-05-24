@@ -79,7 +79,8 @@ contract SpeculateExchange {
         address currency,
         address strategy,
         uint256 amount,
-        uint256 price
+        uint256 price,
+        uint256 endTime
     );
 
     event MakerBid(
@@ -89,7 +90,8 @@ contract SpeculateExchange {
         address currency,
         address strategy,
         uint256 amount,
-        uint256 price
+        uint256 price,
+        uint256 endTime
     );
 
     /**
@@ -143,7 +145,8 @@ contract SpeculateExchange {
             makerAsk.currency,
             makerAsk.strategy,
             makerAsk.amount,
-            makerAsk.price
+            makerAsk.price,
+            makerAsk.endTime
         );
     }
 
@@ -169,7 +172,8 @@ contract SpeculateExchange {
             makerBid.currency,
             makerBid.strategy,
             makerBid.amount,
-            makerBid.price
+            makerBid.price,
+            makerBid.endTime
         );
     }
 
