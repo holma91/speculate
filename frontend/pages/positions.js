@@ -79,6 +79,7 @@ const getShorts = () => {
 };
 
 function Positions() {
+  const { data: activeAccount, isError, isLoading } = useAccount();
   const router = useRouter();
   const [exchangeContract, setExchangeContract] = useState(null);
   const [makerAsks, setMakerAsks] = useState([]);
@@ -108,16 +109,17 @@ function Positions() {
   };
 
   const getNfts = async () => {
-    const { ethereum } = window;
-    if (ethereum) {
+    if (activeAccount) {
       const chain = 'rinkeby';
-      const url = `https://deep-index.moralis.io/api/v2/${ethereum.selectedAddress}/nft/${rinkeby.optionFactory}?chain=${chain}&format=decimal`;
+      const url = `https://deep-index.moralis.io/api/v2/${activeAccount.address}/nft/${rinkeby.optionFactory}?chain=${chain}&format=decimal`;
       let response = await fetch(url, {
         headers: { 'X-API-Key': process.env.MORALIS_API_KEY },
       });
 
       response = await response.json();
       const receivedNFTs = response.result;
+
+      if (!receivedNFTs) return;
 
       let filteredNFTs = receivedNFTs.filter((nft) => nft.metadata);
 
@@ -168,7 +170,7 @@ function Positions() {
 
       setNfts(filteredNFTs);
     } else {
-      console.log('ethereum object not found');
+      console.log('connect with your wallet!');
     }
   };
 

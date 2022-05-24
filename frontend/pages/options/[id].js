@@ -91,16 +91,27 @@ const styleAddress = (address) => {
 };
 
 export default function Option() {
-  const [exchangeContract, setExchangeContract] = useState(null);
   const [makerAsk, setMakerAsk] = useState(null);
   const [makerBids, setMakerBids] = useState([]);
   const [listed, setListed] = useState(false);
   const [bidded, setBidded] = useState(false);
-  const { data, isError, isLoading } = useAccount();
+  const { data: activeAccount, isError, isLoading } = useAccount();
   const [nft, setNft] = useState(null);
   const [assetPrice, setAssetPrice] = useState(0);
   const router = useRouter();
   const { id } = router.query;
+
+  const bidFunc = useContractWrite(
+    {
+      addressOrName: rinkeby.speculateExchange,
+      contractInterface: SpeculateExchange.abi,
+    },
+    'createMakerBid'
+  );
+
+  const waitForBidFunc = useWaitForTransaction({
+    hash: bidFunc.data?.hash,
+  });
 
   const listFunc = useContractWrite(
     {
@@ -114,6 +125,18 @@ export default function Option() {
     hash: listFunc.data?.hash,
   });
 
+  const acceptFunc = useContractWrite(
+    {
+      addressOrName: rinkeby.speculateExchange,
+      contractInterface: SpeculateExchange.abi,
+    },
+    'matchBidWithTakerAsk'
+  );
+
+  const waitForAcceptFunc = useWaitForTransaction({
+    hash: acceptFunc.data?.hash,
+  });
+
   useContractEvent(
     {
       addressOrName: rinkeby.speculateExchange,
@@ -121,42 +144,86 @@ export default function Option() {
     },
     'MakerAsk',
     ([
-      maker,
+      signer,
       collection,
       tokenId,
+      isOrderAsk,
       currency,
       strategy,
       amount,
       price,
+      startTime,
       endTime,
     ]) => {
-      console.log(tokenId.toString());
       const makerAsk = {
-        maker: maker.toLowerCase(),
+        signer: signer.toLowerCase(),
         collection: collection.toLowerCase(),
         tokenId: tokenId.toString(),
+        isOrderAsk: isOrderAsk,
         currency: currency.toLowerCase(),
         strategy: strategy.toLowerCase(),
         amount: amount.toString(),
         price: price.toString(),
+        startTime: startTime.toString(),
         endTime: endTime.toString(),
       };
       setMakerAsk(makerAsk);
       setListed(true);
     }
   );
+  useContractEvent(
+    {
+      addressOrName: rinkeby.speculateExchange,
+      contractInterface: SpeculateExchange.abi,
+    },
+    'MakerBid',
+    ([
+      signer,
+      collection,
+      tokenId,
+      isOrderAsk,
+      currency,
+      strategy,
+      amount,
+      price,
+      startTime,
+      endTime,
+    ]) => {
+      const makerBid = {
+        signer: signer.toLowerCase(),
+        collection: collection.toLowerCase(),
+        tokenId: tokenId.toString(),
+        isOrderAsk: isOrderAsk,
+        currency: currency.toLowerCase(),
+        strategy: strategy.toLowerCase(),
+        amount: amount.toString(),
+        price: price.toString(),
+        startTime: startTime.toString(),
+        endTime: endTime.toString(),
+      };
+      setMakerBids([...makerBids, makerBid]);
+      setBidded(true);
+    }
+  );
 
   const getOffers = () => {
-    let processedOffers = makerBids.map((bid) => {
-      return {
-        price: ethers.utils.formatEther(bid.price),
-        usdPrice: '$100', //bid.price.mul(10),
-        expiration: bid.endTime,
-        priceTreshold: '$2020',
-        from: styleAddress(bid.maker),
-        img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg',
-      };
-    });
+    // necessary to avoid weird frontend bug where one bid is shown twice
+    const addresses = new Set();
+    let processedOffers = [];
+    for (const bid of makerBids) {
+      if (!addresses.has(bid.signer)) {
+        processedOffers.push({
+          price: ethers.utils.formatEther(bid.price),
+          usdPrice: '$100', //bid.price.mul(10),
+          expiration: bid.endTime,
+          priceTreshold: '$2020',
+          from: styleAddress(bid.signer),
+          img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg',
+        });
+      }
+      addresses.add(bid.signer);
+    }
+
     return processedOffers;
   };
 
@@ -199,8 +266,7 @@ export default function Option() {
   };
 
   const getNft = async () => {
-    const { ethereum } = window;
-    if (ethereum) {
+    if (activeAccount) {
       if (!id) {
         return;
       }
@@ -221,7 +287,7 @@ export default function Option() {
 
       setNft(actualNft);
     } else {
-      console.log('ethereum object not found');
+      console.log('connect with your wallet!');
     }
   };
 
@@ -296,46 +362,6 @@ export default function Option() {
 
   const offers = useMemo(() => getOffers(), [makerBids]);
 
-  useEffect(() => {
-    const { ethereum } = window;
-    if (ethereum) {
-      const provider = new ethers.providers.Web3Provider(ethereum);
-      const signer = provider.getSigner();
-      let contract = new ethers.Contract(
-        rinkeby.speculateExchange,
-        SpeculateExchange.abi,
-        signer
-      );
-      setExchangeContract(contract);
-    } else {
-      console.log('ethereum object not found');
-    }
-  }, []);
-
-  const listOption = async ({ price, until }) => {
-    const { ethereum } = window;
-    if (ethereum) {
-      const makerAsk = {
-        isOrderAsk: true,
-        signer: ethereum.selectedAddress,
-        collection: nft.token_address,
-        price: ethers.BigNumber.from(ethers.utils.parseEther(price.toString())),
-        tokenId: nft.token_id,
-        amount: 1,
-        strategy: rinkeby.strategy,
-        currency: rinkeby.weth,
-        startTime: 1651301377,
-        endTime: 1660995560,
-      };
-
-      listFunc.write({
-        args: [makerAsk],
-      });
-    } else {
-      console.log('ethereum object not found');
-    }
-  };
-
   const formik = useFormik({
     initialValues: {
       price: 0,
@@ -353,6 +379,120 @@ export default function Option() {
       listOption(values);
     },
   });
+
+  const offerFormik = useFormik({
+    initialValues: {
+      price: 0,
+      until: 13204210,
+    },
+
+    validationSchema: Yup.object({
+      price: Yup.number()
+        .min(0.000000001, 'Must cost atleast 1 gwei')
+        .required('Required'),
+      until: Yup.date().required('Required'),
+    }),
+
+    onSubmit: (values) => {
+      makeOffer(values);
+    },
+  });
+
+  const listOption = async ({ price, until }) => {
+    if (activeAccount) {
+      const makerAsk = {
+        isOrderAsk: true,
+        signer: activeAccount.address,
+        collection: nft.token_address,
+        price: ethers.BigNumber.from(ethers.utils.parseEther(price.toString())),
+        tokenId: nft.token_id,
+        amount: 1,
+        strategy: rinkeby.strategy,
+        currency: rinkeby.weth,
+        startTime: 1651301377,
+        endTime: 1660995560,
+      };
+
+      listFunc.write({
+        args: [makerAsk],
+      });
+    } else {
+      console.log('connect with your wallet!');
+    }
+  };
+
+  const cancelListing = async () => {
+    if (activeAccount) {
+      console.log('do cancel listing function later');
+    } else {
+      console.log('connect your wallet!');
+    }
+  };
+
+  const getTopOffer = () => {
+    if (makerBids) {
+      let max = makerBids[0];
+      for (const bid of makerBids) {
+        if (ethers.BigNumber.from(bid.price).gt(max)) {
+          max = bid;
+        }
+      }
+      return max;
+    }
+    return {};
+  };
+
+  const makeOffer = async ({ price, until }) => {
+    if (activeAccount) {
+      const makerBid = {
+        isOrderAsk: false,
+        signer: activeAccount.address,
+        collection: nft.token_address,
+        price: ethers.BigNumber.from(ethers.utils.parseEther(price.toString())),
+        tokenId: nft.token_id,
+        amount: 1,
+        strategy: rinkeby.strategy,
+        currency: rinkeby.weth,
+        startTime: 1651301377,
+        endTime: 1660995560,
+      };
+
+      bidFunc.write({
+        args: [makerBid],
+      });
+    } else {
+      console.log('connect your wallet!');
+    }
+  };
+
+  const acceptOffer = async () => {
+    if (activeAccount) {
+      const makerBid = makerBids[0];
+
+      console.log(makerBid);
+
+      const takerAsk = {
+        isOrderAsk: true,
+        taker: activeAccount.address,
+        price: ethers.BigNumber.from(makerBid.price),
+        tokenId: makerBid.tokenId,
+      };
+
+      // acceptFunc.write({
+      //   args: [takerAsk, makerBid],
+      // });
+    } else {
+      console.log('connect your wallet!');
+    }
+  };
+
+  const buyNow = async () => {
+    if (activeAccount) {
+      console.log('do buy now function later');
+    } else {
+      console.log('connect your wallet!');
+    }
+  };
 
   return (
     <OuterContainer>
@@ -397,20 +537,55 @@ export default function Option() {
                     <span>Highest Offer:</span>
                     <p>{ethers.utils.formatEther(makerBids[0].price)} ETH</p>
                   </>
-                ) : (
-                  <p> No Offers </p>
-                )}
+                ) : null}
                 {!isLoading &&
                 nft &&
-                nft.owner_of.toLowerCase() === data.address.toLowerCase() ? (
+                nft.owner_of.toLowerCase() ===
+                  activeAccount.address.toLowerCase() ? (
                   <>
-                    <Button>Accept Offer</Button>
-                    <Button>Cancel Listing</Button>
+                    {bidded && (
+                      <Button onClick={acceptOffer}>Accept Offer</Button>
+                    )}
+                    <Button onClick={cancelListing}>Cancel Listing</Button>
                   </>
                 ) : (
                   <>
-                    <Button>Buy now</Button>
-                    <Button>Make offer</Button>
+                    <form onSubmit={offerFormik.handleSubmit}>
+                      <InputContainer>
+                        <label htmlFor="price">Offer price: </label>
+                        <StyledMyTextInput
+                          name="price"
+                          type="number"
+                          placeholder="2000"
+                          {...offerFormik.getFieldProps('price')}
+                        />
+                      </InputContainer>
+                      <InputContainer>
+                        <label htmlFor="until">Valid until: </label>
+                        <StyledMyTextInput
+                          name="until"
+                          type="date"
+                          placeholder=""
+                          {...offerFormik.getFieldProps('until')}
+                        />
+                      </InputContainer>
+                      {bidFunc.isLoading ? (
+                        <>
+                          <Button type="submit">Loading...</Button>
+                          <Button onClick={buyNow}>Buy now</Button>
+                        </>
+                      ) : waitForBidFunc.isLoading ? (
+                        <>
+                          <Button type="submit">Pending...</Button>
+                          <Button onClick={buyNow}>Buy now</Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button type="submit">Make Offer</Button>
+                          <Button onClick={buyNow}>Buy now</Button>
+                        </>
+                      )}
+                    </form>
                   </>
                 )}
               </div>
@@ -424,7 +599,8 @@ export default function Option() {
                 <p>Unlisted</p>
                 {!isLoading &&
                 nft &&
-                nft.owner_of.toLowerCase() === data.address.toLowerCase() ? (
+                nft.owner_of.toLowerCase() ===
+                  activeAccount.address.toLowerCase() ? (
                   <>
                     <form onSubmit={formik.handleSubmit}>
                       <InputContainer>
