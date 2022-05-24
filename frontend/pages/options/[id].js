@@ -1,11 +1,14 @@
 import { useMemo, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useAccount } from 'wagmi';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import { ethers } from 'ethers';
 import styled from 'styled-components';
 import SmallTable, { AvatarCell } from '../../components/SmallTable';
 import { rinkeby } from '../../utils/addresses';
 import aggregatorV3Interface from '../../../contracts/out/AggregatorV3Interface.sol/AggregatorV3Interface.json';
+import SpeculateExchange from '../../../contracts/out/SpeculateExchange.sol/SpeculateExchange.json';
 
 const getOffers = () => {
   const data = [
@@ -72,7 +75,12 @@ const priceFeeds = {
   },
 };
 
-export default function Option({ position }) {
+export default function Option() {
+  const [exchangeContract, setExchangeContract] = useState(null);
+  const [makerAsks, setMakerAsks] = useState([]);
+  const [makerBids, setMakerBids] = useState([]);
+  const [listed, setListed] = useState(false);
+  const [bidded, setBidded] = useState(false);
   const { data, isError, isLoading } = useAccount();
   const [nft, setNft] = useState(null);
   const [assetPrice, setAssetPrice] = useState(0);
@@ -186,6 +194,35 @@ export default function Option({ position }) {
     getNft();
   }, [id]);
 
+  useEffect(() => {
+    if (!id) {
+      return;
+    }
+    const setUpMakerOrders = async () => {
+      const responseMakerAsks = await fetch(
+        `http://localhost:3001/makerAsks/${rinkeby.optionFactory.toLowerCase()}/${id}`
+      );
+      const responseMakerBids = await fetch(
+        `http://localhost:3001/makerBids/${rinkeby.optionFactory.toLowerCase()}/${id}`
+      );
+      let makerAsks = await responseMakerAsks.json();
+      let makerBids = await responseMakerBids.json();
+
+      console.log('ma:', makerAsks);
+      console.log('mb:', makerBids);
+
+      setMakerAsks(makerAsks);
+      setMakerBids(makerBids);
+      if (makerAsks.collection) {
+        setListed(true);
+      }
+      if (makerBids.length > 0) {
+        setBidded(true);
+      }
+    };
+    setUpMakerOrders();
+  }, [id]);
+
   const offers = useMemo(() => getOffers(), []);
 
   const styleAddress = (address) => {
@@ -196,11 +233,70 @@ export default function Option({ position }) {
     );
   };
 
+  useEffect(() => {
+    const { ethereum } = window;
+    if (ethereum) {
+      const provider = new ethers.providers.Web3Provider(ethereum);
+      const signer = provider.getSigner();
+      let contract = new ethers.Contract(
+        rinkeby.speculateExchange,
+        SpeculateExchange.abi,
+        signer
+      );
+      setExchangeContract(contract);
+    } else {
+      console.log('ethereum object not found');
+    }
+  }, []);
+
+  const listOption = async ({ price, until }) => {
+    const { ethereum } = window;
+    if (ethereum) {
+      const makerAsk = {
+        isOrderAsk: true,
+        signer: ethereum.selectedAddress,
+        collection: nft.token_address,
+        price: ethers.BigNumber.from(ethers.utils.parseEther(price.toString())),
+        tokenId: nft.token_id,
+        amount: 1,
+        strategy: rinkeby.strategy,
+        currency: rinkeby.weth,
+        startTime: 1651301377,
+        endTime: 1660995560,
+      };
+
+      let tx = await exchangeContract.createMakerAsk(makerAsk, {
+        gasLimit: 500000,
+      });
+      await tx.wait();
+      console.log(tx);
+    } else {
+      console.log('ethereum object not found');
+    }
+  };
+
+  const formik = useFormik({
+    initialValues: {
+      price: 0,
+      until: 13204210,
+    },
+
+    validationSchema: Yup.object({
+      price: Yup.number()
+        .min(0.000000001, 'Must cost atleast 1 gwei')
+        .required('Required'),
+      until: Yup.date().required('Required'),
+    }),
+
+    onSubmit: (values) => {
+      listOption(values);
+    },
+  });
+
   return (
     <OuterContainer>
       <Container>
         <div className="left">
-          {/* {!isLoading ? <p>{data.address}</p> : <p>yo</p>} */}
           {nft ? (
             <StyledImg src={`data:image/svg+xml;utf8,${nft.metadata.image}`} />
           ) : (
@@ -221,30 +317,72 @@ export default function Option({ position }) {
           {assetPrice > 0
             ? `${nft.metadata.attributes[0].value} price: $${assetPrice}`
             : null}
-          <PriceBox>
-            <div className="time">
-              <p>Sale ends May 23, 2022</p>
-            </div>
-            <div className="price">
-              <span>Buy now price:</span>
-              <p>1.47 ETH</p>
-              <span>Highest Offer:</span>
-              <p>0.36 ETH</p>
-              {!isLoading &&
-              nft &&
-              nft.owner_of.toLowerCase() === data.address.toLowerCase() ? (
-                <>
-                  <Button>Accept Offer</Button>
-                  <Button>Cancel Listing</Button>
-                </>
-              ) : (
-                <>
-                  <Button>Buy now</Button>
-                  <Button>Make offer</Button>
-                </>
-              )}
-            </div>
-          </PriceBox>
+          {listed ? (
+            <PriceBox>
+              <div className="time">
+                <p>Option expires in 20 days & the sale ends May 23, 2022</p>
+              </div>
+              <div className="price">
+                <span>Buy now price:</span>
+                <p>1.47 ETH</p>
+                <span>Highest Offer:</span>
+                <p>0.36 ETH</p>
+                {!isLoading &&
+                nft &&
+                nft.owner_of.toLowerCase() === data.address.toLowerCase() ? (
+                  <>
+                    <Button>Accept Offer</Button>
+                    <Button>Cancel Listing</Button>
+                  </>
+                ) : (
+                  <>
+                    <Button>Buy now</Button>
+                    <Button>Make offer</Button>
+                  </>
+                )}
+              </div>
+            </PriceBox>
+          ) : (
+            <PriceBox>
+              <div className="time">
+                <p>Option expires in 23 days</p>
+              </div>
+              <div className="price">
+                <p>Unlisted</p>
+                {!isLoading &&
+                nft &&
+                nft.owner_of.toLowerCase() === data.address.toLowerCase() ? (
+                  <>
+                    <form onSubmit={formik.handleSubmit}>
+                      <InputContainer>
+                        <label htmlFor="price">price: </label>
+                        <StyledMyTextInput
+                          name="price"
+                          type="number"
+                          placeholder="2000"
+                          {...formik.getFieldProps('price')}
+                        />
+                      </InputContainer>
+                      <InputContainer>
+                        <label htmlFor="until">until: </label>
+                        <StyledMyTextInput
+                          name="until"
+                          type="date"
+                          placeholder=""
+                          {...formik.getFieldProps('until')}
+                        />
+                      </InputContainer>
+                      <Button type="submit">List Option</Button>
+                    </form>
+                  </>
+                ) : (
+                  <>
+                    <Button>sup</Button>
+                  </>
+                )}
+              </div>
+            </PriceBox>
+          )}
           <OfferBox>
             <div className="heading">
               <p>Offers</p>
@@ -260,6 +398,32 @@ export default function Option({ position }) {
     </OuterContainer>
   );
 }
+
+const StyledMyTextInput = styled.input`
+  margin: 10px 0px;
+  padding: 5px;
+  border: 1px solid lightblue;
+  border: ${(props) => (props.error ? '1px solid red' : '1px solid lightblue')};
+  border-radius: 3px;
+`;
+
+const InputContainer = styled.div`
+  display: flex;
+  justify-content: start;
+  align-items: center;
+
+  label {
+    margin: 7px;
+    margin-left: 7px;
+    margin-right: 15px;
+  }
+
+  p {
+    margin: 10px;
+    margin-left: 7px;
+    margin-right: 15px;
+  }
+`;
 
 const OuterContainer = styled.div`
   display: flex;

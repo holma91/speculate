@@ -100,6 +100,8 @@ function Positions() {
         nftImg: nft.metadata.image,
         createdBy: nft.token_address,
         owner: nft.owner_of,
+        price: nft.listed ? nft.listPrice : 'unlisted',
+        bid: nft.bidded ? nft.highestBid : 'no bid',
       };
     });
     return processedNfts;
@@ -207,8 +209,12 @@ function Positions() {
         accessor: 'expiry',
       },
       {
-        Header: 'Premium',
-        accessor: 'premium',
+        Header: 'Price',
+        accessor: 'price',
+      },
+      {
+        Header: 'Bid',
+        accessor: 'bid',
       },
     ],
     []
