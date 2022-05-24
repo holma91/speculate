@@ -400,7 +400,7 @@ function Positions() {
                       })
                     }
                   >
-                    Approve spending
+                    Approve NFT spending
                   </Button>
                 )}
               </>

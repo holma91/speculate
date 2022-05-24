@@ -1,6 +1,15 @@
 import React from 'react';
+import Link from 'next/link';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useFormik } from 'formik';
+import {
+  useSendTransaction,
+  useContractWrite,
+  useContractRead,
+  useWaitForTransaction,
+  useAccount,
+  useContractEvent,
+} from 'wagmi';
 import * as Yup from 'yup';
 import { ethers } from 'ethers';
 import * as buffer from 'buffer/';
@@ -8,12 +17,14 @@ import styled from 'styled-components';
 import { Canvg } from 'canvg';
 import { ArrowRightIcon, ArrowNarrowRightIcon } from '@heroicons/react/solid';
 
-import { generateMetadata, uploadToIpfs } from '../utils/ipfsHelper';
-import { fuji } from '../utils/addresses';
+import { generateMetadata, uploadToIpfs, createSvg } from '../utils/ipfsHelper';
+import { fuji, rinkeby } from '../utils/addresses';
 import OptionFactory from '../../contracts/out/OptionFactory.sol/OptionFactory.json';
 import { optionTemplates } from '../data/optionTemplates';
 
-const Buffer = buffer.Buffer;
+const sleep = (ms) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
 
 const aggregatorV3InterfaceABI = [
   {
@@ -110,9 +121,54 @@ const imageMapper = {
 };
 
 export default function Write() {
+  const { data: activeAccount, isError, isLoading } = useAccount();
   const [template, setTemplate] = useState(optionTemplates[0]);
   const [assetPrice, setAssetPrice] = useState('');
   const [collateralPrice, setCollateralPrice] = useState('');
+  const [assetDecimals, setAssetDecimals] = useState(0);
+
+  const [createdOptionId, setCreatedOptionId] = useState(null);
+
+  const createOptionFunc = useContractWrite(
+    {
+      addressOrName: rinkeby.optionFactory,
+      contractInterface: OptionFactory.abi,
+    },
+    'createOption'
+  );
+
+  const waitForCreateOptionFunc = useWaitForTransaction({
+    hash: createOptionFunc.data?.hash,
+    onSuccess(data) {
+      console.log(data);
+    },
+  });
+
+  const moralisMetadataSync = async (tokenId) => {
+    await sleep(5000);
+    const chain = 'rinkeby';
+    const url = `https://deep-index.moralis.io/api/v2/nft/${
+      rinkeby.optionFactory
+    }/${tokenId.toString()}/metadata/resync?chain=${chain}&flag=metadata&mode=sync`;
+    let response = await fetch(url, {
+      headers: { 'X-API-Key': process.env.MORALIS_API_KEY },
+    });
+    response = await response.json();
+    console.log(response);
+  };
+
+  useContractEvent(
+    {
+      addressOrName: rinkeby.optionFactory,
+      contractInterface: OptionFactory.abi,
+    },
+    'Transfer',
+    ([from, to, tokenId]) => {
+      console.log(tokenId.toString());
+      setCreatedOptionId(tokenId.toString());
+      moralisMetadataSync(tokenId);
+    }
+  );
 
   const canvasRef = useRef(null);
   const svgRef = useRef(null);
@@ -141,39 +197,36 @@ export default function Write() {
     },
   });
 
-  const svgToPngBuffer = async () => {
-    const canvas = canvasRef.current;
-    const context = canvas.getContext('2d');
-
-    const v = Canvg.fromString(context, svgRef.current.outerHTML);
-    await v.render();
-
-    let pngInBase64 = canvas.toDataURL('image/png');
-
-    // trim the base64 string
-    pngInBase64 = pngInBase64.replace(/^data:image\/png;base64,/, '');
-
-    return Buffer.from(pngInBase64, 'base64');
-  };
-
   const writeOption = async (values) => {
-    try {
-      const { ethereum } = window;
-      if (ethereum) {
-        const pngBuffer = await svgToPngBuffer();
+    if (activeAccount) {
+      const option = {
+        underlyingPriceFeed: priceFeeds.RINKEBY[values.asset.toUpperCase()].USD,
+        underlyingAmount: ethers.utils.parseEther(values.rightToBuy.toString()),
+        call: values.type === 'call',
+        strikePrice: ethers.utils.parseUnits(
+          values.strikePrice.toString(),
+          assetDecimals
+        ),
+        expiry: 1000000,
+      };
+      const collateral = {
+        priceFeed: priceFeeds.RINKEBY.ETH.USD,
+        amount: ethers.utils.parseEther(values.collateral.toString()),
+      };
 
-        // const options = generateMetadata(values);
-        // const filename = `${values.asset}${values.type}.png`;
-        // let metadataURI = await uploadToIpfs(pngBuffer, filename, options);
+      const generatedSvg = createSvg(option, values.asset, assetDecimals);
+      const metadata = generateMetadata(values, generatedSvg);
+      let metadataURI = await uploadToIpfs(metadata);
 
-        // console.log(metadataURI);
-
-        console.log(values);
-      } else {
-        console.log('cannot find ethereum object!');
-      }
-    } catch (error) {
-      console.log(error);
+      // console.log(values);
+      createOptionFunc.write({
+        args: [option, collateral, metadataURI],
+        overrides: {
+          value: collateral.amount,
+        },
+      });
+    } else {
+      console.log('cannot your wallet!');
     }
   };
 
@@ -195,6 +248,7 @@ export default function Write() {
         const decimals = await priceFeedContract.decimals();
         const price = await priceFeedContract.latestRoundData();
 
+        setAssetDecimals(decimals);
         setAssetPrice(ethers.utils.formatUnits(price.answer, decimals));
       } else {
         console.log("Ethereum object doesn't exist!");
@@ -252,8 +306,8 @@ export default function Write() {
   const calculateCRRatio = () => {
     return (
       (collateralPrice * formik.values.collateral) /
-      (assetPrice * formik.values.rightToBuy * formik.values.numberOfOptions)
-    ).toFixed(4);
+      (assetPrice * formik.values.rightToBuy)
+    ).toFixed(2);
   };
 
   useEffect(() => {
@@ -338,50 +392,39 @@ export default function Write() {
         <NFTContainer>
           <StyledSVG
             ref={svgRef}
-            width="320"
-            height="320"
+            width="350"
+            height="350"
             version="1.1"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <image
-              href={imageMapper[formik.values.asset]}
-              x="90"
-              y="26"
-              height="28px"
-              width="28px"
-            />
-            <text
-              x={formik.values.asset === 'eth' ? '120' : '123'}
-              y="49"
-              fontSize="25"
-              fontWeight="300"
-            >
+            <rect x="0" y="0" width="350" height="350" fill="white" />
+            <text x="122" y="49" fontSize="25" fontWeight="200">
               {formik.values.asset.toUpperCase()} CALL
             </text>
             <line
-              x1="20"
+              x1="40"
               y1="65"
-              x2="300"
+              x2="310"
               y2="65"
               stroke="black"
-              strokeWidth="1.25"
+              strokeWidth="1"
             />
-            <text x="70" y="105" fontSize="20" fontWeight="300">
+            <text x="80" y="105" fontSize="20" fontWeight="200">
               Price Feed: {`${formik.values.asset.toUpperCase()}/USD`}
             </text>
-            <text x="70" y="150" fontSize="20" fontWeight="300">
+            <text x="80" y="150" fontSize="20" fontWeight="200">
               Strike Price: {`$${formik.values.strikePrice}`}
             </text>
-            <text x="70" y="195" fontSize="20" fontWeight="300">
+            <text x="80" y="195" fontSize="20" fontWeight="200">
               Amount:{' '}
               {`${
                 formik.values.rightToBuy
               } ${formik.values.asset.toUpperCase()}`}
             </text>
-            <text x="70" y="240" fontSize="20" fontWeight="300">
+            <text x="80" y="240" fontSize="20" fontWeight="200">
               Expiry: {formik.values.expiry}
             </text>
-            <text x="70" y="285" fontSize="20" fontWeight="300">
+            <text x="80" y="285" fontSize="20" fontWeight="200">
               American Style
             </text>
           </StyledSVG>
@@ -390,6 +433,11 @@ export default function Write() {
 
       <Summary>
         <InnerContainer>
+          {createdOptionId ? (
+            <Link href={`/options/${createdOptionId}`}>
+              <a>Newly Created Option</a>
+            </Link>
+          ) : null}
           <form onSubmit={formik.handleSubmit}>
             {formik.values.asset !== 'eth' ? (
               <p>
@@ -398,10 +446,6 @@ export default function Write() {
               </p>
             ) : null}
             <p>Current ETH Price = ${trimStr(collateralPrice)}</p>
-            <p>
-              Current Risk = {formik.values.asset.toUpperCase()} Price x Amount
-              = $0
-            </p>
             <p>
               Max Risk = {formik.values.asset.toUpperCase()} Price x Amount = $
               {trimStr((assetPrice * formik.values.rightToBuy).toString())}
@@ -414,7 +458,7 @@ export default function Write() {
               Collateral-to-Risk Ratio = Collateral / Max Risk ={' '}
               {calculateCRRatio()}
             </p>
-            <Button type="submit">Write Options</Button>
+            <Button type="submit">Write Option</Button>
           </form>
         </InnerContainer>
       </Summary>
@@ -470,7 +514,7 @@ const Templates = styled.div`
 
 const StyledSVG = styled.svg`
   border: 2px solid black;
-  border-radius: 6px;
+  /* border-radius: 6px; */
 `;
 
 const NFTContainer = styled.div`
@@ -511,6 +555,12 @@ const InnerContainer = styled.div`
   /* min-width: 500px; */
   p {
     margin-top: 10px;
+  }
+
+  a {
+    :hover {
+      color: #0e76fd;
+    }
   }
 `;
 

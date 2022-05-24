@@ -49,6 +49,10 @@ const getOffers2 = () => {
   return data;
 };
 
+const sleep = (ms) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
 const priceFeeds = {
   RINKEBY: {
     ETH: {
@@ -305,11 +309,20 @@ export default function Option() {
     pageSize: 5,
   };
 
+  const moralisMetadataSync = async (tokenId) => {
+    const chain = 'rinkeby';
+    const url = `https://deep-index.moralis.io/api/v2/nft/${
+      rinkeby.optionFactory
+    }/${tokenId.toString()}/metadata/resync?chain=${chain}&flag=metadata&mode=sync`;
+    let response = await fetch(url, {
+      headers: { 'X-API-Key': process.env.MORALIS_API_KEY },
+    });
+    response = await response.json();
+    return response;
+  };
+
   const getNft = async () => {
-    if (activeAccount) {
-      if (!id) {
-        return;
-      }
+    const moralisRequest = async (id) => {
       const chain = 'rinkeby';
       const url = `https://deep-index.moralis.io/api/v2/nft/${rinkeby.optionFactory}/${id}?chain=${chain}&format=decimal`;
       let response = await fetch(url, {
@@ -317,11 +330,30 @@ export default function Option() {
       });
 
       response = await response.json();
+      console.log(response);
 
       let actualNft = {
         ...response,
-        metadata: JSON.parse(response.metadata),
+        metadata: response.metadata ? JSON.parse(response.metadata) : null,
       };
+      return actualNft;
+    };
+
+    if (activeAccount) {
+      if (!id) {
+        return;
+      }
+
+      let actualNft = await moralisRequest(id);
+
+      // an actual while loop in prod? lol
+      // while (!actualNft.metadata) {
+      //   let res = await moralisMetadataSync(id);
+      //   console.log(res);
+      //   actualNft = await moralisRequest(id);
+      //   await sleep(5000);
+      //   // prob sleep here to avoid rate limiting?
+      // }
 
       console.log(actualNft);
 
@@ -473,7 +505,7 @@ export default function Option() {
     if (makerBids) {
       let max = makerBids[0];
       for (const bid of makerBids) {
-        if (ethers.BigNumber.from(bid.price).gt(max)) {
+        if (ethers.BigNumber.from(bid.price).gt(max.price)) {
           max = bid;
         }
       }
@@ -507,9 +539,7 @@ export default function Option() {
 
   const acceptOffer = async () => {
     if (activeAccount) {
-      const makerBid = makerBids[0];
-
-      console.log(makerBid);
+      const makerBid = getTopOffer();
 
       const takerAsk = {
         isOrderAsk: true,
@@ -518,9 +548,9 @@ export default function Option() {
         tokenId: makerBid.tokenId,
       };
 
-      // acceptFunc.write({
-      //   args: [takerAsk, makerBid],
-      // });
+      acceptFunc.write({
+        args: [takerAsk, makerBid],
+      });
     } else {
       console.log('connect your wallet!');
     }
@@ -602,9 +632,15 @@ export default function Option() {
                 nft.owner_of.toLowerCase() ===
                   activeAccount.address.toLowerCase() ? (
                   <>
-                    {bidded && (
-                      <Button onClick={acceptOffer}>Accept Offer</Button>
-                    )}
+                    {bidded ? (
+                      acceptFunc.isLoading ? (
+                        <Button>Loading...</Button>
+                      ) : waitForAcceptFunc.isLoading ? (
+                        <Button>Pending...</Button>
+                      ) : (
+                        <Button onClick={acceptOffer}>Accept Offer</Button>
+                      )
+                    ) : null}
                     <Button onClick={cancelListing}>Cancel Listing</Button>
                   </>
                 ) : (
