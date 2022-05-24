@@ -1,5 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useAccount } from 'wagmi';
+import {
+  useAccount,
+  useContractWrite,
+  useContractRead,
+  useWaitForTransaction,
+} from 'wagmi';
 import { ethers } from 'ethers';
 import { useRouter } from 'next/router';
 // WARNING: IF THE LINE BELOW IS REMOVED IT WONT COMPILE,
@@ -15,6 +20,7 @@ import Position from '../components/Position';
 import { rinkeby } from '../utils/addresses';
 import { NormalView, NFTView } from '../components/OptionViews';
 import SpeculateExchange from '../../contracts/out/SpeculateExchange.sol/SpeculateExchange.json';
+import OptionFactory from '../../contracts/out/OptionFactory.sol/OptionFactory.json';
 
 const getShorts = () => {
   const data = [
@@ -87,6 +93,33 @@ function Positions() {
   const [nfts, setNfts] = useState([]);
   const [view, setView] = useState('longs');
   const [clickedPosition, setClickedPosition] = useState(null);
+
+  const isApprovedForAllFunc = useContractRead(
+    {
+      addressOrName: rinkeby.optionFactory,
+      contractInterface: OptionFactory.abi,
+    },
+    'isApprovedForAll',
+    {
+      args: [activeAccount?.address, rinkeby.transferManagerERC721],
+    }
+  );
+
+  const setApprovalFunc = useContractWrite(
+    {
+      addressOrName: rinkeby.optionFactory,
+      contractInterface: OptionFactory.abi,
+    },
+    'setApprovalForAll'
+  );
+
+  const waitForSetApprovalFunc = useWaitForTransaction({
+    hash: setApprovalFunc.data?.hash,
+    onSuccess(data) {
+      // necessary to make approve button disappear after approval
+      isApprovedForAllFunc.refetch();
+    },
+  });
 
   const getLongs = () => {
     let processedNfts = nfts.map((nft) => {
@@ -284,14 +317,8 @@ function Positions() {
     pageSize: 10,
   };
 
-  // const onClickedPosition = (position) => {
-  //   console.log(position);
-  //   setClickedPosition(position);
-  // };
-
   const onClickedPosition = (position) => {
     console.log(position);
-    const { pathname } = router;
     router.push(`options/${position.id}`);
   };
 
@@ -356,6 +383,29 @@ function Positions() {
         <Header>
           <p>backe.eth</p>
           <p>0x30...4d02</p>
+          <div>
+            {/* {!isApprovedForAllFunc?.data ? ( */}
+            {true ? (
+              <>
+                {setApprovalFunc.isLoading ? (
+                  <Button type="button">Loading...</Button>
+                ) : waitForSetApprovalFunc.isLoading ? (
+                  <Button type="button">Pending...</Button>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      setApprovalFunc.write({
+                        args: [rinkeby.transferManagerERC721, true],
+                      })
+                    }
+                  >
+                    Approve spending
+                  </Button>
+                )}
+              </>
+            ) : null}
+          </div>
           <Menu>
             <ViewDiv
               onClick={() => setView('longs')}
@@ -407,6 +457,27 @@ function Positions() {
     </OuterContainer>
   );
 }
+
+const Button = styled.button`
+  background-color: #0e76fd;
+  color: white;
+  margin-top: 10px;
+  margin-right: 10px;
+  margin-left: 0;
+  padding: 9px 25px;
+  font-size: 100%;
+  font-weight: 700;
+  border-radius: 12px;
+  /* width: 50%; */
+  border: none;
+  outline: none;
+  cursor: pointer;
+
+  /* box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1); */
+  :hover {
+    transform: scale(1.01) perspective(1px);
+  }
+`;
 
 const Header = styled.div`
   display: flex;

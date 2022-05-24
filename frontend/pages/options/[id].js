@@ -113,8 +113,6 @@ export default function Option() {
     }
   );
 
-  console.log(allowanceFunc?.data?.toString());
-
   const approveSpendingFunc = useContractWrite(
     {
       addressOrName: rinkeby.weth,
@@ -530,7 +528,6 @@ export default function Option() {
 
   const buyNow = async () => {
     if (activeAccount) {
-      console.log(makerAsk);
       const takerBid = {
         isOrderAsk: false,
         taker: activeAccount.address,
