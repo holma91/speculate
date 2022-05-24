@@ -42,12 +42,12 @@ const main = async () => {
   let tx = await optionFactory.createOption(option, collateral, metadataURI, {
     value: collateral.amount,
   });
-  // await tx.wait();
-  // console.log('option created:', tx.hash);
-  // const retrievedOption = await optionFactory.getOptionById(0);
-  // const retrievedCollateral = await optionFactory.getCollateralById(0);
-  // console.log(retrievedOption);
-  // console.log(retrievedCollateral);
+  await tx.wait();
+  console.log('option created:', tx.hash);
+  const retrievedOption = await optionFactory.getOptionById(0);
+  const retrievedCollateral = await optionFactory.getCollateralById(0);
+  console.log(retrievedOption);
+  console.log(retrievedCollateral);
 };
 
 const runMain = async () => {

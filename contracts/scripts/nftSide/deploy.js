@@ -1,14 +1,14 @@
 const ethers = require('ethers');
-const CurrencyManager = require('../out/CurrencyManager.sol/CurrencyManager.json');
-const ExecutionManager = require('../out/ExecutionManager.sol/ExecutionManager.json');
-const RoyaltyFeeRegistry = require('../out/RoyaltyFeeRegistry.sol/RoyaltyFeeRegistry.json');
-const RoyaltyFeeManager = require('../out/RoyaltyFeeManager.sol/RoyaltyFeeManager.json');
-const SpeculateExchange = require('../out/SpeculateExchange.sol/SpeculateExchange.json');
-const StrategyStandardSaleForFixedPrice = require('../out/StrategyStandardSaleForFixedPrice.sol/StrategyStandardSaleForFixedPrice.json');
-const TransferManagerERC721 = require('../out/TransferManagerERC721.sol/TransferManagerERC721.json');
-const TransferManagerERC1155 = require('../out/TransferManagerERC1155.sol/TransferManagerERC1155.json');
-const TransferSelectorNFT = require('../out/TransferSelectorNFT.sol/TransferSelectorNFT.json');
-const { fuji, mumbai, rinkeby } = require('./addresses');
+const CurrencyManager = require('../../out/CurrencyManager.sol/CurrencyManager.json');
+const ExecutionManager = require('../../out/ExecutionManager.sol/ExecutionManager.json');
+const RoyaltyFeeRegistry = require('../../out/RoyaltyFeeRegistry.sol/RoyaltyFeeRegistry.json');
+const RoyaltyFeeManager = require('../../out/RoyaltyFeeManager.sol/RoyaltyFeeManager.json');
+const SpeculateExchange = require('../../out/SpeculateExchange.sol/SpeculateExchange.json');
+const StrategyStandardSaleForFixedPrice = require('../../out/StrategyStandardSaleForFixedPrice.sol/StrategyStandardSaleForFixedPrice.json');
+const TransferManagerERC721 = require('../../out/TransferManagerERC721.sol/TransferManagerERC721.json');
+const TransferManagerERC1155 = require('../../out/TransferManagerERC1155.sol/TransferManagerERC1155.json');
+const TransferSelectorNFT = require('../../out/TransferSelectorNFT.sol/TransferSelectorNFT.json');
+const { fuji, mumbai, rinkeby } = require('../addresses');
 require('dotenv').config();
 
 const protocolFeeRecipient = '0xB06903728e09748E3d941b83f1657B147bA045d2';
@@ -70,7 +70,7 @@ const getFactories = (wallet) => {
 };
 
 const main = async () => {
-  provider = new ethers.providers.JsonRpcProvider(process.env.rpc_fuji);
+  provider = new ethers.providers.JsonRpcProvider(process.env.rpc_rinkeby);
   const wallet = new ethers.Wallet(process.env.pk2, provider);
 
   const [
@@ -105,7 +105,7 @@ const main = async () => {
     cmContract.address,
     emContract.address,
     rfmContract.address,
-    fuji.wavax,
+    rinkeby.weth,
     protocolFeeRecipient
   );
   await seContract.deployed();
@@ -120,7 +120,7 @@ const main = async () => {
     strategyStandardSaleForFixedPrice.address
   );
 
-  let addCurrencyTx = await cmContract.addCurrency(fuji.wavax);
+  let addCurrencyTx = await cmContract.addCurrency(rinkeby.weth);
   await addCurrencyTx.wait();
   console.log('addCurrency tx:', addCurrencyTx);
 

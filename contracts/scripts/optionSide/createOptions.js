@@ -56,7 +56,7 @@ const priceFeeds = {
 
 const main = async () => {
   provider = new ethers.providers.JsonRpcProvider(process.env.rpc_rinkeby);
-  const wallet = new ethers.Wallet(process.env.pk2, provider);
+  const wallet = new ethers.Wallet(process.env.pk3, provider);
   const factory = new ethers.ContractFactory(
     OptionFactory.abi,
     OptionFactory.bytecode,
@@ -79,14 +79,13 @@ const main = async () => {
       ),
       expiry: timestamps[Math.floor(Math.random() * timestamps.length)],
     };
-    let mintedLongs = Math.floor(Math.random() * 5 + 1);
+
     let collateral = {
       priceFeed: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e',
       amount:
         Math.random() > 0.35
-          ? option.underlyingAmount.mul(mintedLongs)
-          : option.underlyingAmount.mul(mintedLongs).mul(2),
-      mintedLongs,
+          ? option.underlyingAmount
+          : option.underlyingAmount.mul(2),
     };
 
     let svg = createSvg(option, asset);

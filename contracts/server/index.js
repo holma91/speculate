@@ -144,12 +144,20 @@ app.get('/makerAsks', (_, res) => {
 
 app.get('/makerAsks/:collection', (req, res) => {
   const { collection } = req.params;
-  res.json(makerAsks[collection]);
+  if (makerAsks[collection]) {
+    res.json(makerAsks[collection]);
+  } else {
+    res.json({});
+  }
 });
 
 app.get('/makerAsks/:collection/:id', (req, res) => {
   const { collection, id } = req.params;
-  res.json(makerAsks[collection][id]);
+  if (makerAsks[collection] && makerAsks[collection][id]) {
+    res.json(makerAsks[collection][id]);
+  } else {
+    res.json({});
+  }
 });
 
 app.get('/makerBids', (_, res) => {
@@ -158,12 +166,20 @@ app.get('/makerBids', (_, res) => {
 
 app.get('/makerBids/:collection', (req, res) => {
   const { collection } = req.params;
-  res.json(makerBids[collection]);
+  if (makerBids[collection]) {
+    res.json(makerBids[collection]);
+  } else {
+    res.json({});
+  }
 });
 
 app.get('/makerBids/:collection/:id', (req, res) => {
   const { collection, id } = req.params;
-  res.json(makerBids[collection][id]);
+  if (makerBids[collection] && makerBids[collection][id]) {
+    res.json(makerBids[collection][id]);
+  } else {
+    res.json({});
+  }
 });
 
 app.listen(port, () => {

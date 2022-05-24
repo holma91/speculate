@@ -1,14 +1,16 @@
 const ethers = require('ethers');
-const NFT2 = require('../../out/NFT2.sol/NFT2.json');
-const { fuji, mumbai, rinkeby, ADDRESS3, ADDRESS2 } = require('./addresses');
+const NFT = require('../../out/NFT.sol/NFT.json');
+const { fuji, mumbai, rinkeby, ADDRESS3, ADDRESS2 } = require('../addresses');
 require('dotenv').config();
 
 const main = async () => {
-  const provider = new ethers.providers.JsonRpcProvider(process.env.rpc_fuji);
+  const provider = new ethers.providers.JsonRpcProvider(
+    process.env.rpc_rinkeby
+  );
   const wallet = new ethers.Wallet(process.env.pk2, provider);
   const nftContract = new ethers.Contract(
-    fuji.nft2Collection,
-    NFT2.abi,
+    rinkeby.nftCollection,
+    NFT.abi,
     wallet
   );
 
