@@ -32,13 +32,15 @@ fs.readFile('./server/makerBids.json', 'utf8', (_, storedMakerBids) => {
 speculateExchange.on(
   'MakerAsk',
   async (
-    maker,
+    signer,
     collection,
     tokenId,
+    isOrderAsk,
     currency,
     strategy,
     amount,
     price,
+    startTime,
     endTime
   ) => {
     console.log('MakerAsk received');
@@ -48,14 +50,16 @@ speculateExchange.on(
     }
 
     makerAsks[collection][tokenId] = {
-      maker: maker.toLowerCase(),
+      signer: signer.toLowerCase(),
       collection: collection.toLowerCase(),
-      tokenId,
+      tokenId: tokenId.toString(),
+      isOrderAsk: isOrderAsk,
       currency: currency.toLowerCase(),
       strategy: strategy.toLowerCase(),
-      amount,
-      price,
-      endTime,
+      amount: amount.toString(),
+      price: price.toString(),
+      startTime: startTime.toString(),
+      endTime: endTime.toString(),
     };
 
     fs.writeFile(
@@ -71,13 +75,15 @@ speculateExchange.on(
 speculateExchange.on(
   'MakerBid',
   async (
-    maker,
+    signer,
     collection,
     tokenId,
+    isOrderAsk,
     currency,
     strategy,
     amount,
     price,
+    startTime,
     endTime
   ) => {
     console.log('MakerBid received');
@@ -89,26 +95,35 @@ speculateExchange.on(
     if (!makerBids[collection][tokenId]) {
       makerBids[collection][tokenId] = [
         {
-          maker: maker.toLowerCase(),
+          signer: signer.toLowerCase(),
           collection: collection.toLowerCase(),
-          tokenId,
+          tokenId: tokenId.toString(),
+          isOrderAsk: isOrderAsk,
           currency: currency.toLowerCase(),
           strategy: strategy.toLowerCase(),
-          amount,
-          price,
-          endTime,
+          amount: amount.toString(),
+          price: price.toString(),
+          startTime: startTime.toString(),
+          endTime: endTime.toString(),
         },
       ];
     } else {
+      // remove the last bid by this address
+      makerBids[collection][tokenId] = makerBids[collection][tokenId].filter(
+        (bid) => bid.signer !== signer.toLowerCase()
+      );
+      // add new bid
       makerBids[collection][tokenId].push({
-        maker: maker.toLowerCase(),
+        signer: signer.toLowerCase(),
         collection: collection.toLowerCase(),
-        tokenId,
+        tokenId: tokenId.toString(),
+        isOrderAsk: isOrderAsk,
         currency: currency.toLowerCase(),
         strategy: strategy.toLowerCase(),
-        amount,
-        price,
-        endTime,
+        amount: amount.toString(),
+        price: price.toString(),
+        startTime: startTime.toString(),
+        endTime: endTime.toString(),
       });
     }
 
@@ -214,7 +229,7 @@ app.get('/makerBids/:collection/:id', (req, res) => {
   if (makerBids[collection] && makerBids[collection][id]) {
     res.json(makerBids[collection][id]);
   } else {
-    res.json({});
+    res.json([]);
   }
 });
 

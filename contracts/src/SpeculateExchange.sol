@@ -73,24 +73,28 @@ contract SpeculateExchange {
     );
 
     event MakerAsk(
-        address indexed maker,
+        address indexed signer,
         address indexed collection,
         uint256 indexed tokenId,
+        bool isOrderAsk,
         address currency,
         address strategy,
         uint256 amount,
         uint256 price,
+        uint256 startTime,
         uint256 endTime
     );
 
     event MakerBid(
-        address indexed maker,
+        address indexed signer,
         address indexed collection,
         uint256 indexed tokenId,
+        bool isOrderAsk,
         address currency,
         address strategy,
         uint256 amount,
         uint256 price,
+        uint256 startTime,
         uint256 endTime
     );
 
@@ -142,10 +146,12 @@ contract SpeculateExchange {
             makerAsk.signer,
             makerAsk.collection,
             makerAsk.tokenId,
+            makerAsk.isOrderAsk,
             makerAsk.currency,
             makerAsk.strategy,
             makerAsk.amount,
             makerAsk.price,
+            makerAsk.startTime,
             makerAsk.endTime
         );
     }
@@ -171,10 +177,12 @@ contract SpeculateExchange {
             makerBid.signer,
             makerBid.collection,
             makerBid.tokenId,
+            makerBid.isOrderAsk,
             makerBid.currency,
             makerBid.strategy,
             makerBid.amount,
             makerBid.price,
+            makerBid.startTime,
             makerBid.endTime
         );
     }

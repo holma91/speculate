@@ -13,7 +13,7 @@ require('dotenv').config();
 
 const main = async () => {
   provider = new ethers.providers.JsonRpcProvider(process.env.rpc_rinkeby);
-  const wallet = new ethers.Wallet(process.env.pk4, provider);
+  const wallet = new ethers.Wallet(process.env.pk3, provider);
   const factory = new ethers.ContractFactory(
     SpeculateExchange.abi,
     SpeculateExchange.bytecode,
@@ -22,7 +22,7 @@ const main = async () => {
 
   const speculateExchange = factory.attach(rinkeby.speculateExchange);
 
-  const BID = ethers.BigNumber.from(ethers.utils.parseEther('0.03'));
+  const BID = ethers.BigNumber.from(ethers.utils.parseEther('0.02'));
 
   const weth = new ethers.Contract(rinkeby.weth, WETH_ABI, wallet);
   let approveTx = await weth.approve(
@@ -34,7 +34,7 @@ const main = async () => {
 
   const makerBid = {
     isOrderAsk: false,
-    signer: ADDRESS4,
+    signer: ADDRESS3,
     collection: rinkeby.optionFactory,
     price: BID,
     tokenId: 2,

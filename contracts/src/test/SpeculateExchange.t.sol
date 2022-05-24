@@ -64,23 +64,28 @@ contract MockCollection is ERC721("name", "symbol") {
 
 contract SpeculateExchangeTest is DSTest {
     event MakerAsk(
-        address indexed maker,
+        address indexed signer,
         address indexed collection,
         uint256 indexed tokenId,
+        bool isOrderAsk,
         address currency,
         address strategy,
         uint256 amount,
         uint256 price,
+        uint256 startTime,
         uint256 endTime
     );
+
     event MakerBid(
-        address indexed maker,
+        address indexed signer,
         address indexed collection,
         uint256 indexed tokenId,
+        bool isOrderAsk,
         address currency,
         address strategy,
         uint256 amount,
         uint256 price,
+        uint256 startTime,
         uint256 endTime
     );
     event TakerBid(
@@ -183,10 +188,12 @@ contract SpeculateExchangeTest is DSTest {
             makerAsk.signer,
             makerAsk.collection,
             makerAsk.tokenId,
+            makerAsk.isOrderAsk,
             makerAsk.currency,
             makerAsk.strategy,
             makerAsk.amount,
             makerAsk.price,
+            makerAsk.startTime,
             makerAsk.endTime
         );
         speculateExchange.createMakerAsk(makerAsk);
@@ -239,10 +246,12 @@ contract SpeculateExchangeTest is DSTest {
             makerBid.signer,
             makerBid.collection,
             makerBid.tokenId,
+            makerBid.isOrderAsk,
             makerBid.currency,
             makerBid.strategy,
             makerBid.amount,
             makerBid.price,
+            makerBid.startTime,
             makerBid.endTime
         );
         speculateExchange.createMakerBid(makerBid);
