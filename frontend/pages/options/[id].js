@@ -50,6 +50,24 @@ const getOffers2 = () => {
   return data;
 };
 
+const trimStr = (str) => {
+  let lock = true;
+  let j = 0;
+  let i = 0;
+  while (i < str.length) {
+    if (!lock) {
+      j++;
+      if (j >= 3) break;
+    }
+    if (str[i] === '.') {
+      lock = false;
+    }
+    i++;
+  }
+
+  return str.substring(0, i);
+};
+
 const sleep = (ms) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
@@ -357,6 +375,7 @@ export default function Option() {
         call: option.call,
         strikePrice: option.strikePrice,
         expiry: option.expiry,
+        european: option.european,
       };
 
       setOption(parsedOption);
@@ -677,6 +696,10 @@ export default function Option() {
     }
   };
 
+  const getOptionStyle = () => {
+    return option.european;
+  };
+
   return (
     <OuterContainer>
       <Container>
@@ -692,18 +715,38 @@ export default function Option() {
 
           <DescriptionBox>
             <p>Description</p>
-            {nft ? <p>Created by {styleAddress(nft.token_address)}</p> : null}
+            <p className="owned-by">
+              {nft ? `Owned by ${styleAddress(nft.owner_of)}` : 'Owned by '}
+            </p>
           </DescriptionBox>
         </div>
         <div className="right">
           <p className="collection-header">{asset} Options</p>
-          <p className="header">{asset} 2000 CALL</p>
-          <p className="owned-by">
-            {nft ? `Owned by ${styleAddress(nft.owner_of)}` : 'Owned by '}
-          </p>
-          {assetPrice > 0
-            ? `${nft.metadata.attributes[0].value} price: $${assetPrice}`
-            : null}
+          <p className="header">{asset} CALL</p>
+          <Prices>
+            <MarketPriceDiv>
+              <p className="price-header">Strike Price:</p>
+              <p className="price">${trimStr('1750.32323')}</p>
+            </MarketPriceDiv>
+            {assetPrice > 0 ? (
+              <>
+                <MarketPriceDiv>
+                  <p className="price-header">
+                    Current {nft.metadata.attributes[0].value} Price:
+                  </p>
+                  <p className="price">${trimStr(assetPrice)}</p>
+                </MarketPriceDiv>
+                <MarketPriceDiv>
+                  <p className="price-header">Status:</p>
+                  <p className="price">ITM</p>
+                </MarketPriceDiv>
+                <MarketPriceDiv>
+                  <p className="price-header">Expires in:</p>
+                  <p className="price">in 23 days</p>
+                </MarketPriceDiv>
+              </>
+            ) : null}
+          </Prices>
           <PriceBox isClicked={showExerciseInfo}>
             <div
               onClick={() => setShowExerciseInfo(!showExerciseInfo)}
@@ -714,32 +757,38 @@ export default function Option() {
             {showExerciseInfo ? (
               nft?.metadata && assetPrice && option ? (
                 <div className="exercising-info">
-                  <p>
-                    the option expires:{' '}
-                    {getExpiryDate(nft.metadata.attributes[3].value)} (in 23
-                    days)
-                  </p>
-                  <p>the option is currently: {getOptionStatus()}</p>
-                  <p>
-                    since the option is ITM and american style, you can exercise
-                    it early.
-                  </p>
-                  <p>
-                    all our options settle in cash, which means you'll get payed
-                    the profit in WETH.
-                  </p>
-                  <p>the terms if you exercise right now:</p>
-                  <ExerciseTerms>
+                  {option.european ? (
                     <p>
-                      - you have the right to buy 0.2ETH at the price of $2000.
+                      since the option is of european style, you cannot exercise
+                      it before expiry.
                     </p>
-                    <p className="math">0.2 x $2000 = $400</p>
-                    <p>the market price of 1 ETH is at the moment $3000.</p>
-                    <p className="math">0.2 x $3000 = $600</p>
-                    <p>Your profit is therefore $600 - $200 = $400</p>
-                  </ExerciseTerms>
+                  ) : (
+                    <>
+                      <p>
+                        since the option is ITM and american style, you can
+                        exercise it early.
+                      </p>
+                      <p>
+                        all our options settle in cash, which means you'll get
+                        payed the profit in WETH.
+                      </p>
+                      <p>the terms if you exercise right now:</p>
+                      <ExerciseTerms>
+                        <p>
+                          - you have the right to buy 0.2ETH at the price of
+                          $2000.
+                        </p>
+                        <p className="math">0.2 x $2000 = $400</p>
+                        <p>
+                          - the market price of 1 ETH is at the moment $3000.
+                        </p>
+                        <p className="math">0.2 x $3000 = $600</p>
+                        <p>Your profit is therefore $600 - $200 = $400</p>
+                      </ExerciseTerms>
 
-                  <Button>Exercise</Button>
+                      <Button>Exercise</Button>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div className="exercising-info">
@@ -966,13 +1015,17 @@ export default function Option() {
               <p>Offers</p>
             </div>
             {showOffers ? (
-              <div className="table-wrapper">
-                <SmallTable
-                  columns={offerColumns}
-                  data={offers}
-                  initialState={initialState}
-                />
-              </div>
+              offers.length > 0 ? (
+                <div className="table-wrapper">
+                  <SmallTable
+                    columns={offerColumns}
+                    data={offers}
+                    initialState={initialState}
+                  />
+                </div>
+              ) : (
+                <NoOffers>No Offers</NoOffers>
+              )
             ) : null}
           </OfferBox>
         </div>
@@ -980,6 +1033,28 @@ export default function Option() {
     </OuterContainer>
   );
 }
+
+const Prices = styled.div`
+  display: flex;
+  gap: 25px;
+`;
+
+const MarketPriceDiv = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  .price-header {
+    font-size: 14px;
+  }
+  .price {
+    font-size: 24px;
+    font-weight: 500;
+  }
+`;
+
+const NoOffers = styled.div`
+  padding: 15px;
+`;
 
 const ExerciseTerms = styled.div`
   margin: 10px 20px;
@@ -1053,6 +1128,7 @@ const PriceBox = styled.div`
     /* border-bottom: 1px solid #ecedef; */
     p {
       margin: 5px 0;
+      font-weight: 600;
     }
 
     :hover {
@@ -1112,6 +1188,7 @@ const OfferBox = styled.div`
     border-bottom: ${(props) => (props.isClicked ? '1px solid #ecedef' : '')};
     p {
       margin: 5px 0;
+      font-weight: 600;
     }
 
     :hover {

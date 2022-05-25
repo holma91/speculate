@@ -16,7 +16,7 @@ export const rinkeby = {
   nftCollection: '0xD03fFDB76211B391877A3E6b366D863779570D19',
   weth: '0xc778417E063141139Fce010982780140Aa0cD5Ab',
 
-  optionFactory: '0x4422cb4D489258E3721471a29713415707CF4a44',
+  optionFactory: '0x65533C91FAE531edEf65C136e1Ee8458252BE389',
 };
 
 export const mumbai = {
