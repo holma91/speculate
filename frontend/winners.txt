@@ -1,0 +1,24 @@
+nusic
+- just shows the process on the web page
+
+
+
+cozy reef
+- a slide with the tech used
+- a slide with challenges
+- a slide with the architecture/program flow
+
+tradeboard
+- simple explanation of why
+- challenges
+- shows the process
+
+
+krypton
+- simple explanation of why
+- the solution
+- show the process
+- architecture/flow
+- summary
+
+

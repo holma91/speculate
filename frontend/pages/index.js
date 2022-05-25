@@ -190,7 +190,7 @@ const Container = styled.div`
   margin: 0;
 
   h1 {
-    margin-top: 50px;
+    margin-top: 20px;
     margin-bottom: 10px;
     font-size: 70px;
   }

@@ -27,7 +27,7 @@ contract OptionFactory is ERC721URIStorage {
         uint256 amount;
     }
 
-    constructor() ERC721("nejm", "smbl") {
+    constructor() ERC721("najm", "smbl") {
         currentOptionId = 0;
     }
 
@@ -101,7 +101,7 @@ contract OptionFactory is ERC721URIStorage {
             uint256(currentUnderlyingPrice);
         uint256 payoutInETH = payoutInUSD / uint256(currentCollateralPrice);
 
-        // burn the exercised options
+        // burn the nft representing the exercised option
         _burn(optionId);
 
         // settle in cash

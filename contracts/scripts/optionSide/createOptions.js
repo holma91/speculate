@@ -5,20 +5,26 @@ const { fuji, mumbai, rinkeby } = require('../addresses');
 require('dotenv').config();
 
 const assets = ['ETH', 'BTC', 'ATOM', 'LINK', 'MATIC'];
-const prices = [
-  '2000',
-  '200',
-  '211',
-  '4322',
-  '9888',
-  '50000',
-  '20000',
-  '5',
-  '9',
-  '100',
+const prices = {
+  ETH: [2000, 1900, 2100, 1500, 2050],
+  BTC: [30000, 28000, 20000, 29000, 31000],
+  LINK: [7, 6.7, 5.95, 6.5, 7.2],
+  ATOM: [10, 10.7, 10.65, 9.5, 8.5],
+  MATIC: [0.6, 0.7, 0.65, 0.63, 0.55],
+};
+
+const dates = [
+  new Date('2023-01-01').getTime() / 1000,
+  new Date('2024-01-01').getTime() / 1000,
+  new Date('2022-05-26').getTime() / 1000,
+  new Date('2022-05-27').getTime() / 1000,
+  new Date('2022-05-28').getTime() / 1000,
+  new Date('2022-05-29').getTime() / 1000,
+  new Date('2022-05-30').getTime() / 1000,
+  new Date('2022-06-01').getTime() / 1000,
 ];
-const amounts = ['0.001', '0.002', '0.004', '0.0025', '0.01'];
-const timestamps = [1653384630, 1653384830, 1653284610, 1653384635, 1653384830];
+
+const amounts = ['0.1', '0.02', '1', '0.25', '0.01'];
 
 const priceFeeds = {
   RINKEBY: {
@@ -56,7 +62,7 @@ const priceFeeds = {
 
 const main = async () => {
   provider = new ethers.providers.JsonRpcProvider(process.env.rpc_rinkeby);
-  const wallet = new ethers.Wallet(process.env.pk2, provider);
+  const wallet = new ethers.Wallet(process.env.pk3, provider);
   const factory = new ethers.ContractFactory(
     OptionFactory.abi,
     OptionFactory.bytecode,
@@ -65,19 +71,22 @@ const main = async () => {
 
   const optionFactory = factory.attach(rinkeby.optionFactory);
 
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < 20; i++) {
     let asset = assets[Math.floor(Math.random() * assets.length)];
     let option = {
       underlyingPriceFeed: priceFeeds.RINKEBY[asset].USD,
       underlyingAmount: ethers.utils.parseUnits(
         amounts[Math.floor(Math.random() * amounts.length)]
       ),
-      call: Math.random() > 0.35,
+      call: true,
       strikePrice: ethers.utils.parseUnits(
-        prices[Math.floor(Math.random() * prices.length)],
+        prices[asset][
+          Math.floor(Math.random() * prices[asset].length)
+        ].toString(),
         8
       ),
-      expiry: timestamps[Math.floor(Math.random() * timestamps.length)],
+      expiry: dates[Math.floor(Math.random() * dates.length)],
+      european: Math.random() > 0.5 ? true : false,
     };
 
     let collateral = {

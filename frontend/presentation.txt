@@ -1,0 +1,74 @@
+
+
+PRESENTATION
+
+why?
+- decentralized options are currently not that composable
+  - compare to nft trading and ERC-20, where it doesn't matter where you trade
+  - you can't buy an option on one exchange and sell it on another
+
+- hard to find liquidity, this enables a larger and more free market
+
+
+how?
+- represent derivatives as NFTs
+
+results:
+  - interoperability everywhere (other platforms, wallets etc)
+  - you can buy the option and exchange x, and then re-sell it on exchange y
+  - you can exercise the option anywhere
+  - incentivized options selling, by enabling a fee on all subsequent trades
+
+
+
+architecture
+- two contracts
+  - the exchange
+    basically a nft marketplace, inspired by LooksRare
+  - the option factory
+    the contract that handles everything around the options
+  - link to the code
+
+
+
+
+VIDEO
+
+--> home
+
+a platform where users can both SELL options, and BUY options
+
+--> view more call options
+
+show what some available call options look like
+
+--> click on specific option that is listed already and have bids
+
+- view the stats, quickly explain european vs american
+- look at listing information, explain the limit orders you can make via chainlink price feeds
+  - make a limit order on the option
+
+--> go to another option (one that is OTM)
+- buy it on the spot
+- view on another platform to show the interoperability
+- time travel to a day where the option is ITM
+  - exercise the option and see the money flowing in
+
+
+--> go to write options page
+- write the option, quickly explain the parameters
+
+we can now go to two different pages
+- view the short
+- view the long
+
+
+--> go to the short page
+- take a look at the parameters
+
+--> go the long page
+- simulate a bot buying the long
+
+--> go to the short page
+- view it once again
+

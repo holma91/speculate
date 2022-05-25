@@ -127,6 +127,7 @@ export default function Option() {
   const [nft, setNft] = useState(null);
   const [asset, setAsset] = useState('');
   const [assetPrice, setAssetPrice] = useState(0);
+  const [rawAssetPrice, setRawAssetPrice] = useState(null);
   const router = useRouter();
   const { id } = router.query;
 
@@ -167,6 +168,18 @@ export default function Option() {
 
   const waitForBuyNowFunc = useWaitForTransaction({
     hash: buyNowFunc.data?.hash,
+  });
+
+  const exerciseFunc = useContractWrite(
+    {
+      addressOrName: rinkeby.optionFactory,
+      contractInterface: OptionFactory.abi,
+    },
+    'exerciseOption'
+  );
+
+  const waitForExerciseFunc = useWaitForTransaction({
+    hash: exerciseFunc.data?.hash,
   });
 
   const bidFunc = useContractWrite(
@@ -342,18 +355,6 @@ export default function Option() {
     pageSize: 5,
   };
 
-  const moralisMetadataSync = async (tokenId) => {
-    const chain = 'rinkeby';
-    const url = `https://deep-index.moralis.io/api/v2/nft/${
-      rinkeby.optionFactory
-    }/${tokenId.toString()}/metadata/resync?chain=${chain}&flag=metadata&mode=sync`;
-    let response = await fetch(url, {
-      headers: { 'X-API-Key': process.env.MORALIS_API_KEY },
-    });
-    response = await response.json();
-    return response;
-  };
-
   const getOption = async () => {
     if (activeAccount) {
       if (!id) {
@@ -371,7 +372,7 @@ export default function Option() {
       const option = await contract.getOptionById(id);
       const parsedOption = {
         underlyingPriceFeed: option.underlyingPriceFeed,
-        underlyingPriceAmount: option.underlyingAmount,
+        underlyingAmount: option.underlyingAmount,
         call: option.call,
         strikePrice: option.strikePrice,
         expiry: option.expiry,
@@ -459,6 +460,7 @@ export default function Option() {
         const price = await priceFeedContract.latestRoundData();
 
         setAssetPrice(ethers.utils.formatUnits(price.answer, decimals));
+        setRawAssetPrice(price.answer);
       } else {
         console.log("Ethereum object doesn't exist!");
       }
@@ -667,6 +669,19 @@ export default function Option() {
     }
   };
 
+  const exercise = async () => {
+    if (activeAccount) {
+      exerciseFunc.write({
+        args: [id],
+        overrides: {
+          gasLimit: 500000,
+        },
+      });
+    } else {
+      console.log('connect your wallet!');
+    }
+  };
+
   const approveSpending = async () => {
     if (activeAccount) {
       approveSpendingFunc.write({
@@ -677,8 +692,9 @@ export default function Option() {
     }
   };
 
-  const getExpiryDate = (timestamp) => {
-    let d = new Date(timestamp);
+  const getExpiryDate = () => {
+    let d = new Date(parseInt(option.expiry.toString()) * 1000);
+
     let dd = String(d.getDate()).padStart(2, '0');
     let mm = String(d.getMonth() + 1).padStart(2, '0'); //January is 0!
     let yyyy = d.getFullYear();
@@ -688,16 +704,21 @@ export default function Option() {
 
   const getOptionStatus = () => {
     const strikePrice = option.strikePrice;
-    const marketPrice = ethers.utils.parseUnits(assetPrice, 8);
-    if (marketPrice.gt(strikePrice)) {
+    if (rawAssetPrice.gt(strikePrice)) {
       return 'ITM';
     } else {
       return 'OTM';
     }
   };
 
-  const getOptionStyle = () => {
-    return option.european;
+  const getRightToBuy = () => {
+    return ethers.utils.formatEther(option.underlyingAmount.toString());
+  };
+
+  const getValue = () => {
+    const diff = rawAssetPrice.sub(option.strikePrice);
+    const value = diff.mul(option.underlyingAmount);
+    return value.gt(0) ? '$' + ethers.utils.formatUnits(value, 18 + 8) : '-';
   };
 
   return (
@@ -714,7 +735,6 @@ export default function Option() {
           )}
 
           <DescriptionBox>
-            <p>Description</p>
             <p className="owned-by">
               {nft ? `Owned by ${styleAddress(nft.owner_of)}` : 'Owned by '}
             </p>
@@ -723,30 +743,54 @@ export default function Option() {
         <div className="right">
           <p className="collection-header">{asset} Options</p>
           <p className="header">{asset} CALL</p>
-          <Prices>
-            <MarketPriceDiv>
-              <p className="price-header">Strike Price:</p>
-              <p className="price">${trimStr('1750.32323')}</p>
-            </MarketPriceDiv>
-            {assetPrice > 0 ? (
+          <Stats>
+            {option ? (
+              <MarketPriceDiv>
+                <p className="price-header">Strike Price:</p>
+                <p className="price">
+                  $
+                  {trimStr(
+                    ethers.utils
+                      .formatUnits(option.strikePrice.toString(), 8)
+                      .toString()
+                  )}
+                </p>
+              </MarketPriceDiv>
+            ) : null}
+            {rawAssetPrice && option ? (
               <>
                 <MarketPriceDiv>
                   <p className="price-header">
-                    Current {nft.metadata.attributes[0].value} Price:
+                    {nft.metadata.attributes[0].value} Price:
                   </p>
                   <p className="price">${trimStr(assetPrice)}</p>
                 </MarketPriceDiv>
                 <MarketPriceDiv>
                   <p className="price-header">Status:</p>
-                  <p className="price">ITM</p>
+                  <p className="price">{getOptionStatus()}</p>
                 </MarketPriceDiv>
                 <MarketPriceDiv>
-                  <p className="price-header">Expires in:</p>
-                  <p className="price">in 23 days</p>
+                  <p className="price-header">Expiry:</p>
+                  <p className="price">{getExpiryDate()}</p>
+                </MarketPriceDiv>
+                <MarketPriceDiv>
+                  <p className="price-header">Right to buy:</p>
+                  <p className="price">
+                    {getRightToBuy()}
+                    {asset}
+                  </p>
                 </MarketPriceDiv>
               </>
             ) : null}
-          </Prices>
+          </Stats>
+          <Stats>
+            <MarketPriceDiv>
+              <p className="price-header">Inherent Value:</p>
+              {rawAssetPrice && option ? (
+                <p className="price">{trimStr(getValue())}</p>
+              ) : null}
+            </MarketPriceDiv>
+          </Stats>
           <PriceBox isClicked={showExerciseInfo}>
             <div
               onClick={() => setShowExerciseInfo(!showExerciseInfo)}
@@ -759,61 +803,23 @@ export default function Option() {
                 <div className="exercising-info">
                   {option.european ? (
                     <p>
-                      since the option is of european style, you cannot exercise
-                      it before expiry.
+                      Since the option is of european style, it cannot be
+                      exercised before expiry.
                     </p>
                   ) : (
                     <>
                       <p>
-                        since the option is ITM and american style, you can
-                        exercise it early.
+                        Since the option is ITM and american style, it can be
+                        exercised early.
                       </p>
-                      <p>
-                        all our options settle in cash, which means you'll get
-                        payed the profit in WETH.
-                      </p>
-                      <p>the terms if you exercise right now:</p>
-                      <ExerciseTerms>
-                        <p>
-                          - you have the right to buy 0.2ETH at the price of
-                          $2000.
-                        </p>
-                        <p className="math">0.2 x $2000 = $400</p>
-                        <p>
-                          - the market price of 1 ETH is at the moment $3000.
-                        </p>
-                        <p className="math">0.2 x $3000 = $600</p>
-                        <p>Your profit is therefore $600 - $200 = $400</p>
-                      </ExerciseTerms>
-
-                      <Button>Exercise</Button>
+                      All our options settle in cash, which means the profit is
+                      payed back in WETH.
+                      <p></p>
+                      <Button onClick={exercise}>Exercise</Button>
                     </>
                   )}
                 </div>
-              ) : (
-                <div className="exercising-info">
-                  <p>the option expires in: </p>
-                  <p>the option is currently: </p>
-                  <p>
-                    since the option is ITM and american style, you can exercise
-                    it early.
-                  </p>
-                  <p>
-                    all our options settle in cash, which means you'll get payed
-                    the profit in WETH.
-                  </p>
-                  <p>the terms if you exercise right now:</p>
-                  <ExerciseTerms>
-                    <p>- you have the right to buy at the price of .</p>
-                    <p className="math"> x = </p>
-                    <p>the market price of is at the moment .</p>
-                    <p className="math"> x = </p>
-                    <p>Your profit is therefore $ - $ = $</p>
-                  </ExerciseTerms>
-
-                  <Button>Exercise</Button>
-                </div>
-              )
+              ) : null
             ) : null}
           </PriceBox>
           {listed ? (
@@ -1034,9 +1040,12 @@ export default function Option() {
   );
 }
 
-const Prices = styled.div`
+const Stats = styled.div`
   display: flex;
-  gap: 25px;
+  gap: 30px;
+  flex-wrap: wrap;
+  /* grid-template-columns: repeat(4, auto); */
+  /* justify-items: start; */
 `;
 
 const MarketPriceDiv = styled.div`
@@ -1238,10 +1247,14 @@ const DescriptionBox = styled.div`
   display: flex;
   flex-direction: column;
   gap: 5px;
-  border: 1px solid black;
+  border: 1px solid #ecedef;
   border-radius: 6px;
   padding: 10px;
   width: 320px;
+
+  p {
+    font-weight: 600;
+  }
 `;
 
 const StyledSVG = styled.svg`
