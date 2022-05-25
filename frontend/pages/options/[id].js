@@ -96,6 +96,9 @@ const styleAddress = (address) => {
 };
 
 export default function Option() {
+  const [showExerciseInfo, setShowExerciseInfo] = useState(true);
+  const [showListingInfo, setShowListingInfo] = useState(false);
+  const [showOffers, setShowOffers] = useState(false);
   const [makerAsk, setMakerAsk] = useState(null);
   const [makerBids, setMakerBids] = useState([]);
   const [listed, setListed] = useState(false);
@@ -629,43 +632,58 @@ export default function Option() {
           {assetPrice > 0
             ? `${nft.metadata.attributes[0].value} price: $${assetPrice}`
             : null}
-          <PriceBox>
-            <div className="time">
+          <PriceBox isClicked={showExerciseInfo}>
+            <div
+              onClick={() => setShowExerciseInfo(!showExerciseInfo)}
+              className="time"
+            >
               <p>Exercising information</p>
             </div>
-            <div className="exercising-info">
-              <p>the option expires in: 23 days</p>
-              <p>the option is currently: ITM (70% above ATM)</p>
-              <p>
-                since the option is ITM and american style, you can exercise it
-                early.
-              </p>
-              <p>
-                all our options settle in cash, which means you'll get payed the
-                profit in WETH.
-              </p>
-              <p>the terms if you exercise right now:</p>
-              <ExerciseTerms>
-                <p>- you have the right to buy 0.2ETH at the price of $2000.</p>
-                <p className="math">0.2 x $2000 = $400</p>
-                <p>the market price of 1 ETH is at the moment $3000.</p>
-                <p className="math">0.2 x $3000 = $600</p>
-                <p>Your profit is therefore $600 - $200 = $400</p>
-              </ExerciseTerms>
+            {showExerciseInfo ? (
+              <div className="exercising-info">
+                <p>the option expires in: 23 days</p>
+                <p>the option is currently: ITM (70% above ATM)</p>
+                <p>
+                  since the option is ITM and american style, you can exercise
+                  it early.
+                </p>
+                <p>
+                  all our options settle in cash, which means you'll get payed
+                  the profit in WETH.
+                </p>
+                <p>the terms if you exercise right now:</p>
+                <ExerciseTerms>
+                  <p>
+                    - you have the right to buy 0.2ETH at the price of $2000.
+                  </p>
+                  <p className="math">0.2 x $2000 = $400</p>
+                  <p>the market price of 1 ETH is at the moment $3000.</p>
+                  <p className="math">0.2 x $3000 = $600</p>
+                  <p>Your profit is therefore $600 - $200 = $400</p>
+                </ExerciseTerms>
 
-              <Button>Exercise</Button>
-            </div>
+                <Button>Exercise</Button>
+              </div>
+            ) : null}
           </PriceBox>
           {listed ? (
-            <PriceBox>
-              <div className="time">
-                <p>
-                  Sale expires in 15 days OR when {asset} price {'>'} $
-                  {ethers.utils.formatUnits(
-                    makerAsk.underlyingPriceTreshold,
-                    8
-                  )}
-                </p>
+            <PriceBox isClicked={showListingInfo}>
+              <div
+                className="time"
+                onClick={() => setShowListingInfo(!showListingInfo)}
+              >
+                <p>Listing information</p>
+                {showListingInfo ? (
+                  <div className="listing-info">
+                    <p>
+                      Sale expires in 15 days OR when {asset} price {'>'} $
+                      {ethers.utils.formatUnits(
+                        makerAsk.underlyingPriceTreshold,
+                        8
+                      )}
+                    </p>
+                  </div>
+                ) : null}
               </div>
               <div className="price">
                 {listed ? (
@@ -775,72 +793,84 @@ export default function Option() {
               </div>
             </PriceBox>
           ) : (
-            <PriceBox>
-              <div className="time">
+            <PriceBox isClicked={showListingInfo}>
+              <div
+                className="time"
+                onClick={() => setShowListingInfo(!showListingInfo)}
+              >
                 <p>Listing information</p>
               </div>
-              <div className="price">
-                <p>Unlisted</p>
-                {!isLoading &&
-                nft &&
-                nft.owner_of.toLowerCase() ===
-                  activeAccount.address.toLowerCase() ? (
-                  <>
-                    <form onSubmit={formik.handleSubmit}>
-                      <InputContainer>
-                        <label htmlFor="price">price: </label>
-                        <StyledMyTextInput
-                          name="price"
-                          type="number"
-                          placeholder="2000"
-                          {...formik.getFieldProps('price')}
-                        />
-                      </InputContainer>
-                      <InputContainer>
-                        <label htmlFor="until">until: </label>
-                        <StyledMyTextInput
-                          name="until"
-                          type="date"
-                          placeholder=""
-                          {...formik.getFieldProps('until')}
-                        />
-                      </InputContainer>
-                      <InputContainer>
-                        <label htmlFor="treshold">
-                          {asset} price treshold:{' '}
-                        </label>
-                        <StyledMyTextInput
-                          name="treshold"
-                          type="number"
-                          {...formik.getFieldProps('treshold')}
-                        />
-                      </InputContainer>
-                      {listFunc.isLoading ? (
-                        <Button type="submit">Loading...</Button>
-                      ) : waitForListFunc.isLoading ? (
-                        <Button type="submit">Pending...</Button>
-                      ) : (
-                        <Button type="submit">List Option</Button>
-                      )}
-                    </form>
-                  </>
-                ) : (
-                  <>
-                    <Button>sup</Button>
-                  </>
-                )}
-              </div>
+              {showListingInfo ? (
+                <div className="price">
+                  <p>Unlisted</p>
+                  {!isLoading &&
+                  nft &&
+                  nft.owner_of.toLowerCase() ===
+                    activeAccount.address.toLowerCase() ? (
+                    <>
+                      <form onSubmit={formik.handleSubmit}>
+                        <InputContainer>
+                          <label htmlFor="price">price: </label>
+                          <StyledMyTextInput
+                            name="price"
+                            type="number"
+                            placeholder="2000"
+                            {...formik.getFieldProps('price')}
+                          />
+                        </InputContainer>
+                        <InputContainer>
+                          <label htmlFor="until">until: </label>
+                          <StyledMyTextInput
+                            name="until"
+                            type="date"
+                            placeholder=""
+                            {...formik.getFieldProps('until')}
+                          />
+                        </InputContainer>
+                        <InputContainer>
+                          <label htmlFor="treshold">
+                            {asset} price treshold:{' '}
+                          </label>
+                          <StyledMyTextInput
+                            name="treshold"
+                            type="number"
+                            {...formik.getFieldProps('treshold')}
+                          />
+                        </InputContainer>
+                        {listFunc.isLoading ? (
+                          <Button type="submit">Loading...</Button>
+                        ) : waitForListFunc.isLoading ? (
+                          <Button type="submit">Pending...</Button>
+                        ) : (
+                          <Button type="submit">List Option</Button>
+                        )}
+                      </form>
+                    </>
+                  ) : (
+                    <>
+                      <Button>sup</Button>
+                    </>
+                  )}
+                </div>
+              ) : null}
             </PriceBox>
           )}
-          <OfferBox>
-            <div className="heading">
+          <OfferBox isClicked={showOffers}>
+            <div
+              className="offers-info"
+              onClick={() => setShowOffers(!showOffers)}
+            >
               <p>Offers</p>
             </div>
-            <SmallTable
-              columns={offerColumns}
-              data={offers}
-              initialState={initialState}
-            />
+            {showOffers ? (
+              <div className="table-wrapper">
+                <SmallTable
+                  columns={offerColumns}
+                  data={offers}
+                  initialState={initialState}
+                />
+              </div>
+            ) : null}
           </OfferBox>
         </div>
       </Container>
@@ -906,19 +936,30 @@ const PriceBox = styled.div`
   flex-direction: column;
   gap: 5px;
   border: 1px solid #ecedef;
-  padding: 15px;
+  /* padding: 15px; */
   border-radius: 6px;
   width: 100%;
 
   .time {
+    cursor: pointer;
     padding-bottom: 5px;
-    border-bottom: 1px solid #ecedef;
+    /* margin-bottom: 5px; */
+    padding-left: 15px;
+    padding-top: 10px;
+    border-bottom: ${(props) => (props.isClicked ? '1px solid #ecedef' : '')};
+    /* border-bottom: 1px solid #ecedef; */
     p {
       margin: 5px 0;
+    }
+
+    :hover {
+      background-color: rgb(249 250 251);
     }
   }
 
   .price {
+    padding-left: 15px;
+    padding-bottom: 15px;
     span {
       font-size: 14px;
     }
@@ -930,12 +971,18 @@ const PriceBox = styled.div`
   }
 
   .exercising-info {
+    padding-left: 15px;
+    padding-bottom: 15px;
+    /* padding-top: 5px; */
     p {
       margin: 8px 0;
     }
     button {
       margin-top: 3px;
     }
+  }
+
+  .listing-info {
   }
 `;
 
@@ -944,13 +991,28 @@ const OfferBox = styled.div`
   flex-direction: column;
   gap: 5px;
   border: 1px solid #ecedef;
-  padding: 15px;
+  /* padding: 15px; */
+
   border-radius: 6px;
   width: 100%;
 
-  .heading {
+  .offers-info {
+    cursor: pointer;
     padding-bottom: 5px;
-    border-bottom: 1px solid #ecedef;
+    padding-left: 15px;
+    padding-top: 10px;
+    border-bottom: ${(props) => (props.isClicked ? '1px solid #ecedef' : '')};
+    p {
+      margin: 5px 0;
+    }
+
+    :hover {
+      background-color: rgb(249 250 251);
+    }
+  }
+
+  .table-wrapper {
+    padding: 10px;
   }
 `;
 
