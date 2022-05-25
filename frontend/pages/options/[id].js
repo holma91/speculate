@@ -335,6 +335,16 @@ export default function Option() {
   };
 
   const getNft = async () => {
+    const extraRequest = async (url) => {
+      try {
+        let response = await fetch(url);
+        let metadata = await response.json();
+        return metadata;
+      } catch (e) {
+        console.log(e);
+      }
+    };
+
     const moralisRequest = async (id) => {
       const chain = 'rinkeby';
       const url = `https://deep-index.moralis.io/api/v2/nft/${rinkeby.optionFactory}/${id}?chain=${chain}&format=decimal`;
@@ -348,6 +358,8 @@ export default function Option() {
         ...response,
         metadata: response.metadata ? JSON.parse(response.metadata) : null,
       };
+      console.log(actualNft);
+
       return actualNft;
     };
 
@@ -358,14 +370,15 @@ export default function Option() {
 
       let actualNft = await moralisRequest(id);
 
-      // an actual while loop in prod? lol
-      // while (!actualNft.metadata) {
-      //   let res = await moralisMetadataSync(id);
-      //   console.log(res);
-      //   actualNft = await moralisRequest(id);
-      //   await sleep(5000);
-      //   // prob sleep here to avoid rate limiting?
-      // }
+      if (!actualNft.metadata) {
+        const re = /\/ipfs\/.+metadata.json$/;
+        const ipfsString = actualNft.token_uri.match(re)[0];
+
+        const ipfsUrl = `https://minty.infura-ipfs.io${ipfsString}`;
+
+        let metadata = await extraRequest(ipfsUrl);
+        actualNft.metadata = metadata;
+      }
 
       setNft(actualNft);
     } else {
@@ -618,7 +631,7 @@ export default function Option() {
     <OuterContainer>
       <Container>
         <div className="left">
-          {nft ? (
+          {nft?.metadata ? (
             <StyledImg src={`data:image/svg+xml;utf8,${nft.metadata.image}`} />
           ) : (
             <StyledImg />

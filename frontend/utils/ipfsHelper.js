@@ -53,6 +53,7 @@ const createSvg = (option, asset, assetDecimals) => {
       version="1.1"
       xmlns="http://www.w3.org/2000/svg"
     >
+      <rect x="0" y="0" width="350" height="350" fill="white" />
       <text x="122" y="49" fontSize="25" fontWeight="200">
       ${asset.toUpperCase()} CALL
       </text>

@@ -154,7 +154,10 @@ function Positions() {
 
       if (!receivedNFTs) return;
 
+      console.log(receivedNFTs);
+
       let filteredNFTs = receivedNFTs.filter((nft) => nft.metadata);
+      let filteredNFTs2 = receivedNFTs.filter((nft) => nft.token_uri);
 
       filteredNFTs = filteredNFTs.map((nft) => {
         let listed = false;
@@ -199,7 +202,8 @@ function Positions() {
         };
       });
 
-      console.log(filteredNFTs);
+      // console.log(filteredNFTs);
+      console.log(filteredNFTs2);
 
       setNfts(filteredNFTs);
     } else {
