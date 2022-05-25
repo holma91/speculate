@@ -46,42 +46,30 @@ const makeNFTMetadata = async (assetURI, options) => {
 
 const createSvg = (option, asset) => {
   return `<svg
-      width="320"
-      height="320"
+      width="350"
+      height="350"
       version="1.1"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <text
-        x="${asset.toUpperCase() === 'ETH' ? '120' : '123'}"
-        y="49"
-        fontSize="25"
-        fontWeight="300"
-      >
+      <text x="122" y="49" fontSize="25" fontWeight="200">
       ${asset.toUpperCase()} CALL
       </text>
-      <line
-        x1="20"
-        y1="65"
-        x2="300"
-        y2="65"
-        stroke="black"
-        strokeWidth="1.25"
-      />
-      <text x="70" y="105" fontSize="20" fontWeight="300">
+      <line x1="40" y1="65" x2="310" y2="65" stroke="black" strokeWidth="1" />
+      <text x="80" y="105" fontSize="20" fontWeight="200">
         Price Feed: ${asset.toUpperCase()}/USD
       </text>
-      <text x="70" y="150" fontSize="20" fontWeight="300">
+      <text x="80" y="150" fontSize="20" fontWeight="200">
         Strike Price: $${ethers.utils.formatUnits(option.strikePrice, 8)}
       </text>
-      <text x="70" y="195" fontSize="20" fontWeight="300">
+      <text x="80" y="195" fontSize="20" fontWeight="200">
         Amount: ${ethers.utils.formatEther(
           option.underlyingAmount
         )} ${asset.toUpperCase()}
       </text>
-      <text x="70" y="240" fontSize="20" fontWeight="300">
+      <text x="80" y="240" fontSize="20" fontWeight="200">
         Expiry: ${option.expiry}
       </text>
-      <text x="70" y="285" fontSize="20" fontWeight="300">
+      <text x="80" y="285" fontSize="20" fontWeight="200">
         American Style
       </text>
     </svg>`;

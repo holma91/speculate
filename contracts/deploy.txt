@@ -1,5 +1,6 @@
 POSSIBLE ERRORS
 - allowance on ERC721 and ERC20
+  - ERC721 ALLOWANCE SHOULD BE FOR THE MANAGER!
 - forgetting msg.value when minting
 - gas limit
 - gets back weird dictionary/array from in getMakerAsk()
@@ -22,15 +23,15 @@ deploy:
 call getters:
 
 RINKEBY:
-CurrencyManager deployed at: 0x4ED75954521ACB5555Ed34821cB52cb3596cc8AF
-ExecutionManager deployed at: 0x45661ad0482feE92824599772e8d583a387815E0
-RoyaltyFeeRegistry deployed at: 0x1e746bAC6c905483969e6456CA086d757eb0C747
-RoyaltyFeeManager deployed at: 0xf2c6Fc5aD739c0542e70b9AB1a73756A8Cdb08c6
-SpeculateExchange deployed at: 0x018D258bc60971cEB78a528a1494A55530cE0e4f
-strategyStandardSaleForFixedPrice deployed at: 0x771D220f9Eb781808558477d8BE67Fe6f4b86D3C
-transferManagerERC721 deployed at: 0xBd532823452b35131A218cE78ACfde4EAe13d82b
-transferManagerERC1155 deployed at: 0x542fa6AB3DE3244e9191CC2F4f6e2a705C28b0C4
-transferSelectorNFT deployed at: 0x1ed37aFBffDB489a353313Ec8eBF764A9121439D
+CurrencyManager deployed at: 0xEF73a73b232d7853dF7bb9dd6d77f72cB2dA7664
+ExecutionManager deployed at: 0x2Bbc658d5951cc8b9c2DFF34D9205EC90DC4D3aF
+RoyaltyFeeRegistry deployed at: 0x3D87C91989A2FeA321A35A936eA40bef6E107076
+RoyaltyFeeManager deployed at: 0x4aFf95f19Cc47F5aad121429CCB810ce2978B112
+SpeculateExchange deployed at: 0x0f8E6D9e9b05e6f5a056cCE3D6C4114A756280DB
+strategyStandardSaleForFixedPrice deployed at: 0xceB7EffE7d8A985BfD314A8C0eb07eCd6935D103
+transferManagerERC721 deployed at: 0x79289B8F39AC5F8823b25815f75972a979ACA54F
+transferManagerERC1155 deployed at: 0x7760600eE17f7a38B676376aCEEE0B02A5dfF44e
+transferSelectorNFT deployed at: 0x4F5385E410b0c74BA75e0CB8f05Ccf0F0a3E6ed4
 
 optionFactory deployed at: 0x3b61B8289f0b43b600c5032831B621C6DaF4149E
 
