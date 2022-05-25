@@ -142,6 +142,16 @@ function Positions() {
   };
 
   const getNfts = async () => {
+    const extraRequest = async (url) => {
+      try {
+        let response = await fetch(url);
+        let metadata = await response.json();
+        return metadata;
+      } catch (e) {
+        console.log(e);
+      }
+    };
+
     if (activeAccount) {
       const chain = 'rinkeby';
       const url = `https://deep-index.moralis.io/api/v2/${activeAccount.address}/nft/${rinkeby.optionFactory}?chain=${chain}&format=decimal`;
@@ -154,12 +164,21 @@ function Positions() {
 
       if (!receivedNFTs) return;
 
-      console.log(receivedNFTs);
+      for (const nft of receivedNFTs) {
+        if (!nft.metadata) {
+          const re = /\/ipfs\/.+metadata.json$/;
+          const ipfsString = nft.token_uri.match(re)[0];
 
-      let filteredNFTs = receivedNFTs.filter((nft) => nft.metadata);
-      let filteredNFTs2 = receivedNFTs.filter((nft) => nft.token_uri);
+          const ipfsUrl = `https://minty.infura-ipfs.io${ipfsString}`;
 
-      filteredNFTs = filteredNFTs.map((nft) => {
+          let metadata = await extraRequest(ipfsUrl);
+          nft.metadata = metadata;
+        } else {
+          nft.metadata = JSON.parse(nft.metadata);
+        }
+      }
+
+      let filteredNFTs = receivedNFTs.map((nft) => {
         let listed = false;
         let listPrice = '';
         let bidded = false;
@@ -194,7 +213,6 @@ function Positions() {
 
         return {
           ...nft,
-          metadata: JSON.parse(nft.metadata),
           listed,
           listPrice,
           bidded,
@@ -202,8 +220,8 @@ function Positions() {
         };
       });
 
-      // console.log(filteredNFTs);
-      console.log(filteredNFTs2);
+      console.log(filteredNFTs);
+      // console.log(filteredNFTs2);
 
       setNfts(filteredNFTs);
     } else {
