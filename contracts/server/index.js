@@ -41,7 +41,9 @@ speculateExchange.on(
     amount,
     price,
     startTime,
-    endTime
+    endTime,
+    underlyingPriceFeed,
+    underlyingPriceTreshold
   ) => {
     console.log('MakerAsk received');
     collection = collection.toLowerCase();
@@ -60,6 +62,8 @@ speculateExchange.on(
       price: price.toString(),
       startTime: startTime.toString(),
       endTime: endTime.toString(),
+      underlyingPriceFeed: underlyingPriceFeed.toLowerCase(),
+      underlyingPriceTreshold: underlyingPriceTreshold.toString(),
     };
 
     fs.writeFile(
@@ -84,7 +88,9 @@ speculateExchange.on(
     amount,
     price,
     startTime,
-    endTime
+    endTime,
+    underlyingPriceFeed,
+    underlyingPriceTreshold
   ) => {
     console.log('MakerBid received');
     collection = collection.toLowerCase();
@@ -105,6 +111,8 @@ speculateExchange.on(
           price: price.toString(),
           startTime: startTime.toString(),
           endTime: endTime.toString(),
+          underlyingPriceFeed: underlyingPriceFeed.toLowerCase(),
+          underlyingPriceTreshold: underlyingPriceTreshold.toString(),
         },
       ];
     } else {
@@ -124,6 +132,8 @@ speculateExchange.on(
         price: price.toString(),
         startTime: startTime.toString(),
         endTime: endTime.toString(),
+        underlyingPriceFeed: underlyingPriceFeed.toLowerCase(),
+        underlyingPriceTreshold: underlyingPriceTreshold.toString(),
       });
     }
 

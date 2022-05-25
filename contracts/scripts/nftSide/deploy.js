@@ -122,7 +122,7 @@ const main = async () => {
 
   let addCurrencyTx = await cmContract.addCurrency(rinkeby.weth);
   await addCurrencyTx.wait();
-  console.log('addCurrency tx:', addCurrencyTx);
+  console.log('addCurrency tx:', addCurrencyTx.hash);
 
   const transferManagerERC721 = await tmERC721Factory.deploy(
     seContract.address

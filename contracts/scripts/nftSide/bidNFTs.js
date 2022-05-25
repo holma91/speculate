@@ -22,7 +22,7 @@ const main = async () => {
 
   const speculateExchange = factory.attach(rinkeby.speculateExchange);
 
-  const BID = ethers.BigNumber.from(ethers.utils.parseEther('0.02'));
+  const BID = ethers.BigNumber.from(ethers.utils.parseEther('0.03'));
 
   const weth = new ethers.Contract(rinkeby.weth, WETH_ABI, wallet);
   let approveTx = await weth.approve(
@@ -37,12 +37,14 @@ const main = async () => {
     signer: ADDRESS3,
     collection: rinkeby.optionFactory,
     price: BID,
-    tokenId: 2,
+    tokenId: 23,
     amount: 1,
     strategy: rinkeby.strategy,
     currency: rinkeby.weth,
     startTime: 1651301377,
     endTime: 1660995560,
+    underlyingPriceFeed: rinkeby.ethUsd,
+    underlyingPriceTreshold: ethers.utils.parseUnits('1900', 8),
   };
 
   let tx = await speculateExchange.createMakerBid(makerBid, {

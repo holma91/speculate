@@ -11,7 +11,6 @@ import {AggregatorV3Interface} from "chainlink/contracts/src/v0.8/interfaces/Agg
 // LooksRare interfaces
 import {ICurrencyManager} from "./interfaces/ICurrencyManager.sol";
 import {IExecutionManager} from "./interfaces/IExecutionManager.sol";
-import {IExecutionStrategy} from "./interfaces/IExecutionStrategy.sol";
 import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
 import {ILooksRareExchange} from "./interfaces/ILooksRareExchange.sol";
 import {ITransferManagerNFT} from "./interfaces/ITransferManagerNFT.sol";
@@ -32,6 +31,8 @@ contract SpeculateExchange {
 
     using OrderTypes for OrderTypes.MakerOrder;
     using OrderTypes for OrderTypes.TakerOrder;
+
+    uint256 public immutable PROTOCOL_FEE;
 
     address public immutable WETH;
 
@@ -123,6 +124,7 @@ contract SpeculateExchange {
         royaltyFeeManager = IRoyaltyFeeManager(_royaltyFeeManager);
         WETH = _WETH;
         protocolFeeRecipient = _protocolFeeRecipient;
+        PROTOCOL_FEE = 0;
     }
 
     function getMakerAsk(address collection, uint256 id)
@@ -166,13 +168,6 @@ contract SpeculateExchange {
     function createMakerBid(OrderTypes.MakerOrder calldata makerBid) external {
         require(!makerBid.isOrderAsk, "order is not a bid");
         require(msg.sender == makerBid.signer, "maker must be the sender");
-        // require(
-        //     makerBid.price >
-        //         makerBidByNFT[makerBid.collection][makerBid.tokenId].price ||
-        //         block.timestamp >
-        //         makerBidByNFT[makerBid.collection][makerBid.tokenId].endTime,
-        //     "cannot overwrite previous bid"
-        // );
         // check that msg.sender have the funds?
         // check that the nft exists?
 
@@ -214,10 +209,7 @@ contract SpeculateExchange {
             bool isExecutionValid,
             uint256 tokenId,
             uint256 amount
-        ) = IExecutionStrategy(makerAsk.strategy).canExecuteTakerBid(
-                takerBid,
-                makerAsk
-            );
+        ) = canExecuteTakerBid(takerBid, makerAsk);
 
         require(isExecutionValid, "Strategy: Execution invalid");
 
@@ -288,10 +280,7 @@ contract SpeculateExchange {
             bool isExecutionValid,
             uint256 tokenId,
             uint256 amount
-        ) = IExecutionStrategy(makerBid.strategy).canExecuteTakerAsk(
-                takerAsk,
-                makerBid
-            );
+        ) = canExecuteTakerAsk(takerAsk, makerBid);
 
         require(isExecutionValid, "Strategy: Execution invalid");
 
@@ -425,16 +414,57 @@ contract SpeculateExchange {
 
     /**
      * @notice Calculate protocol fee for an execution strategy
-     * @param executionStrategy strategy
      * @param amount amount to transfer
      */
-    function _calculateProtocolFee(address executionStrategy, uint256 amount)
+    function _calculateProtocolFee(uint256 amount)
         internal
         view
         returns (uint256)
     {
-        uint256 protocolFee = IExecutionStrategy(executionStrategy)
-            .viewProtocolFee();
-        return (protocolFee * amount) / 10000;
+        return (PROTOCOL_FEE * amount) / 10000;
+    }
+
+    function canExecuteTakerBid(
+        OrderTypes.TakerOrder calldata takerBid,
+        OrderTypes.MakerOrder calldata makerAsk
+    )
+        private
+        view
+        returns (
+            bool,
+            uint256,
+            uint256
+        )
+    {
+        return (
+            ((makerAsk.price == takerBid.price) &&
+                (makerAsk.tokenId == takerBid.tokenId) &&
+                (makerAsk.startTime <= block.timestamp) &&
+                (makerAsk.endTime >= block.timestamp)),
+            makerAsk.tokenId,
+            makerAsk.amount
+        );
+    }
+
+    function canExecuteTakerAsk(
+        OrderTypes.TakerOrder calldata takerAsk,
+        OrderTypes.MakerOrder calldata makerBid
+    )
+        private
+        view
+        returns (
+            bool,
+            uint256,
+            uint256
+        )
+    {
+        return (
+            ((makerBid.price == takerAsk.price) &&
+                (makerBid.tokenId == takerAsk.tokenId) &&
+                (makerBid.startTime <= block.timestamp) &&
+                (makerBid.endTime >= block.timestamp)),
+            makerBid.tokenId,
+            makerBid.amount
+        );
     }
 }

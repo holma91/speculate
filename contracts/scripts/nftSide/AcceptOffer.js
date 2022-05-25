@@ -1,11 +1,10 @@
 const ethers = require('ethers');
-const SpeculateExchange = require('../out/SpeculateExchange.sol/SpeculateExchange.json');
-const WETH_ABI = require('../wethABI.json');
-const { ADDRESS3, ADDRESS2, mumbai, rinkeby, fuji } = require('./addresses');
+const SpeculateExchange = require('../../out/SpeculateExchange.sol/SpeculateExchange.json');
+const { ADDRESS3, ADDRESS2, mumbai, rinkeby, fuji } = require('../addresses');
 require('dotenv').config();
 
 const main = async () => {
-  provider = new ethers.providers.JsonRpcProvider(process.env.rpc_fuji);
+  provider = new ethers.providers.JsonRpcProvider(process.env.rpc_rinkeby);
   const wallet = new ethers.Wallet(process.env.pk2, provider);
   const factory = new ethers.ContractFactory(
     SpeculateExchange.abi,
@@ -13,11 +12,15 @@ const main = async () => {
     wallet
   );
 
-  const takerAskPrice = ethers.BigNumber.from(ethers.utils.parseEther('0.004'));
+  const takerAskPrice = ethers.BigNumber.from(ethers.utils.parseEther('0.07'));
 
-  const speculateExchange = factory.attach(fuji.speculateExchange);
+  const speculateExchange = factory.attach(rinkeby.speculateExchange);
 
-  const makerBid = await speculateExchange.getMakerBid(fuji.nftCollection, 45);
+  const makerBid = await speculateExchange.getMakerBid(
+    rinkeby.optionFactory,
+    23,
+    ADDRESS3
+  );
   const parsedMakerBid = {
     isOrderAsk: makerBid.isOrderAsk,
     signer: makerBid.signer,
@@ -29,14 +32,16 @@ const main = async () => {
     currency: makerBid.currency,
     startTime: makerBid.startTime,
     endTime: makerBid.endTime,
+    underlyingPriceFeed: makerBid.underlyingPriceFeed,
+    underlyingPriceTreshold: makerBid.underlyingPriceTreshold,
   };
 
   // need to have a collection field in here aswell
   const takerAsk = {
     isOrderAsk: true,
     taker: ADDRESS2,
-    price: takerAskPrice,
-    tokenId: 45,
+    price: parsedMakerBid.price,
+    tokenId: 23,
   };
 
   let tx = await speculateExchange.matchBidWithTakerAsk(

@@ -102,6 +102,7 @@ export default function Option() {
   const [bidded, setBidded] = useState(false);
   const { data: activeAccount, isError, isLoading } = useAccount();
   const [nft, setNft] = useState(null);
+  const [asset, setAsset] = useState('');
   const [assetPrice, setAssetPrice] = useState(0);
   const router = useRouter();
   const { id } = router.query;
@@ -198,6 +199,8 @@ export default function Option() {
       price,
       startTime,
       endTime,
+      underlyingPriceFeed,
+      underlyingPriceTreshold,
     ]) => {
       const makerAsk = {
         signer: signer.toLowerCase(),
@@ -210,6 +213,8 @@ export default function Option() {
         price: price.toString(),
         startTime: startTime.toString(),
         endTime: endTime.toString(),
+        underlyingPriceFeed: underlyingPriceFeed.toLowerCase(),
+        underlyingPriceTreshold: underlyingPriceTreshold.toString(),
       };
       setMakerAsk(makerAsk);
       setListed(true);
@@ -232,6 +237,8 @@ export default function Option() {
       price,
       startTime,
       endTime,
+      underlyingPriceFeed,
+      underlyingPriceTreshold,
     ]) => {
       const makerBid = {
         signer: signer.toLowerCase(),
@@ -244,6 +251,8 @@ export default function Option() {
         price: price.toString(),
         startTime: startTime.toString(),
         endTime: endTime.toString(),
+        underlyingPriceFeed: underlyingPriceFeed.toLowerCase(),
+        underlyingPriceTreshold: underlyingPriceTreshold.toString(),
       };
       setMakerBids([...makerBids, makerBid]);
       setBidded(true);
@@ -260,7 +269,8 @@ export default function Option() {
           price: ethers.utils.formatEther(bid.price),
           usdPrice: '$100', //bid.price.mul(10),
           expiration: bid.endTime,
-          priceTreshold: '$2020',
+          priceTreshold:
+            '$' + ethers.utils.formatUnits(bid.underlyingPriceTreshold, 8),
           from: styleAddress(bid.signer),
           img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg',
         });
@@ -371,6 +381,7 @@ export default function Option() {
       const network = 'RINKEBY';
       const asset = nft.metadata.attributes[0].value;
       console.log(asset);
+      setAsset(asset);
 
       const priceFeedAddress = priceFeeds[network][asset].USD;
 
@@ -438,6 +449,7 @@ export default function Option() {
     initialValues: {
       price: 0,
       until: 13204210,
+      treshold: 2200,
     },
 
     validationSchema: Yup.object({
@@ -445,6 +457,7 @@ export default function Option() {
         .min(0.000000001, 'Must cost atleast 1 gwei')
         .required('Required'),
       until: Yup.date().required('Required'),
+      treshold: Yup.number().required(),
     }),
 
     onSubmit: (values) => {
@@ -454,8 +467,9 @@ export default function Option() {
 
   const offerFormik = useFormik({
     initialValues: {
-      price: 0,
+      price: 0.01,
       until: 13204210,
+      treshold: 2200,
     },
 
     validationSchema: Yup.object({
@@ -463,6 +477,7 @@ export default function Option() {
         .min(0.000000001, 'Must cost atleast 1 gwei')
         .required('Required'),
       until: Yup.date().required('Required'),
+      treshold: Yup.number().required(),
     }),
 
     onSubmit: (values) => {
@@ -470,8 +485,10 @@ export default function Option() {
     },
   });
 
-  const listOption = async ({ price, until }) => {
+  const listOption = async ({ price, until, treshold }) => {
     if (activeAccount) {
+      const priceFeed = priceFeeds.RINKEBY[asset.toUpperCase()].USD;
+      console.log(priceFeed);
       const makerAsk = {
         isOrderAsk: true,
         signer: activeAccount.address,
@@ -483,6 +500,11 @@ export default function Option() {
         currency: rinkeby.weth,
         startTime: 1651301377,
         endTime: 1660995560,
+        underlyingPriceFeed: priceFeed,
+        underlyingPriceTreshold: ethers.utils.parseUnits(
+          treshold.toString(),
+          8
+        ),
       };
 
       listFunc.write({
@@ -540,6 +562,11 @@ export default function Option() {
   const acceptOffer = async () => {
     if (activeAccount) {
       const makerBid = getTopOffer();
+      console.log(makerBid);
+
+      const parsedMakerBid = {
+        ...makerBid,
+      };
 
       const takerAsk = {
         isOrderAsk: true,
@@ -547,10 +574,11 @@ export default function Option() {
         price: ethers.BigNumber.from(makerBid.price),
         tokenId: makerBid.tokenId,
       };
+      console.log(takerAsk);
 
-      acceptFunc.write({
-        args: [takerAsk, makerBid],
-      });
+      // acceptFunc.write({
+      //   args: [takerAsk, makerBid],
+      // });
     } else {
       console.log('connect your wallet!');
     }
@@ -567,6 +595,9 @@ export default function Option() {
 
       buyNowFunc.write({
         args: [takerBid, makerAsk],
+        overrides: {
+          gasLimit: 500000,
+        },
       });
     } else {
       console.log('connect your wallet!');
@@ -599,8 +630,8 @@ export default function Option() {
           </DescriptionBox>
         </div>
         <div className="right">
-          <p className="collection-header">ETH Options</p>
-          <p className="header">ETH 2000 CALL</p>
+          <p className="collection-header">{asset} Options</p>
+          <p className="header">{asset} 2000 CALL</p>
           <p className="owned-by">
             {nft ? `Owned by ${styleAddress(nft.owner_of)}` : 'Owned by '}
           </p>
@@ -611,6 +642,13 @@ export default function Option() {
             <PriceBox>
               <div className="time">
                 <p>Option expires in 20 days & the sale ends May 23, 2022</p>
+                <p>
+                  Sale expires in 15 days OR when {asset} price {'>'} $
+                  {ethers.utils.formatUnits(
+                    makerAsk.underlyingPriceTreshold,
+                    8
+                  )}
+                </p>
               </div>
               <div className="price">
                 {listed ? (
@@ -662,6 +700,16 @@ export default function Option() {
                           type="date"
                           placeholder=""
                           {...offerFormik.getFieldProps('until')}
+                        />
+                      </InputContainer>
+                      <InputContainer>
+                        <label htmlFor="treshold">
+                          {asset} price treshold:{' '}
+                        </label>
+                        <StyledMyTextInput
+                          name="treshold"
+                          type="number"
+                          {...formik.getFieldProps('treshold')}
                         />
                       </InputContainer>
                       {listed && allowanceFunc?.data?.lt(makerAsk.price) ? (
@@ -738,6 +786,16 @@ export default function Option() {
                           type="date"
                           placeholder=""
                           {...formik.getFieldProps('until')}
+                        />
+                      </InputContainer>
+                      <InputContainer>
+                        <label htmlFor="treshold">
+                          {asset} price treshold:{' '}
+                        </label>
+                        <StyledMyTextInput
+                          name="treshold"
+                          type="number"
+                          {...formik.getFieldProps('treshold')}
                         />
                       </InputContainer>
                       {listFunc.isLoading ? (
@@ -830,6 +888,9 @@ const PriceBox = styled.div`
   .time {
     padding-bottom: 5px;
     border-bottom: 1px solid #ecedef;
+    p {
+      margin: 5px 0;
+    }
   }
 
   .price {

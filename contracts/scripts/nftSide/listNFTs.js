@@ -13,39 +13,43 @@ const main = async () => {
     wallet
   );
 
-  const collection = new ethers.Contract(
+  const optionFactory = new ethers.Contract(
     rinkeby.optionFactory,
     OptionFactory.abi,
     wallet
   );
 
-  let approval_tx1 = await collection.setApprovalForAll(
+  let approval_tx1 = await optionFactory.setApprovalForAll(
     rinkeby.speculateExchange,
     true
   );
   await approval_tx1.wait();
   console.log('approval tx1:', approval_tx1.hash);
 
-  let approval_tx2 = await collection.setApprovalForAll(
+  let approval_tx2 = await optionFactory.setApprovalForAll(
     rinkeby.transferManagerERC721,
     true
   );
   await approval_tx2.wait();
-  console.log('approval tx 2:', approval_tx2.hash);
+  console.log('approval tx2:', approval_tx2.hash);
 
   const speculateExchange = factory.attach(rinkeby.speculateExchange);
+
+  const option = await optionFactory.getOptionById(23);
 
   const makerAsk = {
     isOrderAsk: true,
     signer: ADDRESS2,
     collection: rinkeby.optionFactory,
     price: ethers.BigNumber.from(ethers.utils.parseEther('0.07')),
-    tokenId: 2,
+    tokenId: 23,
     amount: 1,
     strategy: rinkeby.strategy,
     currency: rinkeby.weth,
     startTime: 1651301377,
     endTime: 1660995560,
+    underlyingPriceFeed: rinkeby.ethUsd,
+    underlyingPriceTreshold: ethers.utils.parseUnits('2200', 8),
   };
 
   let tx = await speculateExchange.createMakerAsk(makerAsk, {
