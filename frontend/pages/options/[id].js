@@ -340,7 +340,6 @@ export default function Option() {
       });
 
       response = await response.json();
-      console.log(response);
 
       let actualNft = {
         ...response,
@@ -365,8 +364,6 @@ export default function Option() {
       //   // prob sleep here to avoid rate limiting?
       // }
 
-      console.log(actualNft);
-
       setNft(actualNft);
     } else {
       console.log('connect with your wallet!');
@@ -380,7 +377,6 @@ export default function Option() {
       }
       const network = 'RINKEBY';
       const asset = nft.metadata.attributes[0].value;
-      console.log(asset);
       setAsset(asset);
 
       const priceFeedAddress = priceFeeds[network][asset].USD;
@@ -396,8 +392,6 @@ export default function Option() {
 
         const decimals = await priceFeedContract.decimals();
         const price = await priceFeedContract.latestRoundData();
-
-        console.log(price);
 
         setAssetPrice(ethers.utils.formatUnits(price.answer, decimals));
       } else {
@@ -488,7 +482,6 @@ export default function Option() {
   const listOption = async ({ price, until, treshold }) => {
     if (activeAccount) {
       const priceFeed = priceFeeds.RINKEBY[asset.toUpperCase()].USD;
-      console.log(priceFeed);
       const makerAsk = {
         isOrderAsk: true,
         signer: activeAccount.address,
@@ -562,7 +555,6 @@ export default function Option() {
   const acceptOffer = async () => {
     if (activeAccount) {
       const makerBid = getTopOffer();
-      console.log(makerBid);
 
       const parsedMakerBid = {
         ...makerBid,
@@ -574,7 +566,6 @@ export default function Option() {
         price: ethers.BigNumber.from(makerBid.price),
         tokenId: makerBid.tokenId,
       };
-      console.log(takerAsk);
 
       // acceptFunc.write({
       //   args: [takerAsk, makerBid],
@@ -638,10 +629,36 @@ export default function Option() {
           {assetPrice > 0
             ? `${nft.metadata.attributes[0].value} price: $${assetPrice}`
             : null}
+          <PriceBox>
+            <div className="time">
+              <p>Exercising information</p>
+            </div>
+            <div className="exercising-info">
+              <p>the option expires in: 23 days</p>
+              <p>the option is currently: ITM (70% above ATM)</p>
+              <p>
+                since the option is ITM and american style, you can exercise it
+                early.
+              </p>
+              <p>
+                all our options settle in cash, which means you'll get payed the
+                profit in WETH.
+              </p>
+              <p>the terms if you exercise right now:</p>
+              <ExerciseTerms>
+                <p>- you have the right to buy 0.2ETH at the price of $2000.</p>
+                <p className="math">0.2 x $2000 = $400</p>
+                <p>the market price of 1 ETH is at the moment $3000.</p>
+                <p className="math">0.2 x $3000 = $600</p>
+                <p>Your profit is therefore $600 - $200 = $400</p>
+              </ExerciseTerms>
+
+              <Button>Exercise</Button>
+            </div>
+          </PriceBox>
           {listed ? (
             <PriceBox>
               <div className="time">
-                <p>Option expires in 20 days & the sale ends May 23, 2022</p>
                 <p>
                   Sale expires in 15 days OR when {asset} price {'>'} $
                   {ethers.utils.formatUnits(
@@ -760,7 +777,7 @@ export default function Option() {
           ) : (
             <PriceBox>
               <div className="time">
-                <p>Option expires in 23 days</p>
+                <p>Listing information</p>
               </div>
               <div className="price">
                 <p>Unlisted</p>
@@ -830,6 +847,14 @@ export default function Option() {
     </OuterContainer>
   );
 }
+
+const ExerciseTerms = styled.div`
+  margin: 10px 20px;
+
+  .math {
+    padding-left: 13px;
+  }
+`;
 
 const BuyDiv = styled.div`
   width: 50%;
@@ -901,6 +926,15 @@ const PriceBox = styled.div`
     p {
       margin-top: 5px;
       font-size: 22px;
+    }
+  }
+
+  .exercising-info {
+    p {
+      margin: 8px 0;
+    }
+    button {
+      margin-top: 3px;
     }
   }
 `;
