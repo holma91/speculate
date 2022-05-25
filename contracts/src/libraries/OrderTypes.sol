@@ -21,6 +21,8 @@ library OrderTypes {
         address currency; // currency (e.g., WETH)
         uint256 startTime; // startTime in timestamp
         uint256 endTime; // endTime in timestamp
+        address underlyingPriceFeed; // price feed for the underlying asset in the option
+        uint256 underlyingPriceTreshold; // order is valid as long as asset price is under/over the treshold
     }
 
     struct TakerOrder {

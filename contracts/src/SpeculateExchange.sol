@@ -6,6 +6,7 @@ import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
 import {IERC20, SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC721} from "openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
+import {AggregatorV3Interface} from "chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 // LooksRare interfaces
 import {ICurrencyManager} from "./interfaces/ICurrencyManager.sol";
@@ -82,7 +83,9 @@ contract SpeculateExchange {
         uint256 amount,
         uint256 price,
         uint256 startTime,
-        uint256 endTime
+        uint256 endTime,
+        address underlyingPriceFeed,
+        uint256 underlyingPriceTreshold
     );
 
     event MakerBid(
@@ -95,7 +98,9 @@ contract SpeculateExchange {
         uint256 amount,
         uint256 price,
         uint256 startTime,
-        uint256 endTime
+        uint256 endTime,
+        address underlyingPriceFeed,
+        uint256 underlyingPriceTreshold
     );
 
     /**
@@ -152,7 +157,9 @@ contract SpeculateExchange {
             makerAsk.amount,
             makerAsk.price,
             makerAsk.startTime,
-            makerAsk.endTime
+            makerAsk.endTime,
+            makerAsk.underlyingPriceFeed,
+            makerAsk.underlyingPriceTreshold
         );
     }
 
@@ -183,7 +190,9 @@ contract SpeculateExchange {
             makerBid.amount,
             makerBid.price,
             makerBid.startTime,
-            makerBid.endTime
+            makerBid.endTime,
+            makerBid.underlyingPriceFeed,
+            makerBid.underlyingPriceTreshold
         );
     }
 
@@ -200,6 +209,7 @@ contract SpeculateExchange {
             "Order: Taker must be the sender"
         );
 
+        // canExecuteTakerBid checks for validity apart from the price
         (
             bool isExecutionValid,
             uint256 tokenId,
@@ -210,6 +220,17 @@ contract SpeculateExchange {
             );
 
         require(isExecutionValid, "Strategy: Execution invalid");
+
+        // validate the price
+        (, int256 underlyingAssetPrice, , , ) = AggregatorV3Interface(
+            makerAsk.underlyingPriceFeed
+        ).latestRoundData();
+
+        // only valid for call options for now
+        require(
+            underlyingAssetPrice <= int256(makerAsk.underlyingPriceTreshold),
+            "price not below treshold"
+        );
 
         // Execution part 1/2
         _transferFeesAndFunds(
@@ -273,6 +294,17 @@ contract SpeculateExchange {
             );
 
         require(isExecutionValid, "Strategy: Execution invalid");
+
+        // validate the price
+        (, int256 underlyingAssetPrice, , , ) = AggregatorV3Interface(
+            makerBid.underlyingPriceFeed
+        ).latestRoundData();
+
+        // only valid for call options for now
+        require(
+            underlyingAssetPrice >= int256(makerBid.underlyingPriceTreshold),
+            "price not above treshold"
+        );
 
         // Execution part 1/2
         _transferNonFungibleToken(

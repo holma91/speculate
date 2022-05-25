@@ -16,6 +16,9 @@ import "../TransferManagerERC721.sol";
 import "../TransferManagerERC1155.sol";
 import "../TransferSelectorNFT.sol";
 
+// mocks
+import "./mocks/MockV3Aggregator.sol";
+
 // LooksRare interfaces
 import {ICurrencyManager} from "../interfaces/ICurrencyManager.sol";
 import {IExecutionManager} from "../interfaces/IExecutionManager.sol";
@@ -73,7 +76,9 @@ contract SpeculateExchangeTest is DSTest {
         uint256 amount,
         uint256 price,
         uint256 startTime,
-        uint256 endTime
+        uint256 endTime,
+        address underlyingPriceFeed,
+        uint256 underlyingPriceTreshold
     );
 
     event MakerBid(
@@ -86,7 +91,9 @@ contract SpeculateExchangeTest is DSTest {
         uint256 amount,
         uint256 price,
         uint256 startTime,
-        uint256 endTime
+        uint256 endTime,
+        address underlyingPriceFeed,
+        uint256 underlyingPriceTreshold
     );
     event TakerBid(
         address indexed taker,
@@ -119,6 +126,10 @@ contract SpeculateExchangeTest is DSTest {
     address internal babback;
     address internal mange;
     MockWETH internal WETH;
+
+    MockV3Aggregator internal btcUsdPriceFeed;
+    MockV3Aggregator internal ethUsdPriceFeed;
+
     StrategyStandardSaleForFixedPrice
         internal strategyStandardSaleForFixedPrice;
 
@@ -136,6 +147,8 @@ contract SpeculateExchangeTest is DSTest {
         babback = address(0x1339);
         mange = address(0x1340);
         WETH = new MockWETH();
+        btcUsdPriceFeed = new MockV3Aggregator(8, 30_000 * 10**8);
+        ethUsdPriceFeed = new MockV3Aggregator(8, 2_000 * 10**8);
         strategyStandardSaleForFixedPrice = new StrategyStandardSaleForFixedPrice(
             100
         );
@@ -170,6 +183,7 @@ contract SpeculateExchangeTest is DSTest {
 
     function testCanCreateMakerAsks() public {
         cheats.startPrank(address(receiver), address(receiver));
+        // eth option
         OrderTypes.MakerOrder memory makerAsk = OrderTypes.MakerOrder(
             true,
             address(receiver),
@@ -180,7 +194,9 @@ contract SpeculateExchangeTest is DSTest {
             address(strategyStandardSaleForFixedPrice),
             address(WETH),
             1650718512,
-            1650719912
+            1650719912,
+            address(ethUsdPriceFeed),
+            2500 * 10**8
         );
         cheats.expectEmit(true, true, true, true);
         // the event we expect to see
@@ -194,7 +210,9 @@ contract SpeculateExchangeTest is DSTest {
             makerAsk.amount,
             makerAsk.price,
             makerAsk.startTime,
-            makerAsk.endTime
+            makerAsk.endTime,
+            makerAsk.underlyingPriceFeed,
+            makerAsk.underlyingPriceTreshold
         );
         speculateExchange.createMakerAsk(makerAsk);
         OrderTypes.MakerOrder memory retrievedMakerAsk = speculateExchange
@@ -203,6 +221,10 @@ contract SpeculateExchangeTest is DSTest {
         assertEq(makerAsk.signer, retrievedMakerAsk.signer);
         assertEq(makerAsk.strategy, retrievedMakerAsk.strategy);
         assertEq(makerAsk.endTime, retrievedMakerAsk.endTime);
+        assertEq(
+            makerAsk.underlyingPriceTreshold,
+            retrievedMakerAsk.underlyingPriceTreshold
+        );
 
         OrderTypes.MakerOrder memory makerAsk2 = OrderTypes.MakerOrder(
             true,
@@ -214,7 +236,9 @@ contract SpeculateExchangeTest is DSTest {
             address(strategyStandardSaleForFixedPrice),
             address(WETH),
             1650718512,
-            1650719912
+            1650719912,
+            address(ethUsdPriceFeed),
+            2500 * 10**8
         );
 
         speculateExchange.createMakerAsk(makerAsk2);
@@ -223,6 +247,10 @@ contract SpeculateExchangeTest is DSTest {
         assertEq(makerAsk2.signer, retrievedMakerAsk2.signer);
         assertEq(makerAsk2.strategy, retrievedMakerAsk2.strategy);
         assertEq(makerAsk2.endTime, retrievedMakerAsk2.endTime);
+        assertEq(
+            makerAsk2.underlyingPriceTreshold,
+            retrievedMakerAsk2.underlyingPriceTreshold
+        );
         cheats.stopPrank();
     }
 
@@ -238,7 +266,9 @@ contract SpeculateExchangeTest is DSTest {
             address(strategyStandardSaleForFixedPrice),
             address(WETH),
             1650718512,
-            1650719912
+            1650719912,
+            address(ethUsdPriceFeed),
+            2500 * 10**8
         );
 
         cheats.expectEmit(true, true, true, true);
@@ -252,7 +282,9 @@ contract SpeculateExchangeTest is DSTest {
             makerBid.amount,
             makerBid.price,
             makerBid.startTime,
-            makerBid.endTime
+            makerBid.endTime,
+            makerBid.underlyingPriceFeed,
+            makerBid.underlyingPriceTreshold
         );
         speculateExchange.createMakerBid(makerBid);
         OrderTypes.MakerOrder memory retrievedMakerBid = speculateExchange
@@ -278,7 +310,9 @@ contract SpeculateExchangeTest is DSTest {
             address(strategyStandardSaleForFixedPrice),
             address(WETH),
             1650718512,
-            1650719912
+            1650719912,
+            address(ethUsdPriceFeed),
+            2500 * 10**8
         );
 
         speculateExchange.createMakerBid(makerBid2);
@@ -306,7 +340,9 @@ contract SpeculateExchangeTest is DSTest {
             address(strategyStandardSaleForFixedPrice),
             address(WETH),
             1650718512,
-            1650719912
+            1650719912,
+            address(ethUsdPriceFeed),
+            2500 * 10**8
         );
         cheats.prank(alice);
         speculateExchange.createMakerBid(makerBid);
@@ -321,7 +357,9 @@ contract SpeculateExchangeTest is DSTest {
             address(strategyStandardSaleForFixedPrice),
             address(WETH),
             1650718512,
-            1650719912
+            1650719912,
+            address(ethUsdPriceFeed),
+            2500 * 10**8
         );
         cheats.prank(bob);
         speculateExchange.createMakerBid(makerBid2);
@@ -358,7 +396,9 @@ contract SpeculateExchangeTest is DSTest {
             address(strategyStandardSaleForFixedPrice),
             address(WETH),
             block.timestamp,
-            1653806167
+            1653806167,
+            address(ethUsdPriceFeed),
+            2500 * 10**8
         );
         speculateExchange.createMakerAsk(makerAsk);
         assertTrue(
@@ -378,7 +418,9 @@ contract SpeculateExchangeTest is DSTest {
             address(strategyStandardSaleForFixedPrice),
             address(WETH),
             block.timestamp,
-            1653806167
+            1653806167,
+            address(ethUsdPriceFeed),
+            2500 * 10**8
         );
 
         // create taker bid
@@ -450,7 +492,9 @@ contract SpeculateExchangeTest is DSTest {
             address(strategyStandardSaleForFixedPrice),
             address(WETH),
             block.timestamp,
-            1653806167
+            1653806167,
+            address(ethUsdPriceFeed),
+            2000 * 10**8
         );
 
         speculateExchange.createMakerBid(makerBid);
@@ -487,6 +531,107 @@ contract SpeculateExchangeTest is DSTest {
 
         assertEq(collection.ownerOf(2), alice);
         assertEq(collection.ownerOf(1), address(receiver));
+    }
+
+    function testMakerAskWithTreshold() public {
+        cheats.startPrank(address(receiver), address(receiver));
+
+        // only want to sell this option as long as the eth price is below 2500
+        // starting eth price is 2000
+        OrderTypes.MakerOrder memory makerAsk = OrderTypes.MakerOrder(
+            true,
+            address(receiver),
+            address(collection),
+            0.01 ether,
+            1,
+            1,
+            address(strategyStandardSaleForFixedPrice),
+            address(WETH),
+            block.timestamp,
+            1650719912,
+            address(ethUsdPriceFeed),
+            2500 * 10**8
+        );
+        speculateExchange.createMakerAsk(makerAsk);
+        assertTrue(
+            collection.isApprovedForAll(
+                address(receiver),
+                address(transferManagerERC721)
+            )
+        );
+
+        ethUsdPriceFeed.updateAnswer(2600 * 10**8);
+
+        cheats.stopPrank();
+        cheats.startPrank(alice, alice);
+
+        OrderTypes.TakerOrder memory takerBid = OrderTypes.TakerOrder(
+            false,
+            alice,
+            0.01 ether,
+            1
+        );
+        WETH.mintTo(alice, 1 ether);
+        WETH.approve(address(speculateExchange), 1 ether);
+
+        cheats.expectRevert("price not below treshold");
+        speculateExchange.matchAskWithTakerBid(takerBid, makerAsk);
+
+        ethUsdPriceFeed.updateAnswer(2400 * 10**8);
+        // should succeed now
+        speculateExchange.matchAskWithTakerBid(takerBid, makerAsk);
+    }
+
+    function testMakerBidWithTreshold() public {
+        cheats.startPrank(alice, alice);
+        WETH.mintTo(alice, 1 ether);
+        WETH.approve(address(speculateExchange), 1 ether);
+
+        // only want to sell this option as long as the eth price is above 1900
+        // starting eth price is 2000
+        OrderTypes.MakerOrder memory makerBid = OrderTypes.MakerOrder(
+            false,
+            alice,
+            address(collection),
+            1 ether,
+            1,
+            1,
+            address(strategyStandardSaleForFixedPrice),
+            address(WETH),
+            block.timestamp,
+            1653806167,
+            address(ethUsdPriceFeed),
+            2000 * 10**8
+        );
+
+        speculateExchange.createMakerBid(makerBid);
+
+        cheats.stopPrank();
+
+        assertTrue(
+            collection.isApprovedForAll(
+                address(receiver),
+                address(transferManagerERC721)
+            )
+        );
+
+        cheats.startPrank(address(receiver), address(receiver));
+
+        OrderTypes.TakerOrder memory takerAsk = OrderTypes.TakerOrder(
+            true,
+            address(receiver),
+            1 ether,
+            1
+        );
+
+        ethUsdPriceFeed.updateAnswer(1500 * 10**8);
+
+        cheats.expectRevert("price not above treshold");
+        speculateExchange.matchBidWithTakerAsk(takerAsk, makerBid);
+
+        ethUsdPriceFeed.updateAnswer(2000 * 10**8);
+        // should succeed now
+        speculateExchange.matchBidWithTakerAsk(takerAsk, makerBid);
     }
 }
 
