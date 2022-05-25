@@ -16,6 +16,7 @@ import SmallTable, { AvatarCell } from '../../components/SmallTable';
 import { rinkeby } from '../../utils/addresses';
 import aggregatorV3Interface from '../../../contracts/out/AggregatorV3Interface.sol/AggregatorV3Interface.json';
 import SpeculateExchange from '../../../contracts/out/SpeculateExchange.sol/SpeculateExchange.json';
+import OptionFactory from '../../../contracts/out/OptionFactory.sol/OptionFactory.json';
 import wethABI from '../../../contracts/wethABI.json';
 
 const getOffers2 = () => {
@@ -104,6 +105,7 @@ export default function Option() {
   const [listed, setListed] = useState(false);
   const [bidded, setBidded] = useState(false);
   const { data: activeAccount, isError, isLoading } = useAccount();
+  const [option, setOption] = useState(null);
   const [nft, setNft] = useState(null);
   const [asset, setAsset] = useState('');
   const [assetPrice, setAssetPrice] = useState(0);
@@ -334,6 +336,35 @@ export default function Option() {
     return response;
   };
 
+  const getOption = async () => {
+    if (activeAccount) {
+      if (!id) {
+        return;
+      }
+
+      let provider = ethers.getDefaultProvider(process.env.ALCHEMY_RINKEBY_RPC);
+
+      let contract = new ethers.Contract(
+        rinkeby.optionFactory,
+        OptionFactory.abi,
+        provider
+      );
+
+      const option = await contract.getOptionById(id);
+      const parsedOption = {
+        underlyingPriceFeed: option.underlyingPriceFeed,
+        underlyingPriceAmount: option.underlyingAmount,
+        call: option.call,
+        strikePrice: option.strikePrice,
+        expiry: option.expiry,
+      };
+
+      setOption(parsedOption);
+    } else {
+      console.log('connect with your wallet!');
+    }
+  };
+
   const getNft = async () => {
     const extraRequest = async (url) => {
       try {
@@ -358,7 +389,6 @@ export default function Option() {
         ...response,
         metadata: response.metadata ? JSON.parse(response.metadata) : null,
       };
-      console.log(actualNft);
 
       return actualNft;
     };
@@ -424,6 +454,7 @@ export default function Option() {
 
   useEffect(() => {
     getNft();
+    getOption();
   }, [id]);
 
   useEffect(() => {
@@ -589,9 +620,9 @@ export default function Option() {
         tokenId: makerBid.tokenId,
       };
 
-      // acceptFunc.write({
-      //   args: [takerAsk, makerBid],
-      // });
+      acceptFunc.write({
+        args: [takerAsk, makerBid],
+      });
     } else {
       console.log('connect your wallet!');
     }
@@ -627,12 +658,34 @@ export default function Option() {
     }
   };
 
+  const getExpiryDate = (timestamp) => {
+    let d = new Date(timestamp);
+    let dd = String(d.getDate()).padStart(2, '0');
+    let mm = String(d.getMonth() + 1).padStart(2, '0'); //January is 0!
+    let yyyy = d.getFullYear();
+    const formatted = mm + '/' + dd + '/' + yyyy;
+    return formatted;
+  };
+
+  const getOptionStatus = () => {
+    const strikePrice = option.strikePrice;
+    const marketPrice = ethers.utils.parseUnits(assetPrice, 8);
+    if (marketPrice.gt(strikePrice)) {
+      return 'ITM';
+    } else {
+      return 'OTM';
+    }
+  };
+
   return (
     <OuterContainer>
       <Container>
         <div className="left">
           {nft?.metadata ? (
-            <StyledImg src={`data:image/svg+xml;utf8,${nft.metadata.image}`} />
+            <StyledImg
+              src={`data:image/svg+xml;utf8,${nft.metadata.image}`}
+              sizes="(max-width: 48rem) 95vw, (max-width: 90rem) 60vw, 536px"
+            />
           ) : (
             <StyledImg />
           )}
@@ -659,30 +712,59 @@ export default function Option() {
               <p>Exercising information</p>
             </div>
             {showExerciseInfo ? (
-              <div className="exercising-info">
-                <p>the option expires in: 23 days</p>
-                <p>the option is currently: ITM (70% above ATM)</p>
-                <p>
-                  since the option is ITM and american style, you can exercise
-                  it early.
-                </p>
-                <p>
-                  all our options settle in cash, which means you'll get payed
-                  the profit in WETH.
-                </p>
-                <p>the terms if you exercise right now:</p>
-                <ExerciseTerms>
+              nft?.metadata && assetPrice && option ? (
+                <div className="exercising-info">
                   <p>
-                    - you have the right to buy 0.2ETH at the price of $2000.
+                    the option expires:{' '}
+                    {getExpiryDate(nft.metadata.attributes[3].value)} (in 23
+                    days)
                   </p>
-                  <p className="math">0.2 x $2000 = $400</p>
-                  <p>the market price of 1 ETH is at the moment $3000.</p>
-                  <p className="math">0.2 x $3000 = $600</p>
-                  <p>Your profit is therefore $600 - $200 = $400</p>
-                </ExerciseTerms>
+                  <p>the option is currently: {getOptionStatus()}</p>
+                  <p>
+                    since the option is ITM and american style, you can exercise
+                    it early.
+                  </p>
+                  <p>
+                    all our options settle in cash, which means you'll get payed
+                    the profit in WETH.
+                  </p>
+                  <p>the terms if you exercise right now:</p>
+                  <ExerciseTerms>
+                    <p>
+                      - you have the right to buy 0.2ETH at the price of $2000.
+                    </p>
+                    <p className="math">0.2 x $2000 = $400</p>
+                    <p>the market price of 1 ETH is at the moment $3000.</p>
+                    <p className="math">0.2 x $3000 = $600</p>
+                    <p>Your profit is therefore $600 - $200 = $400</p>
+                  </ExerciseTerms>
 
-                <Button>Exercise</Button>
-              </div>
+                  <Button>Exercise</Button>
+                </div>
+              ) : (
+                <div className="exercising-info">
+                  <p>the option expires in: </p>
+                  <p>the option is currently: </p>
+                  <p>
+                    since the option is ITM and american style, you can exercise
+                    it early.
+                  </p>
+                  <p>
+                    all our options settle in cash, which means you'll get payed
+                    the profit in WETH.
+                  </p>
+                  <p>the terms if you exercise right now:</p>
+                  <ExerciseTerms>
+                    <p>- you have the right to buy at the price of .</p>
+                    <p className="math"> x = </p>
+                    <p>the market price of is at the moment .</p>
+                    <p className="math"> x = </p>
+                    <p>Your profit is therefore $ - $ = $</p>
+                  </ExerciseTerms>
+
+                  <Button>Exercise</Button>
+                </div>
+              )
             ) : null}
           </PriceBox>
           {listed ? (

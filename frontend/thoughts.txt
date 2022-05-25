@@ -1,21 +1,36 @@
-as a buyer:
-- important to be able to filter stuff
+
+
+FOR ALL OPTIONS
+
+0. get maker orders which triggers 1.
+
+1. get nfts from moralis
+every nft have a token_uri
+
+2. use the token_uri to query the metadata from ipfs
+
+
+
+FOR SPECIFIC OPTION
+
+0. get id from query which triggers 1.
+
+1. 
 
 
 
 
+exercise stuff
+expires in:
+  get timestamp from ipfs
 
-todo:
-do frontend, then backend
+is currently:
+  gets strikeprice from ipfs
+  current price from chainlink
 
+option style:
+  from ipfs
 
-views
-- active positions
-  - view shorts/longs normally - DONE
-  - view longs as NFTs - 
-  - active position
-
-- buy options
-  - buy option - DONE
-
-- write option
+terms:
+  right to buy from ipfs
+  current price from chainlink
