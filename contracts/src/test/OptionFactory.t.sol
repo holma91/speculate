@@ -59,7 +59,8 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
             1 * 10**18,
             true,
             1_000 * 10**8,
-            1_000
+            1_000,
+            true
         );
 
         // covered call
@@ -75,7 +76,8 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
             1 * 10**18,
             true,
             20_000 * 10**8,
-            1_000
+            1_000,
+            true
         );
 
         collateral_btc20Call = OptionFactory.Collateral(
@@ -153,31 +155,89 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
         assertEq(optionFactory.ownerOf(long_btc20CallId), alice);
     }
 
-    function testCanExercise() public {
+    function testCanExerciseEuropeanAtExpiry() public {
         uint256 balanceStart = address(this).balance;
+
+        // write option
         uint256 eth1CallId = optionFactory.createOption{value: 1 ether}(
             eth1Call,
             collateral_eth1Call,
             metadata_eth1Call
         );
-        uint256 balanceMid = address(this).balance;
-        assertEq(balanceStart, balanceMid + 1 ether);
 
         assertEq(optionFactory.ownerOf(eth1CallId), address(this));
 
-        // eth rises
+        // transfer option
+        optionFactory.safeTransferFrom(address(this), alice, eth1CallId, "");
+
+        assertEq(optionFactory.ownerOf(eth1CallId), alice);
+
         ethUsdPriceFeed.updateAnswer(4000 * 10**8);
-        cheats.warp(1000);
+        cheats.warp(1000); // now at expiry
 
-        // emit log_uint(address(optionFactory).balance);
-
+        emit log_uint(alice.balance);
+        uint256 balanceBefore = alice.balance;
+        cheats.prank(alice);
         optionFactory.exerciseOption(eth1CallId);
+        uint256 balanceAfter = alice.balance;
+        emit log_uint(alice.balance);
 
+        assertEq(balanceBefore + eth1Call.underlyingAmount, balanceAfter);
+
+        // token should now be burned
         cheats.expectRevert("ERC721: owner query for nonexistent token");
         optionFactory.ownerOf(eth1CallId);
+    }
 
-        uint256 balanceEnd = address(this).balance;
-        assertEq(balanceStart, balanceEnd);
+    function testCannotExerciseEuropeanBeforeExpiry() public {
+        uint256 eth1CallId = optionFactory.createOption{value: 1 ether}(
+            eth1Call,
+            collateral_eth1Call,
+            metadata_eth1Call
+        );
+
+        optionFactory.safeTransferFrom(address(this), alice, eth1CallId, "");
+
+        assertEq(optionFactory.ownerOf(eth1CallId), alice);
+
+        ethUsdPriceFeed.updateAnswer(4000 * 10**8);
+
+        cheats.expectRevert("not at expiry");
+        cheats.prank(alice);
+        optionFactory.exerciseOption(eth1CallId);
+    }
+
+    function testCanExerciseAmericanBeforeExpiry() public {
+        eth1Call.european = false;
+
+        // write option
+        uint256 eth1CallId = optionFactory.createOption{value: 1 ether}(
+            eth1Call,
+            collateral_eth1Call,
+            metadata_eth1Call
+        );
+
+        assertEq(optionFactory.ownerOf(eth1CallId), address(this));
+
+        // transfer option
+        optionFactory.safeTransferFrom(address(this), alice, eth1CallId, "");
+
+        assertEq(optionFactory.ownerOf(eth1CallId), alice);
+
+        ethUsdPriceFeed.updateAnswer(4000 * 10**8);
+
+        emit log_uint(alice.balance);
+        uint256 balanceBefore = alice.balance;
+        cheats.prank(alice);
+        optionFactory.exerciseOption(eth1CallId);
+        uint256 balanceAfter = alice.balance;
+        emit log_uint(alice.balance);
+
+        assertEq(balanceBefore + eth1Call.underlyingAmount, balanceAfter);
+
+        // token should now be burned
+        cheats.expectRevert("ERC721: owner query for nonexistent token");
+        optionFactory.ownerOf(eth1CallId);
     }
 
     function testCanAddCollateral() public {

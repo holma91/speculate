@@ -56,7 +56,7 @@ const priceFeeds = {
 
 const main = async () => {
   provider = new ethers.providers.JsonRpcProvider(process.env.rpc_rinkeby);
-  const wallet = new ethers.Wallet(process.env.pk3, provider);
+  const wallet = new ethers.Wallet(process.env.pk2, provider);
   const factory = new ethers.ContractFactory(
     OptionFactory.abi,
     OptionFactory.bytecode,

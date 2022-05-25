@@ -21,5 +21,8 @@ on factory
 
 
 agenda
-- "if then" makerOrders
+- only rely on moralis for the tokenUri, then call infura ipfs and get the metadata.
   
+
+
+

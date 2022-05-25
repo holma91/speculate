@@ -19,6 +19,7 @@ contract OptionFactory is ERC721URIStorage {
         bool call;
         uint256 strikePrice;
         uint256 expiry;
+        bool european;
     }
 
     struct Collateral {
@@ -69,22 +70,42 @@ contract OptionFactory is ERC721URIStorage {
         require(ownerOf(optionId) == msg.sender, "only owner can exercise");
 
         Option memory option = getOptionById(optionId);
+        Collateral memory collateral = getCollateralById(optionId);
 
-        // check expiry
-        require(block.timestamp >= option.expiry, "not at expiry");
+        if (option.european) {
+            // european style option can only be exercised at expiry
+            require(block.timestamp >= option.expiry, "not at expiry");
+        }
+
+        // can only exercise if ITM
 
         // check price
-        (, int256 currentPrice, , , ) = AggregatorV3Interface(
+        (, int256 currentUnderlyingPrice, , , ) = AggregatorV3Interface(
             option.underlyingPriceFeed
         ).latestRoundData();
 
-        uint256 total = option.underlyingAmount;
+        (, int256 currentCollateralPrice, , , ) = AggregatorV3Interface(
+            collateral.priceFeed
+        ).latestRoundData();
+
+        require(
+            currentUnderlyingPrice > 0 && currentCollateralPrice > 0,
+            "oracle error, negative price"
+        );
+        require(
+            currentUnderlyingPrice > int256(option.strikePrice),
+            "option is OTM, cannot be exercised"
+        );
+
+        uint256 payoutInUSD = option.underlyingAmount *
+            uint256(currentUnderlyingPrice);
+        uint256 payoutInETH = payoutInUSD / uint256(currentCollateralPrice);
 
         // burn the exercised options
         _burn(optionId);
 
         // settle in cash
-        (bool sent, ) = msg.sender.call{value: total}("");
+        (bool sent, ) = msg.sender.call{value: payoutInETH}("");
         require(sent, "failed ether transfer");
     }
 
