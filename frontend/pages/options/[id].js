@@ -532,7 +532,8 @@ export default function Option() {
     return {};
   };
 
-  const makeOffer = async ({ price, until }) => {
+  const makeOffer = async ({ price, until, treshold }) => {
+    const priceFeed = priceFeeds.RINKEBY[asset.toUpperCase()].USD;
     if (activeAccount) {
       const makerBid = {
         isOrderAsk: false,
@@ -545,6 +546,11 @@ export default function Option() {
         currency: rinkeby.weth,
         startTime: 1651301377,
         endTime: 1660995560,
+        underlyingPriceFeed: priceFeed,
+        underlyingPriceTreshold: ethers.utils.parseUnits(
+          treshold.toString(),
+          8
+        ),
       };
 
       bidFunc.write({
@@ -673,124 +679,126 @@ export default function Option() {
                 onClick={() => setShowListingInfo(!showListingInfo)}
               >
                 <p>Listing information</p>
-                {showListingInfo ? (
-                  <div className="listing-info">
-                    <p>
-                      Sale expires in 15 days OR when {asset} price {'>'} $
-                      {ethers.utils.formatUnits(
-                        makerAsk.underlyingPriceTreshold,
-                        8
-                      )}
-                    </p>
-                  </div>
-                ) : null}
               </div>
-              <div className="price">
-                {listed ? (
-                  <>
-                    <span>Buy now price:</span>
-                    <p>{ethers.utils.formatEther(makerAsk.price)} ETH</p>
-                  </>
-                ) : (
-                  <p>Unlisted</p>
-                )}
-                {bidded ? (
-                  <>
-                    <span>Highest Offer:</span>
-                    <p>{ethers.utils.formatEther(makerBids[0].price)} ETH</p>
-                  </>
-                ) : null}
-                {!isLoading &&
-                nft &&
-                nft.owner_of.toLowerCase() ===
-                  activeAccount.address.toLowerCase() ? (
-                  <>
+              {showListingInfo ? (
+                <div className="listing-info">
+                  <p className="extra-info">
+                    Sale expires in 15 days OR when {asset} price {'>'} $
+                    {ethers.utils.formatUnits(
+                      makerAsk.underlyingPriceTreshold,
+                      8
+                    )}
+                  </p>
+                  <div className="price">
+                    {listed ? (
+                      <>
+                        <span>Buy now price:</span>
+                        <p>{ethers.utils.formatEther(makerAsk.price)} ETH</p>
+                      </>
+                    ) : (
+                      <p>Unlisted</p>
+                    )}
                     {bidded ? (
-                      acceptFunc.isLoading ? (
-                        <Button>Loading...</Button>
-                      ) : waitForAcceptFunc.isLoading ? (
-                        <Button>Pending...</Button>
-                      ) : (
-                        <Button onClick={acceptOffer}>Accept Offer</Button>
-                      )
+                      <>
+                        <span>Highest Offer:</span>
+                        <p>
+                          {ethers.utils.formatEther(makerBids[0].price)} ETH
+                        </p>
+                      </>
                     ) : null}
-                    <Button onClick={cancelListing}>Cancel Listing</Button>
-                  </>
-                ) : (
-                  <>
-                    <form onSubmit={offerFormik.handleSubmit}>
-                      <InputContainer>
-                        <label htmlFor="price">Offer price: </label>
-                        <StyledMyTextInput
-                          name="price"
-                          type="number"
-                          placeholder="2000"
-                          {...offerFormik.getFieldProps('price')}
-                        />
-                      </InputContainer>
-                      <InputContainer>
-                        <label htmlFor="until">Valid until: </label>
-                        <StyledMyTextInput
-                          name="until"
-                          type="date"
-                          placeholder=""
-                          {...offerFormik.getFieldProps('until')}
-                        />
-                      </InputContainer>
-                      <InputContainer>
-                        <label htmlFor="treshold">
-                          {asset} price treshold:{' '}
-                        </label>
-                        <StyledMyTextInput
-                          name="treshold"
-                          type="number"
-                          {...formik.getFieldProps('treshold')}
-                        />
-                      </InputContainer>
-                      {listed && allowanceFunc?.data?.lt(makerAsk.price) ? (
-                        <ApproveDiv>
-                          {approveSpendingFunc.isLoading ? (
-                            <Button type="button" onClick={approveSpending}>
-                              Loading...
-                            </Button>
-                          ) : waitForApproveSpendingFunc.isLoading ? (
-                            <Button type="button" onClick={approveSpending}>
-                              Pending...
-                            </Button>
+                    {!isLoading &&
+                    nft &&
+                    nft.owner_of.toLowerCase() ===
+                      activeAccount.address.toLowerCase() ? (
+                      <>
+                        {bidded ? (
+                          acceptFunc.isLoading ? (
+                            <Button>Loading...</Button>
+                          ) : waitForAcceptFunc.isLoading ? (
+                            <Button>Pending...</Button>
                           ) : (
-                            <Button type="button" onClick={approveSpending}>
-                              Approve spending
-                            </Button>
-                          )}
-                        </ApproveDiv>
-                      ) : null}
-                      <BuyDiv>
-                        {bidFunc.isLoading ? (
-                          <Button type="submit">Loading...</Button>
-                        ) : waitForBidFunc.isLoading ? (
-                          <Button type="submit">Pending...</Button>
-                        ) : (
-                          <Button type="submit">Make Offer</Button>
-                        )}
+                            <Button onClick={acceptOffer}>Accept Offer</Button>
+                          )
+                        ) : null}
+                        <Button onClick={cancelListing}>Cancel Listing</Button>
+                      </>
+                    ) : (
+                      <>
+                        <form onSubmit={offerFormik.handleSubmit}>
+                          <InputContainer>
+                            <label htmlFor="price">Offer price: </label>
+                            <StyledMyTextInput
+                              name="price"
+                              type="number"
+                              placeholder="2000"
+                              {...offerFormik.getFieldProps('price')}
+                            />
+                          </InputContainer>
+                          <InputContainer>
+                            <label htmlFor="until">Valid until: </label>
+                            <StyledMyTextInput
+                              name="until"
+                              type="date"
+                              placeholder=""
+                              {...offerFormik.getFieldProps('until')}
+                            />
+                          </InputContainer>
+                          <InputContainer>
+                            <label htmlFor="treshold">
+                              {asset} price treshold:{' '}
+                            </label>
+                            <StyledMyTextInput
+                              name="treshold"
+                              type="number"
+                              {...formik.getFieldProps('treshold')}
+                            />
+                          </InputContainer>
+                          {listed && allowanceFunc?.data?.lt(makerAsk.price) ? (
+                            <ApproveDiv>
+                              {approveSpendingFunc.isLoading ? (
+                                <Button type="button" onClick={approveSpending}>
+                                  Loading...
+                                </Button>
+                              ) : waitForApproveSpendingFunc.isLoading ? (
+                                <Button type="button" onClick={approveSpending}>
+                                  Pending...
+                                </Button>
+                              ) : (
+                                <Button type="button" onClick={approveSpending}>
+                                  Approve spending
+                                </Button>
+                              )}
+                            </ApproveDiv>
+                          ) : null}
+                          <BuyDiv>
+                            {bidFunc.isLoading ? (
+                              <Button type="submit">Loading...</Button>
+                            ) : waitForBidFunc.isLoading ? (
+                              <Button type="submit">Pending...</Button>
+                            ) : (
+                              <Button type="submit">Make Offer</Button>
+                            )}
 
-                        {buyNowFunc.isLoading ? (
-                          <Button onClick={buyNow} type="button">
-                            Loading...
-                          </Button>
-                        ) : waitForBuyNowFunc.isLoading ? (
-                          <Button onClick={buyNow} type="button">
-                            Pending...
-                          </Button>
-                        ) : (
-                          <Button onClick={buyNow} type="button">
-                            Buy now
-                          </Button>
-                        )}
-                      </BuyDiv>
-                    </form>
-                  </>
-                )}
-              </div>
+                            {buyNowFunc.isLoading ? (
+                              <Button onClick={buyNow} type="button">
+                                Loading...
+                              </Button>
+                            ) : waitForBuyNowFunc.isLoading ? (
+                              <Button onClick={buyNow} type="button">
+                                Pending...
+                              </Button>
+                            ) : (
+                              <Button onClick={buyNow} type="button">
+                                Buy now
+                              </Button>
+                            )}
+                          </BuyDiv>
+                        </form>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ) : null}
             </PriceBox>
           ) : (
             <PriceBox isClicked={showListingInfo}>
@@ -983,6 +991,11 @@ const PriceBox = styled.div`
   }
 
   .listing-info {
+    .extra-info {
+      padding-left: 15px;
+      /* padding-bottom: 15px; */
+      margin: 8px 0;
+    }
   }
 `;
 
