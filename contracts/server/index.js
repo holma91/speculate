@@ -37,7 +37,6 @@ speculateExchange.on(
     tokenId,
     isOrderAsk,
     currency,
-    strategy,
     amount,
     price,
     startTime,
@@ -57,7 +56,6 @@ speculateExchange.on(
       tokenId: tokenId.toString(),
       isOrderAsk: isOrderAsk,
       currency: currency.toLowerCase(),
-      strategy: strategy.toLowerCase(),
       amount: amount.toString(),
       price: price.toString(),
       startTime: startTime.toString(),
@@ -84,7 +82,6 @@ speculateExchange.on(
     tokenId,
     isOrderAsk,
     currency,
-    strategy,
     amount,
     price,
     startTime,
@@ -106,7 +103,6 @@ speculateExchange.on(
           tokenId: tokenId.toString(),
           isOrderAsk: isOrderAsk,
           currency: currency.toLowerCase(),
-          strategy: strategy.toLowerCase(),
           amount: amount.toString(),
           price: price.toString(),
           startTime: startTime.toString(),
@@ -127,7 +123,6 @@ speculateExchange.on(
         tokenId: tokenId.toString(),
         isOrderAsk: isOrderAsk,
         currency: currency.toLowerCase(),
-        strategy: strategy.toLowerCase(),
         amount: amount.toString(),
         price: price.toString(),
         startTime: startTime.toString(),
@@ -149,16 +144,7 @@ speculateExchange.on(
 
 speculateExchange.on(
   'TakerAsk',
-  async (
-    taker,
-    maker,
-    strategy,
-    currency,
-    collection,
-    tokenId,
-    amount,
-    price
-  ) => {
+  async (taker, maker, tokenId, currency, collection, amount, price) => {
     console.log('TakerAsk received');
     collection = collection.toLowerCase();
     delete makerBids[collection][tokenId];
@@ -175,16 +161,7 @@ speculateExchange.on(
 
 speculateExchange.on(
   'TakerBid',
-  async (
-    taker,
-    maker,
-    strategy,
-    currency,
-    collection,
-    tokenId,
-    amount,
-    price
-  ) => {
+  async (taker, maker, tokenId, currency, collection, amount, price) => {
     console.log('TakerBid received');
     collection = collection.toLowerCase();
     delete makerAsks[collection][tokenId];
