@@ -828,6 +828,7 @@ const StyledImg = styled.img`
 const ButtonDiv = styled.div`
   display: flex;
   gap: 5px;
+  margin-bottom: 8px;
 `;
 
 const Button = styled.button`

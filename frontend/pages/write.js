@@ -9,6 +9,7 @@ import {
   useWaitForTransaction,
   useAccount,
   useContractEvent,
+  useNetwork,
 } from 'wagmi';
 import * as Yup from 'yup';
 import { ethers } from 'ethers';
@@ -144,35 +145,36 @@ const aggregatorV3InterfaceABI = [
 ];
 
 const priceFeeds = {
-  RINKEBY: {
-    ETH: {
-      USD: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e',
+  bsc_test: {},
+  rinkeby: {
+    eth: {
+      usd: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e',
     },
-    BTC: {
-      USD: '0xECe365B379E1dD183B20fc5f022230C044d51404',
+    btc: {
+      usd: '0xECe365B379E1dD183B20fc5f022230C044d51404',
     },
-    ATOM: {
-      USD: '0x3539F2E214d8BC7E611056383323aC6D1b01943c',
+    atom: {
+      usd: '0x3539F2E214d8BC7E611056383323aC6D1b01943c',
     },
-    LINK: {
-      USD: '0xd8bd0a1cb028a31aa859a21a3758685a95de4623',
+    link: {
+      usd: '0xd8bd0a1cb028a31aa859a21a3758685a95de4623',
     },
-    MATIC: {
-      USD: '0x7794ee502922e2b723432DDD852B3C30A911F021',
+    matic: {
+      usd: '0x7794ee502922e2b723432DDD852B3C30A911F021',
     },
   },
-  FUJI: {
-    ETH: {
-      USD: '0x86d67c3D38D2bCeE722E601025C25a575021c6EA',
+  fuji: {
+    eth: {
+      usd: '0x86d67c3D38D2bCeE722E601025C25a575021c6EA',
     },
-    BTC: {
-      USD: '0x31CF013A08c6Ac228C94551d535d5BAfE19c602a',
+    btc: {
+      usd: '0x31CF013A08c6Ac228C94551d535d5BAfE19c602a',
     },
-    AVAX: {
-      USD: '0x5498BB86BC934c8D34FDA08E81D444153d0D06aD',
+    avax: {
+      usd: '0x5498BB86BC934c8D34FDA08E81D444153d0D06aD',
     },
-    LINK: {
-      USD: '0x34C4c526902d88a3Aa98DB8a9b802603EB1E3470',
+    link: {
+      usd: '0x34C4c526902d88a3Aa98DB8a9b802603EB1E3470',
     },
   },
 };
@@ -187,7 +189,19 @@ const imageMapper = {
   atom: '/ATOM.svg',
 };
 
+let addresses = {
+  rinkeby: rinkeby.optionFactory,
+};
+
 export default function Write() {
+  const {
+    activeChain,
+    chains,
+    error,
+    isLoading: il,
+    pendingChainId,
+    switchNetwork,
+  } = useNetwork();
   const { data: activeAccount, isError, isLoading } = useAccount();
   const [template, setTemplate] = useState(optionTemplates[0]);
   const [assetPrice, setAssetPrice] = useState('');
@@ -231,9 +245,8 @@ export default function Write() {
     },
     'Transfer',
     ([from, to, tokenId]) => {
-      console.log(tokenId.toString());
       setCreatedOptionId(tokenId.toString());
-      moralisMetadataSync(tokenId);
+      // moralisMetadataSync(tokenId);
     }
   );
 
@@ -261,9 +274,15 @@ export default function Write() {
   });
 
   const writeOption = async (values) => {
-    if (activeAccount) {
+    if (activeAccount && activeChain) {
+      const chain = activeChain.name.toLowerCase();
+      const nativeSymbol = activeChain.nativeCurrency.symbol.toLowerCase();
+      const assetSymbol = values.asset.toLowerCase();
+
+      const assetPriceFeed = priceFeeds[chain][assetSymbol].usd;
+      const collateralPriceFeed = priceFeeds[chain][nativeSymbol].usd;
       const option = {
-        underlyingPriceFeed: priceFeeds.RINKEBY[values.asset.toUpperCase()].USD,
+        underlyingPriceFeed: assetPriceFeed,
         underlyingAmount: ethers.utils.parseEther(values.rightToBuy.toString()),
         call: values.type === 'call',
         strikePrice: ethers.utils.parseUnits(
@@ -274,15 +293,14 @@ export default function Write() {
         seller: activeAccount.address,
       };
       const collateral = {
-        priceFeed: priceFeeds.RINKEBY.ETH.USD,
+        priceFeed: collateralPriceFeed,
         amount: ethers.utils.parseEther(values.collateral.toString()),
       };
 
-      const generatedSvg = createSvg(option, values.asset, assetDecimals);
+      const generatedSvg = createSvg(option, assetSymbol, assetDecimals);
       const metadata = generateMetadata(values, generatedSvg);
       let metadataURI = await uploadToIpfs(metadata);
 
-      // console.log(values);
       createOptionFunc.write({
         args: [option, collateral, metadataURI],
         overrides: {
@@ -296,13 +314,13 @@ export default function Write() {
 
   const getAssetPrice = async () => {
     try {
-      const network = 'RINKEBY';
-      const priceFeedAddress =
-        priceFeeds[network][formik.values.asset.toUpperCase()].USD;
+      if (activeAccount && activeChain) {
+        const chain = activeChain.name.toLowerCase();
 
-      if (activeAccount) {
+        const priceFeedAddress =
+          priceFeeds[chain][formik.values.asset.toLowerCase()].usd;
         const provider = new ethers.providers.JsonRpcProvider(
-          process.env.ALCHEMY_RINKEBY_RPC
+          activeChain.rpcUrls.default
         );
 
         const priceFeedContract = new ethers.Contract(
@@ -326,13 +344,13 @@ export default function Write() {
 
   const getCollateralPrice = async () => {
     try {
-      const network = 'RINKEBY';
-      const collateral = 'ETH'; // always ETH for the mvp
-      const priceFeedAddress = priceFeeds[network][collateral].USD;
+      if (activeAccount && activeChain) {
+        const collateral = activeChain.nativeCurrency.symbol.toLowerCase(); // always the native ting for the mvp
+        const chain = activeChain.name.toLowerCase();
+        const priceFeedAddress = priceFeeds[chain][collateral].usd;
 
-      if (ethereum) {
         const provider = new ethers.providers.JsonRpcProvider(
-          process.env.ALCHEMY_RINKEBY_RPC
+          activeChain.rpcUrls.default
         );
 
         const priceFeedContract = new ethers.Contract(

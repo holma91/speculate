@@ -472,8 +472,6 @@ export default function Option() {
         const decimals = await priceFeedContract.decimals();
         const price = await priceFeedContract.latestRoundData();
 
-        console.log(price.toString());
-
         setAssetPrice(ethers.utils.formatUnits(price.answer, decimals));
         setRawAssetPrice(price.answer);
       } else {
@@ -740,7 +738,7 @@ export default function Option() {
     <BaseContainer>
       {true ? (
         <ShortOption>
-          <Link href={`/options/1`}>
+          <Link href={`/positions/shorts/${id}`}>
             <a>
               You are short this option <ExternalLinkIcon></ExternalLinkIcon>
             </a>
