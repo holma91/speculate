@@ -10,8 +10,6 @@ import {
 } from '@rainbow-me/rainbowkit';
 import { chain, createClient, WagmiProvider } from 'wagmi';
 
-console.log(chain);
-
 const avalancheChain = {
   id: 43_114,
   name: 'Avalanche',
@@ -54,8 +52,8 @@ const binanceSmartChainTestnet = {
   name: 'Binance Testnet',
   nativeCurrency: {
     decimals: 18,
-    name: 'tBNB',
-    symbol: 'tBNB',
+    name: 'BNB',
+    symbol: 'BNB',
   },
   rpcUrls: {
     default: 'https://data-seed-prebsc-2-s3.binance.org:8545',
@@ -72,12 +70,12 @@ chain.rinkeby.nativeCurrency.symbol = 'ETH';
 
 const { chains, provider } = configureChains(
   [
-    chain.mainnet,
+    // chain.mainnet,
     chain.rinkeby,
-    chain.polygon,
-    chain.optimism,
-    chain.arbitrum,
-    avalancheChain,
+    // chain.polygon,
+    // chain.optimism,
+    // chain.arbitrum,
+    // avalancheChain,
     binanceSmartChain,
     binanceSmartChainTestnet,
   ],

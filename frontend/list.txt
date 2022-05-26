@@ -1,17 +1,37 @@
-1. get all nfts for the user
-2. get all makerAsks
-
-compare 1 and 2,
-- show the non-listed with the button list
-- show the listed with the button re-list
-
-
-1. click on list
-  - make a pre-configured makerAsk
 
 
 
 
-- list nft - DONE
-- accept offer on nft - DONE
-- 
+- determine if user is short
+
+- get option from chain
+check if current user == option.seller
+
+
+
+
+
+CHECKLIST
+
+
+big stuff
+- can write option
+- can list option
+- can make offers
+- can buy now (remember, need wrapped)
+  - FIX: make page update when option is bought
+
+- can view call options
+- can view specific option
+  - FIX: make page fixed width, make button taking us to pancakeswap
+- can view short
+
+
+
+
+
+
+small stuff
+- can approve nft spending
+- can approve erc20 spending
+

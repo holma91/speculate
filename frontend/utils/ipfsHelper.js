@@ -54,29 +54,29 @@ const createSvg = (option, asset, assetDecimals) => {
       xmlns="http://www.w3.org/2000/svg"
     >
       <rect x="0" y="0" width="350" height="350" fill="white" />
-      <text x="122" y="49" fontSize="25" fontWeight="200">
+      <text x="50%" y="49" font-size="24" font-weight="300" dominant-baseline="middle" text-anchor="middle">
       ${asset.toUpperCase()} CALL
       </text>
-      <line x1="40" y1="65" x2="310" y2="65" stroke="black" strokeWidth="1" />
-      <text x="80" y="105" fontSize="20" fontWeight="200">
+      <line x1="40" y1="73" x2="310" y2="73" stroke="black" stroke-width="1.5" dominant-baseline="middle" text-anchor="middle" />
+      <text x="50%" y="110" font-size="22" font-weight="200" dominant-baseline="middle" text-anchor="middle">
         Price Feed: ${asset.toUpperCase()}/USD
       </text>
-      <text x="80" y="150" fontSize="20" fontWeight="200">
+      <text x="50%" y="155" font-size="22" font-weight="200" dominant-baseline="middle" text-anchor="middle">
         Strike Price: $${ethers.utils.formatUnits(
           option.strikePrice,
           assetDecimals
         )}
       </text>
-      <text x="80" y="195" fontSize="20" fontWeight="200">
+      <text x="50%" y="200" font-size="22" font-weight="200" dominant-baseline="middle" text-anchor="middle">
         Amount: ${ethers.utils.formatEther(
           option.underlyingAmount
         )} ${asset.toUpperCase()}
       </text>
-      <text x="80" y="240" fontSize="20" fontWeight="200">
+      <text x="50%" y="245" font-size="22" font-weight="200" dominant-baseline="middle" text-anchor="middle">
         Expiry: ${option.expiry}
       </text>
-      <text x="80" y="285" fontSize="20" fontWeight="200">
-        American Style
+      <text x="50%" y="290" font-size="22" font-weight="200" dominant-baseline="middle" text-anchor="middle">
+        ${option.european ? 'European' : 'American'} Style
       </text>
     </svg>`;
 };

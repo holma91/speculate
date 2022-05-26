@@ -24,9 +24,10 @@ import {
 import Table from '../components/Table';
 
 import { generateMetadata, uploadToIpfs, createSvg } from '../utils/ipfsHelper';
-import { fuji, rinkeby } from '../utils/addresses';
+import { fuji, rinkeby, zeroAddress } from '../utils/addresses';
 import OptionFactory from '../../contracts/out/OptionFactory.sol/OptionFactory.json';
 import { optionTemplates } from '../data/optionTemplates';
+import { priceFeeds, aggregatorV3InterfaceABI } from '../utils/misc';
 
 const getShorts = () => {
   const data = [
@@ -94,91 +95,6 @@ const sleep = (ms) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
-const aggregatorV3InterfaceABI = [
-  {
-    inputs: [],
-    name: 'decimals',
-    outputs: [{ internalType: 'uint8', name: '', type: 'uint8' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'description',
-    outputs: [{ internalType: 'string', name: '', type: 'string' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [{ internalType: 'uint80', name: '_roundId', type: 'uint80' }],
-    name: 'getRoundData',
-    outputs: [
-      { internalType: 'uint80', name: 'roundId', type: 'uint80' },
-      { internalType: 'int256', name: 'answer', type: 'int256' },
-      { internalType: 'uint256', name: 'startedAt', type: 'uint256' },
-      { internalType: 'uint256', name: 'updatedAt', type: 'uint256' },
-      { internalType: 'uint80', name: 'answeredInRound', type: 'uint80' },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'latestRoundData',
-    outputs: [
-      { internalType: 'uint80', name: 'roundId', type: 'uint80' },
-      { internalType: 'int256', name: 'answer', type: 'int256' },
-      { internalType: 'uint256', name: 'startedAt', type: 'uint256' },
-      { internalType: 'uint256', name: 'updatedAt', type: 'uint256' },
-      { internalType: 'uint80', name: 'answeredInRound', type: 'uint80' },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'version',
-    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-];
-
-const priceFeeds = {
-  bsc_test: {},
-  rinkeby: {
-    eth: {
-      usd: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e',
-    },
-    btc: {
-      usd: '0xECe365B379E1dD183B20fc5f022230C044d51404',
-    },
-    atom: {
-      usd: '0x3539F2E214d8BC7E611056383323aC6D1b01943c',
-    },
-    link: {
-      usd: '0xd8bd0a1cb028a31aa859a21a3758685a95de4623',
-    },
-    matic: {
-      usd: '0x7794ee502922e2b723432DDD852B3C30A911F021',
-    },
-  },
-  fuji: {
-    eth: {
-      usd: '0x86d67c3D38D2bCeE722E601025C25a575021c6EA',
-    },
-    btc: {
-      usd: '0x31CF013A08c6Ac228C94551d535d5BAfE19c602a',
-    },
-    avax: {
-      usd: '0x5498BB86BC934c8D34FDA08E81D444153d0D06aD',
-    },
-    link: {
-      usd: '0x34C4c526902d88a3Aa98DB8a9b802603EB1E3470',
-    },
-  },
-};
-
 const imageMapper = {
   eth: '/ETH.svg',
   btc: '/BTC.svg',
@@ -202,6 +118,11 @@ export default function Write() {
   const [assetDecimals, setAssetDecimals] = useState(0);
 
   const [createdOptionId, setCreatedOptionId] = useState(null);
+  const [isSSR, setIsSSR] = useState(true);
+
+  useEffect(() => {
+    setIsSSR(false);
+  }, []);
 
   const createOptionFunc = useContractWrite(
     {
@@ -251,6 +172,7 @@ export default function Write() {
       type: 'call',
       expiry: template.expiry,
       collateral: 1,
+      style: 'european',
     },
 
     validationSchema: Yup.object({
@@ -282,7 +204,8 @@ export default function Write() {
           values.strikePrice.toString(),
           assetDecimals
         ),
-        expiry: 1000000,
+        expiry: new Date(values.expiry).getTime() / 1000,
+        european: values.style === 'european',
         seller: activeAccount.address,
       };
       const collateral = {
@@ -309,6 +232,8 @@ export default function Write() {
     try {
       if (activeAccount && activeChain) {
         const chain = activeChain.name.toLowerCase();
+
+        console.log(chain);
 
         const priceFeedAddress =
           priceFeeds[chain][formik.values.asset.toLowerCase()].usd;
@@ -339,6 +264,7 @@ export default function Write() {
     try {
       if (activeAccount && activeChain) {
         const collateral = activeChain.nativeCurrency.symbol.toLowerCase(); // always the native ting for the mvp
+        console.log(collateral);
         const chain = activeChain.name.toLowerCase();
         const priceFeedAddress = priceFeeds[chain][collateral].usd;
 
@@ -416,7 +342,6 @@ export default function Write() {
               <StyledSelect id="asset" {...formik.getFieldProps('asset')}>
                 <option value="eth">$ETH</option>
                 <option value="btc">$BTC</option>
-                <option value="atom">$ATOM</option>
                 <option value="link">$LINK</option>
                 <option value="matic">$MATIC</option>
               </StyledSelect>
@@ -438,7 +363,9 @@ export default function Write() {
               />
             </InputContainer>
             <InputContainer>
-              <label htmlFor="rightToBuy">Amount: </label>
+              <label htmlFor="rightToBuy">
+                Right to buy ({formik.values.asset.toUpperCase()}):{' '}
+              </label>
               <StyledMyTextInput
                 name="rightToBuy"
                 type="number"
@@ -456,7 +383,23 @@ export default function Write() {
               />
             </InputContainer>
             <InputContainer>
-              <label htmlFor="collateral">Your Collateral (ETH): </label>
+              <label htmlFor="style">Style: </label>
+              <StyledSelect id="style" {...formik.getFieldProps('style')}>
+                <option value="european">European</option>
+                <option value="american">American</option>
+              </StyledSelect>
+            </InputContainer>
+            <InputContainer>
+              <div>
+                {!isSSR && activeChain ? (
+                  <label htmlFor="collateral">
+                    Your Collateral (
+                    {activeChain.nativeCurrency.name.toUpperCase()})
+                  </label>
+                ) : (
+                  <label htmlFor="collateral">Your Collateral (): </label>
+                )}
+              </div>
               <StyledMyTextInput
                 name="collateral"
                 type="number"
@@ -472,7 +415,7 @@ export default function Write() {
           <Summary>
             <InnerContainer>
               <Stats>
-                {formik.values.asset !== 'eth' ? (
+                {formik.values.asset !== 'bnb' ? (
                   <MarketPriceDiv>
                     <p className="price-header">
                       Current {formik.values.asset.toUpperCase()} Price:
@@ -481,7 +424,11 @@ export default function Write() {
                   </MarketPriceDiv>
                 ) : null}
                 <MarketPriceDiv>
-                  <p className="price-header">Current ETH Price:</p>
+                  {!isSSR && activeChain ? (
+                    <p className="price-header">
+                      {activeChain.nativeCurrency.name.toUpperCase()} Price:
+                    </p>
+                  ) : null}
                   <p className="price">${trimStr(collateralPrice)}</p>
                 </MarketPriceDiv>
               </Stats>

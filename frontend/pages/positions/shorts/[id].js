@@ -20,67 +20,22 @@ import * as Yup from 'yup';
 import { ethers } from 'ethers';
 import styled from 'styled-components';
 import SmallTable, { AvatarCell } from '../../../components/SmallTable';
-import { rinkeby } from '../../../utils/addresses';
+import {
+  rinkeby,
+  binanceTest,
+  zeroAddress,
+  nativeTokenMapper,
+} from '../../../utils/addresses';
 import aggregatorV3Interface from '../../../../contracts/out/AggregatorV3Interface.sol/AggregatorV3Interface.json';
 import SpeculateExchange from '../../../../contracts/out/SpeculateExchange.sol/SpeculateExchange.json';
 import OptionFactory from '../../../../contracts/out/OptionFactory.sol/OptionFactory.json';
 import wethABI from '../../../../contracts/wethABI.json';
 
-const aggregatorV3InterfaceABI = [
-  {
-    inputs: [],
-    name: 'decimals',
-    outputs: [{ internalType: 'uint8', name: '', type: 'uint8' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'description',
-    outputs: [{ internalType: 'string', name: '', type: 'string' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [{ internalType: 'uint80', name: '_roundId', type: 'uint80' }],
-    name: 'getRoundData',
-    outputs: [
-      { internalType: 'uint80', name: 'roundId', type: 'uint80' },
-      { internalType: 'int256', name: 'answer', type: 'int256' },
-      { internalType: 'uint256', name: 'startedAt', type: 'uint256' },
-      { internalType: 'uint256', name: 'updatedAt', type: 'uint256' },
-      { internalType: 'uint80', name: 'answeredInRound', type: 'uint80' },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'latestRoundData',
-    outputs: [
-      { internalType: 'uint80', name: 'roundId', type: 'uint80' },
-      { internalType: 'int256', name: 'answer', type: 'int256' },
-      { internalType: 'uint256', name: 'startedAt', type: 'uint256' },
-      { internalType: 'uint256', name: 'updatedAt', type: 'uint256' },
-      { internalType: 'uint80', name: 'answeredInRound', type: 'uint80' },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'version',
-    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-];
-
-const moralisMapping = {
-  rinkeby: 'rinkeby',
-  bsc: 'bsc',
-  bsc_test: 'bsc testnet',
-};
+import {
+  aggregatorV3InterfaceABI,
+  moralisMapping,
+  priceFeeds,
+} from '../../../utils/misc';
 
 const trimStr = (str) => {
   let lock = true;
@@ -102,41 +57,6 @@ const trimStr = (str) => {
   }
 
   return str.substring(0, i);
-};
-
-const priceFeeds = {
-  bsc_test: {},
-  rinkeby: {
-    eth: {
-      usd: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e',
-    },
-    btc: {
-      usd: '0xECe365B379E1dD183B20fc5f022230C044d51404',
-    },
-    atom: {
-      usd: '0x3539F2E214d8BC7E611056383323aC6D1b01943c',
-    },
-    link: {
-      usd: '0xd8bd0a1cb028a31aa859a21a3758685a95de4623',
-    },
-    matic: {
-      usd: '0x7794ee502922e2b723432DDD852B3C30A911F021',
-    },
-  },
-  fuji: {
-    eth: {
-      usd: '0x86d67c3D38D2bCeE722E601025C25a575021c6EA',
-    },
-    btc: {
-      usd: '0x31CF013A08c6Ac228C94551d535d5BAfE19c602a',
-    },
-    avax: {
-      usd: '0x5498BB86BC934c8D34FDA08E81D444153d0D06aD',
-    },
-    link: {
-      usd: '0x34C4c526902d88a3Aa98DB8a9b802603EB1E3470',
-    },
-  },
 };
 
 const styleAddress = (address) => {
@@ -170,7 +90,9 @@ export default function Option() {
 
   const allowanceFunc = useContractRead(
     {
-      addressOrName: rinkeby.weth,
+      addressOrName: activeChain
+        ? nativeTokenMapper[activeChain.name.toLowerCase()]
+        : zeroAddress,
       contractInterface: wethABI,
     },
     'allowance',
@@ -181,7 +103,9 @@ export default function Option() {
 
   const approveSpendingFunc = useContractWrite(
     {
-      addressOrName: rinkeby.weth,
+      addressOrName: activeChain
+        ? nativeTokenMapper[activeChain.name.toLowerCase()]
+        : zeroAddress,
       contractInterface: wethABI,
     },
     'approve'

@@ -20,42 +20,12 @@ import * as Yup from 'yup';
 import { ethers } from 'ethers';
 import styled from 'styled-components';
 import SmallTable, { AvatarCell } from '../../components/SmallTable';
-import { rinkeby } from '../../utils/addresses';
+import { rinkeby, zeroAddress, nativeTokenMapper } from '../../utils/addresses';
 import aggregatorV3Interface from '../../../contracts/out/AggregatorV3Interface.sol/AggregatorV3Interface.json';
 import SpeculateExchange from '../../../contracts/out/SpeculateExchange.sol/SpeculateExchange.json';
 import OptionFactory from '../../../contracts/out/OptionFactory.sol/OptionFactory.json';
 import wethABI from '../../../contracts/wethABI.json';
-
-const getOffers2 = () => {
-  const data = [
-    {
-      price: '0.36 WETH',
-      img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg',
-      usdPrice: '$733',
-      expiration: '2022-07-01',
-      priceTreshold: '$2200',
-      from: '0xA13...37A',
-    },
-    {
-      price: '0.32 WETH',
-      img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg',
-      usdPrice: '$713',
-      expiration: '2022-07-20',
-      priceTreshold: '$2500',
-      from: '0xA18...38A',
-    },
-    {
-      price: '0.28 WETH',
-      img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg',
-      usdPrice: '$693',
-      expiration: '2022-06-20',
-      priceTreshold: '$2500',
-      from: '0xA28...18B',
-    },
-  ];
-
-  return data;
-};
+import { priceFeeds, moralisMapping } from '../../utils/misc';
 
 const trimStr = (str) => {
   let lock = true;
@@ -79,53 +49,12 @@ const sleep = (ms) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
-const priceFeeds = {
-  bsc_test: {},
-  rinkeby: {
-    eth: {
-      usd: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e',
-    },
-    btc: {
-      usd: '0xECe365B379E1dD183B20fc5f022230C044d51404',
-    },
-    atom: {
-      usd: '0x3539F2E214d8BC7E611056383323aC6D1b01943c',
-    },
-    link: {
-      usd: '0xd8bd0a1cb028a31aa859a21a3758685a95de4623',
-    },
-    matic: {
-      usd: '0x7794ee502922e2b723432DDD852B3C30A911F021',
-    },
-  },
-  fuji: {
-    eth: {
-      usd: '0x86d67c3D38D2bCeE722E601025C25a575021c6EA',
-    },
-    btc: {
-      usd: '0x31CF013A08c6Ac228C94551d535d5BAfE19c602a',
-    },
-    avax: {
-      usd: '0x5498BB86BC934c8D34FDA08E81D444153d0D06aD',
-    },
-    link: {
-      usd: '0x34C4c526902d88a3Aa98DB8a9b802603EB1E3470',
-    },
-  },
-};
-
 const styleAddress = (address) => {
   return (
     address.substring(0, 5) +
     '...' +
     address.substring(address.length - 3, address.length)
   );
-};
-
-const moralisMapping = {
-  rinkeby: 'rinkeby',
-  bsc: 'bsc',
-  bsc_test: 'bsc testnet',
 };
 
 export default function Option() {
@@ -144,12 +73,46 @@ export default function Option() {
   const [asset, setAsset] = useState('');
   const [assetPrice, setAssetPrice] = useState(0);
   const [rawAssetPrice, setRawAssetPrice] = useState(null);
+  const [assetDecimals, setAssetDecimals] = useState(0);
+  const [isUserShort, setIsUserShort] = useState(false);
   const router = useRouter();
   const { id } = router.query;
 
+  const isApprovedForAllFunc = useContractRead(
+    {
+      addressOrName: rinkeby.optionFactory,
+      contractInterface: OptionFactory.abi,
+    },
+    'isApprovedForAll',
+    {
+      args: [
+        activeAccount ? activeAccount.address : zeroAddress,
+        rinkeby.transferManagerERC721,
+      ],
+    }
+  );
+
+  const setApprovalFunc = useContractWrite(
+    {
+      addressOrName: rinkeby.optionFactory,
+      contractInterface: OptionFactory.abi,
+    },
+    'setApprovalForAll'
+  );
+
+  const waitForSetApprovalFunc = useWaitForTransaction({
+    hash: setApprovalFunc.data?.hash,
+    onSuccess(data) {
+      // necessary to make approve button disappear after approval
+      isApprovedForAllFunc.refetch();
+    },
+  });
+
   const allowanceFunc = useContractRead(
     {
-      addressOrName: rinkeby.weth,
+      addressOrName: activeChain
+        ? nativeTokenMapper[activeChain.name.toLowerCase()]
+        : zeroAddress,
       contractInterface: wethABI,
     },
     'allowance',
@@ -160,7 +123,9 @@ export default function Option() {
 
   const approveSpendingFunc = useContractWrite(
     {
-      addressOrName: rinkeby.weth,
+      addressOrName: activeChain
+        ? nativeTokenMapper[activeChain.name.toLowerCase()]
+        : zeroAddress,
       contractInterface: wethABI,
     },
     'approve'
@@ -399,6 +364,10 @@ export default function Option() {
         seller: option.seller,
       };
 
+      if (option.seller.toLowerCase() === activeAccount.address.toLowerCase()) {
+        setIsUserShort(true);
+      }
+
       setOption(parsedOption);
     } else {
       console.log('connect with your wallet!');
@@ -485,6 +454,7 @@ export default function Option() {
 
         setAssetPrice(ethers.utils.formatUnits(price.answer, decimals));
         setRawAssetPrice(price.answer);
+        setAssetDecimals(decimals);
       } else {
         console.log("Ethereum object doesn't exist!");
       }
@@ -572,7 +542,8 @@ export default function Option() {
   });
 
   const listOption = async ({ price, until, treshold }) => {
-    if (activeAccount) {
+    if (activeAccount && activeChain) {
+      const nativeCurrency = nativeTokenMapper[activeChain.name.toLowerCase()];
       const network = activeChain.name.toLowerCase();
       const priceFeed = priceFeeds[network][asset.toLowerCase()].usd;
       const makerAsk = {
@@ -583,9 +554,9 @@ export default function Option() {
         tokenId: nft.token_id,
         amount: 1,
         strategy: rinkeby.strategy,
-        currency: rinkeby.weth,
-        startTime: 1651301377,
-        endTime: 1660995560,
+        currency: nativeCurrency,
+        startTime: Math.floor(new Date().getTime() / 1000),
+        endTime: Math.floor(new Date(until).getTime() / 1000),
         underlyingPriceFeed: priceFeed,
         underlyingPriceTreshold: ethers.utils.parseUnits(
           treshold.toString(),
@@ -626,6 +597,7 @@ export default function Option() {
     if (activeAccount && activeChain) {
       const network = activeChain.name.toLowerCase();
       const priceFeed = priceFeeds[network][asset.toLowerCase()].usd;
+      const nativeCurrency = nativeTokenMapper[activeChain.name.toLowerCase()];
       const makerBid = {
         isOrderAsk: false,
         signer: activeAccount.address,
@@ -634,9 +606,9 @@ export default function Option() {
         tokenId: nft.token_id,
         amount: 1,
         strategy: rinkeby.strategy,
-        currency: rinkeby.weth,
-        startTime: 1651301377,
-        endTime: 1660995560,
+        currency: nativeCurrency,
+        startTime: Math.floor(new Date().getTime() / 1000),
+        endTime: Math.floor(new Date(until).getTime() / 1000),
         underlyingPriceFeed: priceFeed,
         underlyingPriceTreshold: ethers.utils.parseUnits(
           treshold.toString(),
@@ -749,7 +721,7 @@ export default function Option() {
 
   return (
     <BaseContainer>
-      {true ? (
+      {isUserShort ? (
         <ShortOption>
           <Link href={`/positions/shorts/${id}`}>
             <a>
@@ -780,14 +752,17 @@ export default function Option() {
             <p className="collection-header">{asset} Options</p>
             <p className="header">LONG {asset} CALL</p>
             <Stats>
-              {option ? (
+              {option && assetDecimals > 0 ? (
                 <MarketPriceDiv>
                   <p className="price-header">Strike Price:</p>
                   <p className="price">
                     $
                     {trimStr(
                       ethers.utils
-                        .formatUnits(option.strikePrice.toString(), 8)
+                        .formatUnits(
+                          option.strikePrice.toString(),
+                          assetDecimals
+                        )
                         .toString()
                     )}
                   </p>
@@ -849,7 +824,7 @@ export default function Option() {
                           exercised early.
                         </p>
                         All our options settle in cash, which means the profit
-                        is payed back in WETH.
+                        is payed back in the wrapped native token.
                         <p></p>
                         <Button onClick={exercise}>Exercise</Button>
                       </>
@@ -876,19 +851,23 @@ export default function Option() {
                       )}
                     </p>
                     <div className="price">
-                      {listed ? (
+                      {listed && activeChain ? (
                         <>
                           <span>Buy now price:</span>
-                          <p>{ethers.utils.formatEther(makerAsk.price)} ETH</p>
+                          <p>
+                            {ethers.utils.formatEther(makerAsk.price)}{' '}
+                            {activeChain.nativeCurrency.symbol.toUpperCase()}
+                          </p>
                         </>
                       ) : (
                         <p>Unlisted</p>
                       )}
-                      {bidded ? (
+                      {bidded && activeChain ? (
                         <>
                           <span>Highest Offer:</span>
                           <p>
-                            {ethers.utils.formatEther(makerBids[0].price)} ETH
+                            {ethers.utils.formatEther(makerBids[0].price)}{' '}
+                            {activeChain.nativeCurrency.symbol.toUpperCase()}
                           </p>
                         </>
                       ) : null}
@@ -1010,7 +989,6 @@ export default function Option() {
                 </div>
                 {showListingInfo ? (
                   <div className="price">
-                    <p>Unlisted</p>
                     {!isLoading &&
                     nft &&
                     nft.owner_of.toLowerCase() ===
@@ -1045,6 +1023,32 @@ export default function Option() {
                               {...formik.getFieldProps('treshold')}
                             />
                           </InputContainer>
+                          <div>
+                            {isApprovedForAllFunc &&
+                            !isApprovedForAllFunc.data ? (
+                              <>
+                                {setApprovalFunc.isLoading ? (
+                                  <Button type="button">Loading...</Button>
+                                ) : waitForSetApprovalFunc.isLoading ? (
+                                  <Button type="button">Pending...</Button>
+                                ) : (
+                                  <Button
+                                    type="button"
+                                    onClick={() =>
+                                      setApprovalFunc.write({
+                                        args: [
+                                          rinkeby.transferManagerERC721,
+                                          true,
+                                        ],
+                                      })
+                                    }
+                                  >
+                                    Approve NFT spending
+                                  </Button>
+                                )}
+                              </>
+                            ) : null}
+                          </div>
                           {listFunc.isLoading ? (
                             <Button type="submit">Loading...</Button>
                           ) : waitForListFunc.isLoading ? (
@@ -1056,7 +1060,7 @@ export default function Option() {
                       </>
                     ) : (
                       <>
-                        <Button>sup</Button>
+                        <p>Unlisted</p>
                       </>
                     )}
                   </div>
@@ -1158,9 +1162,9 @@ const ExerciseTerms = styled.div`
 `;
 
 const BuyDiv = styled.div`
-  width: 50%;
+  /* width: 50%; */
   button {
-    width: 47%;
+    /* width: 47%; */
   }
 `;
 const ApproveDiv = styled.div`

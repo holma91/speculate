@@ -17,11 +17,11 @@ import Table, {
   StatusPill,
   AvatarCell,
 } from '../components/Table';
-import Position from '../components/Position';
-import { rinkeby } from '../utils/addresses';
+import { rinkeby, binanceTest, zeroAddress } from '../utils/addresses';
 import { NormalView, NFTView } from '../components/OptionViews';
 import SpeculateExchange from '../../contracts/out/SpeculateExchange.sol/SpeculateExchange.json';
 import OptionFactory from '../../contracts/out/OptionFactory.sol/OptionFactory.json';
+import { moralisMapping } from '../utils/misc';
 
 const getShorts = () => {
   const data = [
@@ -85,12 +85,6 @@ const getShorts = () => {
   return [...data, ...data, ...data];
 };
 
-const moralisMapping = {
-  rinkeby: 'rinkeby',
-  bsc: 'bsc',
-  bsc_test: 'bsc testnet',
-};
-
 export default function Positions({ allPositions }) {
   const { activeChain } = useNetwork();
   const { data: activeAccount, isError, isLoading } = useAccount();
@@ -100,6 +94,11 @@ export default function Positions({ allPositions }) {
   const [nfts, setNfts] = useState([]);
   const [view, setView] = useState('longs');
   const [clickedPosition, setClickedPosition] = useState(null);
+  const [isSSR, setIsSSR] = useState(true);
+
+  useEffect(() => {
+    setIsSSR(false);
+  }, []);
 
   const isApprovedForAllFunc = useContractRead(
     {
@@ -109,7 +108,7 @@ export default function Positions({ allPositions }) {
     'isApprovedForAll',
     {
       args: [
-        '0x30429A2FfAE3bE74032B6ADD7ac4A971AbAd4d02',
+        activeAccount ? activeAccount.address : zeroAddress,
         rinkeby.transferManagerERC721,
       ],
     }
@@ -170,6 +169,7 @@ export default function Positions({ allPositions }) {
       } else {
         url = `https://deep-index.moralis.io/api/v2/nft/${rinkeby.optionFactory}?chain=${chain}&format=decimal`;
       }
+
       let response = await fetch(url, {
         headers: { 'X-API-Key': process.env.MORALIS_API_KEY },
       });
@@ -371,16 +371,11 @@ export default function Positions({ allPositions }) {
   return (
     <OuterContainer>
       <InnerContainer>
-        {clickedPosition ? (
-          <Position clickedPosition={clickedPosition} />
-        ) : null}
-
         <Header>
           <p>backe.eth</p>
           <p>0x30...4d02</p>
           <div>
-            {/* {!isApprovedForAllFunc?.data ? ( */}
-            {true ? (
+            {isApprovedForAllFunc && !isApprovedForAllFunc.data && !isSSR ? (
               <>
                 {setApprovalFunc.isLoading ? (
                   <Button type="button">Loading...</Button>
