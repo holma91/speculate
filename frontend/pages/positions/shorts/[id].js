@@ -1,25 +1,14 @@
-import { useMemo, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import Link from 'next/link';
 import {
-  useSendTransaction,
   useContractWrite,
   useContractRead,
   useWaitForTransaction,
   useAccount,
-  useContractEvent,
   useNetwork,
 } from 'wagmi';
-import { useFormik } from 'formik';
-import {
-  ArrowRightIcon,
-  ArrowNarrowRightIcon,
-  ExternalLinkIcon,
-} from '@heroicons/react/solid';
-import * as Yup from 'yup';
 import { ethers } from 'ethers';
 import styled from 'styled-components';
-import SmallTable, { AvatarCell } from '../../../components/SmallTable';
 import {
   rinkeby,
   binanceTest,
@@ -71,113 +60,17 @@ export default function Option() {
   const { activeChain } = useNetwork();
   const { data: activeAccount, isError, isLoading } = useAccount();
   const [showExerciseInfo, setShowExerciseInfo] = useState(true);
-  const [showListingInfo, setShowListingInfo] = useState(false);
-  const [showOffers, setShowOffers] = useState(false);
-  const [makerAsk, setMakerAsk] = useState(null);
-  const [makerBids, setMakerBids] = useState([]);
-  const [listed, setListed] = useState(false);
-  const [bidded, setBidded] = useState(false);
   const [option, setOption] = useState(null);
   const [collateral, setCollateral] = useState(null);
   const [nft, setNft] = useState(null);
   const [asset, setAsset] = useState('');
   const [assetPrice, setAssetPrice] = useState(0);
   const [rawAssetPrice, setRawAssetPrice] = useState(null);
+  const [isUserShort, setIsUserShort] = useState(false);
   const [rawCollateralPrice, setRawCollateralPrice] = useState(null);
   const [collateralizationRatio, setCollateralizationRatio] = useState(null);
   const router = useRouter();
   const { id } = router.query;
-
-  const allowanceFunc = useContractRead(
-    {
-      addressOrName: activeChain
-        ? nativeTokenMapper[activeChain.name.toLowerCase()]
-        : zeroAddress,
-      contractInterface: wethABI,
-    },
-    'allowance',
-    {
-      args: [activeAccount?.address, rinkeby.speculateExchange],
-    }
-  );
-
-  const approveSpendingFunc = useContractWrite(
-    {
-      addressOrName: activeChain
-        ? nativeTokenMapper[activeChain.name.toLowerCase()]
-        : zeroAddress,
-      contractInterface: wethABI,
-    },
-    'approve'
-  );
-
-  const waitForApproveSpendingFunc = useWaitForTransaction({
-    hash: approveSpendingFunc.data?.hash,
-    onSuccess(data) {
-      // necessary to make approve button disappear after approval
-      allowanceFunc.refetch();
-    },
-  });
-
-  const buyNowFunc = useContractWrite(
-    {
-      addressOrName: rinkeby.speculateExchange,
-      contractInterface: SpeculateExchange.abi,
-    },
-    'matchAskWithTakerBid'
-  );
-
-  const waitForBuyNowFunc = useWaitForTransaction({
-    hash: buyNowFunc.data?.hash,
-  });
-
-  const exerciseFunc = useContractWrite(
-    {
-      addressOrName: rinkeby.optionFactory,
-      contractInterface: OptionFactory.abi,
-    },
-    'exerciseOption'
-  );
-
-  const waitForExerciseFunc = useWaitForTransaction({
-    hash: exerciseFunc.data?.hash,
-  });
-
-  const bidFunc = useContractWrite(
-    {
-      addressOrName: rinkeby.speculateExchange,
-      contractInterface: SpeculateExchange.abi,
-    },
-    'createMakerBid'
-  );
-
-  const waitForBidFunc = useWaitForTransaction({
-    hash: bidFunc.data?.hash,
-  });
-
-  const listFunc = useContractWrite(
-    {
-      addressOrName: rinkeby.speculateExchange,
-      contractInterface: SpeculateExchange.abi,
-    },
-    'createMakerAsk'
-  );
-
-  const waitForListFunc = useWaitForTransaction({
-    hash: listFunc.data?.hash,
-  });
-
-  const acceptFunc = useContractWrite(
-    {
-      addressOrName: rinkeby.speculateExchange,
-      contractInterface: SpeculateExchange.abi,
-    },
-    'matchBidWithTakerAsk'
-  );
-
-  const waitForAcceptFunc = useWaitForTransaction({
-    hash: acceptFunc.data?.hash,
-  });
 
   const getOption = async () => {
     if (activeAccount && activeChain) {
@@ -212,6 +105,13 @@ export default function Option() {
         priceFeed: collateral.priceFeed,
         amount: collateral.amount,
       };
+
+      if (
+        parsedOption.seller.toLowerCase() ===
+        activeAccount.address.toLowerCase()
+      ) {
+        setIsUserShort(true);
+      }
 
       setOption(parsedOption);
       setCollateral(parsedCollateral);
@@ -282,7 +182,7 @@ export default function Option() {
       setAsset(asset);
 
       if (activeAccount) {
-        // const asset = activeChain.nativeCurrency.symbol.toLowerCase(); // always the native ting for the mvp
+        // always the native token as collateral for the mvp
         const chain = activeChain.name.toLowerCase();
         const priceFeedAddress = priceFeeds[chain][asset.toLowerCase()].usd;
         const provider = new ethers.providers.JsonRpcProvider(
@@ -297,8 +197,6 @@ export default function Option() {
 
         const decimals = await priceFeedContract.decimals();
         const price = await priceFeedContract.latestRoundData();
-
-        console.log(price.toString());
 
         setAssetPrice(ethers.utils.formatUnits(price.answer, decimals));
         setRawAssetPrice(price.answer);
@@ -344,43 +242,6 @@ export default function Option() {
     getCollateralPrice();
   }, [id]);
 
-  useEffect(() => {
-    if (!id) {
-      return;
-    }
-    const setUpMakerOrders = async () => {
-      const responseMakerAsk = await fetch(
-        `http://localhost:3001/makerAsks/${rinkeby.optionFactory.toLowerCase()}/${id}`
-      );
-      const responseMakerBids = await fetch(
-        `http://localhost:3001/makerBids/${rinkeby.optionFactory.toLowerCase()}/${id}`
-      );
-      let makerAsk = await responseMakerAsk.json();
-      let makerBids = await responseMakerBids.json();
-
-      if (makerAsk.collection) {
-        setListed(true);
-        setMakerAsk(makerAsk);
-      }
-
-      setMakerBids(makerBids);
-      if (makerBids.length > 0) {
-        setBidded(true);
-      }
-    };
-    setUpMakerOrders();
-  }, [id]);
-
-  const approveSpending = async () => {
-    if (activeAccount) {
-      approveSpendingFunc.write({
-        args: [rinkeby.speculateExchange, ethers.utils.parseEther('10000000')], // 10 million WETH
-      });
-    } else {
-      console.log('connect your wallet!');
-    }
-  };
-
   const getExpiryDate = () => {
     let d = new Date(parseInt(option.expiry.toString()) * 1000);
 
@@ -411,7 +272,6 @@ export default function Option() {
   };
 
   const getRisk = () => {
-    // price * underlying amount
     const risk = rawAssetPrice.mul(option.underlyingAmount);
     return ethers.utils.formatUnits(risk, 18 + 8);
   };
@@ -432,7 +292,9 @@ export default function Option() {
     let collateralFloat = parseFloat(
       ethers.utils.formatUnits(collateralValue, 18)
     );
-    let ratio = riskFloat !== 0 ? (collateralFloat / riskFloat).toString() : 0;
+    let ratio = riskFloat !== 0 ? collateralFloat / riskFloat : 0;
+    console.log(typeof ratio);
+    console.log(ratio);
     setCollateralizationRatio(ratio);
   };
 
@@ -500,14 +362,16 @@ export default function Option() {
                 ) : null}
               </MarketPriceDiv>
             </Stats>
-            <ButtonDiv>
-              <Button ratio={collateralizationRatio} add={true}>
-                Add Collateral
-              </Button>
-              <Button ratio={collateralizationRatio} add={false} disabled>
-                Withdraw Collateral
-              </Button>
-            </ButtonDiv>
+            {isUserShort ? (
+              <ButtonDiv>
+                <Button ratio={collateralizationRatio} add={true}>
+                  Add Collateral
+                </Button>
+                <Button ratio={collateralizationRatio} add={false} disabled>
+                  Withdraw Collateral
+                </Button>
+              </ButtonDiv>
+            ) : null}
 
             <PriceBox isClicked={showExerciseInfo}>
               <div
@@ -583,37 +447,10 @@ const BaseContainer = styled.div`
   justify-content: center;
 `;
 
-const ShortOption = styled.div`
-  width: 100vw;
-  padding-top: 10px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #ecedef;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  a {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 3px;
-    font-weight: 500;
-
-    :hover {
-      color: #0e76fd;
-    }
-  }
-
-  svg {
-    width: 22px;
-  }
-`;
-
 const Stats = styled.div`
   display: flex;
   gap: 30px;
   flex-wrap: wrap;
-  /* grid-template-columns: repeat(4, auto); */
-  /* justify-items: start; */
 
   .last-stats {
     margin-top: 10px;

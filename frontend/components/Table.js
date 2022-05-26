@@ -14,7 +14,7 @@ import {
   ChevronRightIcon,
   ChevronDoubleRightIcon,
 } from '@heroicons/react/solid';
-import { Button, PageButton } from '../components/Button';
+import { PageButton } from '../components/Button';
 
 export function SelectColumnFilter({
   column: { filterValue, setFilter, preFilteredRows, id, render },
@@ -218,16 +218,7 @@ function Table({
           </div>
         </div>
       </TableDivContainer>
-      {/* Pagination */}
       <PaginationDiv>
-        {/* <PaginationButtonContainer>
-          <Button onClick={() => previousPage()} disabled={!canPreviousPage}>
-            Previous
-          </Button>
-          <Button onClick={() => nextPage()} disabled={!canNextPage}>
-            Next
-          </Button>
-        </PaginationButtonContainer> */}
         <div className="pagination-div-2">
           <div className="pagination-div-3">
             <span className="upper-span">
@@ -289,12 +280,6 @@ function Table({
           </div>
         </div>
       </PaginationDiv>
-
-      {/* <div>
-        <pre>
-          <code>{JSON.stringify(state, null, 2)}</code>
-        </pre>
-      </div> */}
     </>
   );
 }
@@ -380,8 +365,6 @@ const AvatarCellDiv = styled.div`
 `;
 
 const PaginationDiv = styled.div`
-  /* padding-top: 0.75rem; 12px // py-3 */
-  /* padding-bottom: 0.75rem; 12px */
   display: flex; // flex
   align-items: center; // items-center
   justify-content: space-between; // justify-between

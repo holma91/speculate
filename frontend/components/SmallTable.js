@@ -7,7 +7,7 @@ import {
   ChevronRightIcon,
   ChevronDoubleRightIcon,
 } from '@heroicons/react/solid';
-import { Button, PageButton } from '../components/Button';
+import { PageButton } from '../components/Button';
 
 function SmallTable({
   columns,
@@ -16,7 +16,6 @@ function SmallTable({
   clickedPosition,
   onClickedPosition,
 }) {
-  // Use the state and functions returned from useTable to build your UI
   const {
     getTableProps,
     getTableBodyProps,
@@ -43,7 +42,6 @@ function SmallTable({
     usePagination
   );
 
-  // Render the UI for your table
   return (
     <>
       <TableDivContainer>
@@ -55,15 +53,12 @@ function SmallTable({
                   {headerGroups.map((headerGroup) => (
                     <tr {...headerGroup.getHeaderGroupProps()}>
                       {headerGroup.headers.map((column) => (
-                        // Add the sorting props to control sorting. For this example
-                        // we can add them into the header props
                         <th
                           {...column.getHeaderProps(
                             column.getSortByToggleProps()
                           )}
                         >
                           {column.render('Header')}
-                          {/* Add a sort direction indicator */}
                           <span>
                             {column.isSorted
                               ? column.isSortedDesc
@@ -100,7 +95,6 @@ function SmallTable({
           </div>
         </div>
       </TableDivContainer>
-      {/* Pagination */}
       <PaginationDiv>
         <div className="pagination-div-2">
           <div className="pagination-div-3">
@@ -237,7 +231,6 @@ const StyledSelect = styled.select`
 const TableDivContainer = styled.div`
   display: flex; // flex: ;
   flex-direction: column; // flex-col
-  /* width: 100%; */
 
   .div-2 {
     overflow-x: auto; // overflow-x-auto
@@ -305,7 +298,6 @@ const TableDivContainer = styled.div`
     white-space: nowrap; // whitespace-nowrap
     color: rgb(107 114 128);
     font-weight: 300;
-    /* text-transform: uppercase; */
   }
 
   tr {
@@ -329,7 +321,6 @@ const PaginationDiv = styled.div`
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    /* display: none; // hidden */
     // sm:flex-1 sm:flex sm:items-center sm:justify-between
   }
 

@@ -1,11 +1,9 @@
 import React from 'react';
 import Link from 'next/link';
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useFormik } from 'formik';
 import {
-  useSendTransaction,
   useContractWrite,
-  useContractRead,
   useWaitForTransaction,
   useAccount,
   useContractEvent,
@@ -13,100 +11,18 @@ import {
 } from 'wagmi';
 import * as Yup from 'yup';
 import { ethers } from 'ethers';
-import * as buffer from 'buffer/';
 import styled from 'styled-components';
-import { Canvg } from 'canvg';
-import {
-  ArrowRightIcon,
-  ArrowNarrowRightIcon,
-  ExternalLinkIcon,
-} from '@heroicons/react/solid';
+import { ArrowNarrowRightIcon, ExternalLinkIcon } from '@heroicons/react/solid';
 import Table from '../components/Table';
 
 import { generateMetadata, uploadToIpfs, createSvg } from '../utils/ipfsHelper';
-import { fuji, rinkeby, zeroAddress } from '../utils/addresses';
+import { rinkeby, zeroAddress } from '../utils/addresses';
 import OptionFactory from '../../contracts/out/OptionFactory.sol/OptionFactory.json';
 import { optionTemplates } from '../data/optionTemplates';
 import { priceFeeds, aggregatorV3InterfaceABI } from '../utils/misc';
 
-const getShorts = () => {
-  const data = [
-    {
-      asset: 'eth',
-      priceFeed: 'ETH/USD',
-      type: 'call',
-      strikePrice: '$2000',
-      rightToBuy: 1,
-      expiry: '2023-01-01',
-      premium: '1 ETH',
-      collateral: 1,
-      numberOfOptions: 1,
-      filled: '80%',
-      CL: 'COVERED',
-      img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg',
-    },
-    {
-      asset: 'btc',
-      priceFeed: 'BTC/USD',
-      type: 'call',
-      strikePrice: '$30000',
-      rightToBuy: 2,
-      expiry: '2023-01-01',
-      premium: '1 ETH',
-      collateral: 1,
-      numberOfOptions: 1,
-      filled: '100%',
-      CL: '190%',
-      img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/19a58483-b100-4d09-ab0d-7d221a491090_BTC.svg',
-    },
-    {
-      asset: 'avax',
-      priceFeed: 'AVAX/USD',
-      type: 'put',
-      strikePrice: '$40',
-      rightToBuy: 5,
-      expiry: '2023-01-01',
-      premium: '0.25 ETH',
-      collateral: 1,
-      numberOfOptions: 1,
-      filled: '30%',
-      CL: '150%',
-      img: 'https://images.prismic.io/data-chain-link/63137341-c4d1-4825-b284-b8a5a8436d15_ICON_AVAX.png?auto=compress,format',
-    },
-    {
-      asset: 'link',
-      priceFeed: 'LINK/USD',
-      type: 'call',
-      strikePrice: '$5',
-      rightToBuy: 3,
-      expiry: '2023-01-01',
-      premium: '0.15 ETH',
-      collateral: 1,
-      numberOfOptions: 1,
-      filled: '25%',
-      CL: '120%',
-      img: 'https://data-chain-link.cdn.prismic.io/data-chain-link/ad14983c-eec5-448e-b04c-d1396e644596_LINK.svg',
-    },
-  ];
-  return [...data, ...data, ...data];
-};
-
 const sleep = (ms) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
-};
-
-const imageMapper = {
-  eth: '/ETH.svg',
-  btc: '/BTC.svg',
-  avax: '/AVAX.svg',
-  link: '/LINK.svg',
-  sol: '/SOL.svg',
-  matic: '/MATIC.svg',
-  atom: '/ATOM.svg',
-};
-
-let addresses = {
-  rinkeby: rinkeby.optionFactory,
 };
 
 export default function Write() {
@@ -139,19 +55,6 @@ export default function Write() {
     },
   });
 
-  const moralisMetadataSync = async (tokenId) => {
-    await sleep(5000);
-    const chain = 'rinkeby';
-    const url = `https://deep-index.moralis.io/api/v2/nft/${
-      rinkeby.optionFactory
-    }/${tokenId.toString()}/metadata/resync?chain=${chain}&flag=metadata&mode=sync`;
-    let response = await fetch(url, {
-      headers: { 'X-API-Key': process.env.MORALIS_API_KEY },
-    });
-    response = await response.json();
-    console.log(response);
-  };
-
   useContractEvent(
     {
       addressOrName: rinkeby.optionFactory,
@@ -160,7 +63,6 @@ export default function Write() {
     'Transfer',
     ([from, to, tokenId]) => {
       setCreatedOptionId(tokenId.toString());
-      // moralisMetadataSync(tokenId);
     }
   );
 
@@ -233,8 +135,6 @@ export default function Write() {
       if (activeAccount && activeChain) {
         const chain = activeChain.name.toLowerCase();
 
-        console.log(chain);
-
         const priceFeedAddress =
           priceFeeds[chain][formik.values.asset.toLowerCase()].usd;
         const provider = new ethers.providers.JsonRpcProvider(
@@ -263,8 +163,8 @@ export default function Write() {
   const getCollateralPrice = async () => {
     try {
       if (activeAccount && activeChain) {
-        const collateral = activeChain.nativeCurrency.symbol.toLowerCase(); // always the native ting for the mvp
-        console.log(collateral);
+        // collateral is always the native token for the mvp
+        const collateral = activeChain.nativeCurrency.symbol.toLowerCase();
         const chain = activeChain.name.toLowerCase();
         const priceFeedAddress = priceFeeds[chain][collateral].usd;
 
@@ -487,14 +387,6 @@ export default function Write() {
   );
 }
 
-const StyledCanvas = styled.canvas`
-  display: none;
-`;
-
-const StyledImg = styled.img`
-  /* display: none; */
-`;
-
 const BaseContainer = styled.div`
   padding: 10px 30px;
   display: flex;
@@ -544,22 +436,14 @@ const TemplateContainer = styled.div`
 `;
 
 const Templates = styled.div`
-  /* max-width: 1000px; */
-  /* display: flex; */
-  /* flex-direction: column; */
-  /* justify-content: center; */
-  /* justify-content: start; */
-`;
-
-const StyledSVG = styled.svg`
-  border: 2px solid black;
-  /* border-radius: 6px; */
+  max-width: 1000px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  justify-content: start;
 `;
 
 const NFTContainer = styled.div`
-  /* height: 100%; */
-  /* width: 100%; */
-  /* margin-top: 70px; */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -588,7 +472,7 @@ const InnerContainer = styled.div`
   flex-direction: column;
   border: 1px solid #ecedef;
   border-radius: 6px;
-  /* box-shadow: 0 8px 24px -16px rgba(12, 22, 44, 0.32); */
+
   padding: 25px;
   font-size: 120%;
   min-width: 350px;
@@ -665,7 +549,6 @@ const InputContainer = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: start;
-  /* align-items: center; */
 
   label {
     font-size: 16px;
@@ -693,44 +576,3 @@ const StyledSelect = styled.select`
   border-radius: 3px;
   font-weight: 500;
 `;
-
-/*
-<StyledSVG
-            ref={svgRef}
-            width="350"
-            height="350"
-            version="1.1"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <rect x="0" y="0" width="350" height="350" fill="white" />
-            <text x="122" y="49" fontSize="25" fontWeight="200">
-              {formik.values.asset.toUpperCase()} CALL
-            </text>
-            <line
-              x1="40"
-              y1="65"
-              x2="310"
-              y2="65"
-              stroke="black"
-              strokeWidth="1"
-            />
-            <text x="80" y="105" fontSize="20" fontWeight="200">
-              Price Feed: {`${formik.values.asset.toUpperCase()}/USD`}
-            </text>
-            <text x="80" y="150" fontSize="20" fontWeight="200">
-              Strike Price: {`$${formik.values.strikePrice}`}
-            </text>
-            <text x="80" y="195" fontSize="20" fontWeight="200">
-              Amount:{' '}
-              {`${
-                formik.values.rightToBuy
-              } ${formik.values.asset.toUpperCase()}`}
-            </text>
-            <text x="80" y="240" fontSize="20" fontWeight="200">
-              Expiry: {formik.values.expiry}
-            </text>
-            <text x="80" y="285" fontSize="20" fontWeight="200">
-              American Style
-            </text>
-          </StyledSVG>
-          */

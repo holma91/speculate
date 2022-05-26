@@ -25,9 +25,15 @@ big stuff
 - can view specific option
   - FIX: make page fixed width, make button taking us to pancakeswap
 - can view short
+  - FIX: make it possible to add/remove collateral
 
 
 
+FIX GENERAL: show that price comes from chainlink feeds
+
+FIXES SMALL: 
+- collateralization ratio is always red
+- make header stick
 
 
 

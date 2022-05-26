@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 

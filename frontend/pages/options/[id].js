@@ -2,7 +2,6 @@ import { useMemo, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import {
-  useSendTransaction,
   useContractWrite,
   useContractRead,
   useWaitForTransaction,
@@ -11,11 +10,7 @@ import {
   useNetwork,
 } from 'wagmi';
 import { useFormik } from 'formik';
-import {
-  ArrowRightIcon,
-  ArrowNarrowRightIcon,
-  ExternalLinkIcon,
-} from '@heroicons/react/solid';
+import { ExternalLinkIcon } from '@heroicons/react/solid';
 import * as Yup from 'yup';
 import { ethers } from 'ethers';
 import styled from 'styled-components';
@@ -43,10 +38,6 @@ const trimStr = (str) => {
   }
 
   return str.substring(0, i);
-};
-
-const sleep = (ms) => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
 const styleAddress = (address) => {
@@ -211,7 +202,6 @@ export default function Option() {
       tokenId,
       isOrderAsk,
       currency,
-      strategy,
       amount,
       price,
       startTime,
@@ -225,7 +215,6 @@ export default function Option() {
         tokenId: tokenId.toString(),
         isOrderAsk: isOrderAsk,
         currency: currency.toLowerCase(),
-        strategy: strategy.toLowerCase(),
         amount: amount.toString(),
         price: price.toString(),
         startTime: startTime.toString(),
@@ -249,7 +238,6 @@ export default function Option() {
       tokenId,
       isOrderAsk,
       currency,
-      strategy,
       amount,
       price,
       startTime,
@@ -263,7 +251,6 @@ export default function Option() {
         tokenId: tokenId.toString(),
         isOrderAsk: isOrderAsk,
         currency: currency.toLowerCase(),
-        strategy: strategy.toLowerCase(),
         amount: amount.toString(),
         price: price.toString(),
         startTime: startTime.toString(),
@@ -553,7 +540,6 @@ export default function Option() {
         price: ethers.BigNumber.from(ethers.utils.parseEther(price.toString())),
         tokenId: nft.token_id,
         amount: 1,
-        strategy: rinkeby.strategy,
         currency: nativeCurrency,
         startTime: Math.floor(new Date().getTime() / 1000),
         endTime: Math.floor(new Date(until).getTime() / 1000),
@@ -605,7 +591,6 @@ export default function Option() {
         price: ethers.BigNumber.from(ethers.utils.parseEther(price.toString())),
         tokenId: nft.token_id,
         amount: 1,
-        strategy: rinkeby.strategy,
         currency: nativeCurrency,
         startTime: Math.floor(new Date().getTime() / 1000),
         endTime: Math.floor(new Date(until).getTime() / 1000),
@@ -627,10 +612,6 @@ export default function Option() {
   const acceptOffer = async () => {
     if (activeAccount) {
       const makerBid = getTopOffer();
-
-      const parsedMakerBid = {
-        ...makerBid,
-      };
 
       const takerAsk = {
         isOrderAsk: true,
@@ -683,7 +664,7 @@ export default function Option() {
   const approveSpending = async () => {
     if (activeAccount) {
       approveSpendingFunc.write({
-        args: [rinkeby.speculateExchange, ethers.utils.parseEther('10000000')], // 10 million WETH
+        args: [rinkeby.speculateExchange, ethers.utils.parseEther('10000000')], // arbitrary value
       });
     } else {
       console.log('connect your wallet!');
@@ -694,7 +675,7 @@ export default function Option() {
     let d = new Date(parseInt(option.expiry.toString()) * 1000);
 
     let dd = String(d.getDate()).padStart(2, '0');
-    let mm = String(d.getMonth() + 1).padStart(2, '0'); //January is 0!
+    let mm = String(d.getMonth() + 1).padStart(2, '0'); // january is 0
     let yyyy = d.getFullYear();
     const formatted = mm + '/' + dd + '/' + yyyy;
     return formatted;

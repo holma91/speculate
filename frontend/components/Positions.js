@@ -12,14 +12,9 @@ import { useRouter } from 'next/router';
 // because of "ReferenceError: regeneratorRuntime is not defined"
 import regeneratorRuntime from 'regenerator-runtime'; // eslint-disable-line no-unused-vars
 import styled from 'styled-components';
-import Table, {
-  SelectColumnFilter,
-  StatusPill,
-  AvatarCell,
-} from '../components/Table';
+import Table, { AvatarCell } from '../components/Table';
 import { rinkeby, binanceTest, zeroAddress } from '../utils/addresses';
-import { NormalView, NFTView } from '../components/OptionViews';
-import SpeculateExchange from '../../contracts/out/SpeculateExchange.sol/SpeculateExchange.json';
+import { NFTView } from '../components/OptionViews';
 import OptionFactory from '../../contracts/out/OptionFactory.sol/OptionFactory.json';
 import { moralisMapping } from '../utils/misc';
 
@@ -125,7 +120,7 @@ export default function Positions({ allPositions }) {
   const waitForSetApprovalFunc = useWaitForTransaction({
     hash: setApprovalFunc.data?.hash,
     onSuccess(data) {
-      // necessary to make approve button disappear after approval
+      // necessary to make the approve button disappear after approval
       isApprovedForAllFunc.refetch();
     },
   });
@@ -362,7 +357,7 @@ export default function Positions({ allPositions }) {
 
   const acceptOffer = async (collectionAddress, collectionId) => {
     if (activeAccount) {
-      console.log('hey');
+      console.log('accept offer function not yet implemented on the frontend');
     } else {
       console.log('ethereum object not found');
     }
