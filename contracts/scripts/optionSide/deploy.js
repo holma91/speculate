@@ -5,7 +5,7 @@ require('dotenv').config();
 
 const main = async () => {
   provider = new ethers.providers.JsonRpcProvider(process.env.rpc_rinkeby);
-  const wallet = new ethers.Wallet(process.env.pk2, provider);
+  const wallet = new ethers.Wallet(process.env.pk6, provider);
   const factory = new ethers.ContractFactory(
     OptionFactory.abi,
     OptionFactory.bytecode,

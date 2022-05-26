@@ -1,11 +1,18 @@
 const ethers = require('ethers');
 const OptionFactory = require('../../out/OptionFactory.sol/OptionFactory.json');
-const { fuji, mumbai, rinkeby } = require('../addresses');
+const {
+  fuji,
+  mumbai,
+  rinkeby,
+  priceFeed,
+  priceFeeds,
+  ADDRESS2,
+} = require('../addresses');
 const { createSvg, uploadToIpfs, generateMetadata } = require('../ipfsHelper');
 require('dotenv').config();
 
 const main = async () => {
-  provider = new ethers.providers.JsonRpcProvider(process.env.rpc_rinkeby);
+  provider = new ethers.providers.JsonRpcProvider(process.env.rpc_binancetest);
   const wallet = new ethers.Wallet(process.env.pk2, provider);
   const factory = new ethers.ContractFactory(
     OptionFactory.abi,
@@ -17,17 +24,21 @@ const main = async () => {
 
   const asset = 'ETH';
 
+  const priceFeedRinkeby = priceFeeds['rinkeby'].eth.usd;
+  const priceFeedBsc = priceFeeds['binance testnet'].bnb.usd;
+
   const option = {
-    underlyingPriceFeed: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e',
-    underlyingAmount: ethers.utils.parseUnits('0.01'),
+    underlyingPriceFeed: priceFeedBsc,
+    underlyingAmount: ethers.utils.parseUnits('0.0001'),
     call: true,
     strikePrice: 1500,
     expiry: new Date('2022-05-29').getTime() / 1000,
     european: false,
+    seller: ADDRESS2,
   };
   const collateral = {
-    priceFeed: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e',
-    amount: ethers.utils.parseUnits('0.01'),
+    priceFeed: option.underlyingPriceFeed,
+    amount: ethers.utils.parseUnits('0.0001'),
   };
 
   let svg = createSvg(option, asset);

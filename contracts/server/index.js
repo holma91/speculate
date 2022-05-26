@@ -2,7 +2,7 @@ const fs = require('fs');
 const express = require('express');
 const ethers = require('ethers');
 const SpeculateExchange = require('../out/SpeculateExchange.sol/SpeculateExchange.json');
-const { fuji, rinkeby } = require('../scripts/addresses');
+const { fuji, rinkeby, binanceTest } = require('../scripts/addresses');
 require('dotenv').config();
 const cors = require('cors');
 const app = express();
@@ -10,10 +10,10 @@ app.use(cors());
 const port = 3001;
 
 // set up contract
-provider = new ethers.providers.JsonRpcProvider(process.env.rpc_rinkeby);
+provider = new ethers.providers.JsonRpcProvider(process.env.rpc_binancetest);
 const wallet = new ethers.Wallet(process.env.pk2, provider);
 const speculateExchange = new ethers.Contract(
-  rinkeby.speculateExchange,
+  binanceTest.speculateExchange,
   SpeculateExchange.abi,
   wallet
 );

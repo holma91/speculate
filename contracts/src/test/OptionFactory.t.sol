@@ -60,7 +60,8 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
             true,
             1_000 * 10**8,
             1_000,
-            true
+            true,
+            address(this)
         );
 
         // covered call
@@ -77,7 +78,8 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
             true,
             20_000 * 10**8,
             1_000,
-            true
+            true,
+            address(this)
         );
 
         collateral_btc20Call = OptionFactory.Collateral(

@@ -3,29 +3,44 @@ pragma solidity ^0.8.0;
 
 // OpenZeppelin contracts
 import {IERC20, SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-
-// Chainlink contracts
 import {AggregatorV3Interface} from "chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 // LooksRare interfaces
+import {ICurrencyManager} from "./interfaces/ICurrencyManager.sol";
+import {IExecutionManager} from "./interfaces/IExecutionManager.sol";
+import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
+import {ILooksRareExchange} from "./interfaces/ILooksRareExchange.sol";
 import {ITransferManagerNFT} from "./interfaces/ITransferManagerNFT.sol";
 import {ITransferSelectorNFT} from "./interfaces/ITransferSelectorNFT.sol";
+import {IWETH} from "./interfaces/IWETH.sol";
 
 // LooksRare libraries
 import {OrderTypes} from "./libraries/OrderTypes.sol";
+import {SignatureChecker} from "./libraries/SignatureChecker.sol";
 
 /**
  * @title SpeculateExchange
- * @notice The core contract of the exchange.
+ * @notice It is the core contract of the Speculate exchange.
  */
+
 contract SpeculateExchange {
     using SafeERC20 for IERC20;
 
     using OrderTypes for OrderTypes.MakerOrder;
     using OrderTypes for OrderTypes.TakerOrder;
 
-    address public immutable WRAPPED_NATIVE_ASSET;
+    uint256 public immutable PROTOCOL_FEE;
 
+    address public immutable WETH;
+
+    address public protocolFeeRecipient; // who receives the fee
+
+    // maintains whitelist for erc20s
+    ICurrencyManager public currencyManager;
+    // maintains whitelist for strategies
+    IExecutionManager public executionManager;
+    // calculates the fees for sales
+    IRoyaltyFeeManager public royaltyFeeManager;
     // does stuff related to who can transfer assets in a collection
     ITransferSelectorNFT public transferSelectorNFT;
 
@@ -37,9 +52,10 @@ contract SpeculateExchange {
     event TakerBid(
         address indexed taker,
         address indexed maker,
-        uint256 indexed tokenId,
+        address indexed strategy,
         address currency,
         address collection,
+        uint256 tokenId,
         uint256 amount,
         uint256 price
     );
@@ -47,9 +63,10 @@ contract SpeculateExchange {
     event TakerAsk(
         address indexed taker,
         address indexed maker,
-        uint256 indexed tokenId,
+        address indexed strategy,
         address currency,
         address collection,
+        uint256 tokenId,
         uint256 amount,
         uint256 price
     );
@@ -60,6 +77,7 @@ contract SpeculateExchange {
         uint256 indexed tokenId,
         bool isOrderAsk,
         address currency,
+        address strategy,
         uint256 amount,
         uint256 price,
         uint256 startTime,
@@ -74,6 +92,7 @@ contract SpeculateExchange {
         uint256 indexed tokenId,
         bool isOrderAsk,
         address currency,
+        address strategy,
         uint256 amount,
         uint256 price,
         uint256 startTime,
@@ -84,10 +103,25 @@ contract SpeculateExchange {
 
     /**
      * @notice Constructor
-     * @param _wrappedNativeAsset the initially accepted currency
+     * @param _currencyManager currency manager address
+     * @param _executionManager execution manager address
+     * @param _royaltyFeeManager royalty fee manager address
+     * @param _WETH wrapped ether address (for other chains, use wrapped native asset)
+     * @param _protocolFeeRecipient protocol fee recipient
      */
-    constructor(address _wrappedNativeAsset) {
-        WRAPPED_NATIVE_ASSET = _wrappedNativeAsset;
+    constructor(
+        address _currencyManager,
+        address _executionManager,
+        address _royaltyFeeManager,
+        address _WETH,
+        address _protocolFeeRecipient
+    ) {
+        currencyManager = ICurrencyManager(_currencyManager);
+        executionManager = IExecutionManager(_executionManager);
+        royaltyFeeManager = IRoyaltyFeeManager(_royaltyFeeManager);
+        WETH = _WETH;
+        protocolFeeRecipient = _protocolFeeRecipient;
+        PROTOCOL_FEE = 0;
     }
 
     function getMakerAsk(address collection, uint256 id)
@@ -118,6 +152,7 @@ contract SpeculateExchange {
             makerAsk.tokenId,
             makerAsk.isOrderAsk,
             makerAsk.currency,
+            makerAsk.strategy,
             makerAsk.amount,
             makerAsk.price,
             makerAsk.startTime,
@@ -143,6 +178,7 @@ contract SpeculateExchange {
             makerBid.tokenId,
             makerBid.isOrderAsk,
             makerBid.currency,
+            makerBid.strategy,
             makerBid.amount,
             makerBid.price,
             makerBid.startTime,
@@ -187,6 +223,7 @@ contract SpeculateExchange {
 
         // Execution part 1/2
         _transferFeesAndFunds(
+            makerAsk.strategy,
             makerAsk.collection,
             tokenId,
             makerAsk.currency,
@@ -207,9 +244,10 @@ contract SpeculateExchange {
         emit TakerBid(
             takerBid.taker,
             makerAsk.signer,
-            tokenId,
+            makerAsk.strategy,
             makerAsk.currency,
             makerAsk.collection,
+            tokenId,
             amount,
             takerBid.price
         );
@@ -265,6 +303,7 @@ contract SpeculateExchange {
 
         // Execution part 2/2
         _transferFeesAndFunds(
+            makerBid.strategy,
             makerBid.collection,
             tokenId,
             makerBid.currency,
@@ -276,9 +315,10 @@ contract SpeculateExchange {
         emit TakerAsk(
             takerAsk.taker,
             makerBid.signer,
-            tokenId,
+            makerBid.strategy,
             makerBid.currency,
             makerBid.collection,
+            tokenId,
             amount,
             takerAsk.price
         );
@@ -291,6 +331,7 @@ contract SpeculateExchange {
 
     /**
      * @notice Transfer fees and funds to royalty recipient, protocol, and seller
+     * @param strategy address of the execution strategy
      * @param collection non fungible token address for the transfer
      * @param tokenId tokenId
      * @param currency currency being used for the purchase (e.g., WETH/USDC)
@@ -299,6 +340,7 @@ contract SpeculateExchange {
      * @param amount amount being transferred (in currency)
      */
     function _transferFeesAndFunds(
+        address strategy,
         address collection,
         uint256 tokenId,
         address currency,
@@ -306,8 +348,15 @@ contract SpeculateExchange {
         address to,
         uint256 amount
     ) internal {
+        // Initialize the final amount that is transferred to seller
+        uint256 finalSellerAmount = amount;
+
+        // no protocol fee
+
+        // no royalty fee
+
         // Transfer final amount to seller
-        IERC20(currency).safeTransferFrom(from, to, amount);
+        IERC20(currency).safeTransferFrom(from, to, finalSellerAmount);
     }
 
     /**
@@ -326,14 +375,17 @@ contract SpeculateExchange {
         uint256 tokenId,
         uint256 amount
     ) internal {
+        // Retrieve the transfer manager address
         address transferManager = transferSelectorNFT
             .checkTransferManagerForToken(collection);
 
+        // If no transfer manager found, it returns address(0)
         require(
             transferManager != address(0),
             "Transfer: No NFT transfer manager available"
         );
 
+        // If one is found, transfer the token
         ITransferManagerNFT(transferManager).transferNonFungibleToken(
             collection,
             from,
@@ -353,6 +405,20 @@ contract SpeculateExchange {
             "Owner: Cannot be null address"
         );
         transferSelectorNFT = ITransferSelectorNFT(_transferSelectorNFT);
+
+        // emit NewTransferSelectorNFT(_transferSelectorNFT);
+    }
+
+    /**
+     * @notice Calculate protocol fee for an execution strategy
+     * @param amount amount to transfer
+     */
+    function _calculateProtocolFee(uint256 amount)
+        internal
+        view
+        returns (uint256)
+    {
+        return (PROTOCOL_FEE * amount) / 10000;
     }
 
     function canExecuteTakerBid(

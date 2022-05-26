@@ -1,7 +1,14 @@
 const ethers = require('ethers');
 const OptionFactory = require('../../out/OptionFactory.sol/OptionFactory.json');
 const { createSvg, uploadToIpfs, generateMetadata } = require('../ipfsHelper');
-const { fuji, mumbai, rinkeby } = require('../addresses');
+const {
+  fuji,
+  mumbai,
+  rinkeby,
+  ADDRESS2,
+  ADDRESS3,
+  ADDRESS4,
+} = require('../addresses');
 require('dotenv').config();
 
 const assets = ['ETH', 'BTC', 'ATOM', 'LINK', 'MATIC'];
@@ -87,6 +94,7 @@ const main = async () => {
       ),
       expiry: dates[Math.floor(Math.random() * dates.length)],
       european: Math.random() > 0.5 ? true : false,
+      seller: ADDRESS3,
     };
 
     let collateral = {

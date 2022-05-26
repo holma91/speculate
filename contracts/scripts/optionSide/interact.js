@@ -13,11 +13,11 @@ const main = async () => {
   );
 
   const optionFactory = factory.attach(rinkeby.optionFactory);
-
   const option = await optionFactory.getOptionById(0);
-  const collateral = await optionFactory.getCollateralById(0);
+
   console.log(option);
-  console.log(collateral);
+
+  // const collateral = await optionFactory.getCollateralById(0);
 };
 
 const runMain = async () => {

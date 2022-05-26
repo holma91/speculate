@@ -20,6 +20,7 @@ contract OptionFactory is ERC721URIStorage {
         uint256 strikePrice;
         uint256 expiry;
         bool european;
+        address seller;
     }
 
     struct Collateral {
@@ -37,6 +38,7 @@ contract OptionFactory is ERC721URIStorage {
         string memory metadataURI
     ) public payable returns (uint256) {
         require(collateral.amount == msg.value, "wrong collateral amount");
+        require(option.seller == msg.sender, "seller must be sender");
         collateralById[currentOptionId] = collateral;
 
         optionById[currentOptionId] = option;

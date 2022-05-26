@@ -8,7 +8,7 @@ const StrategyStandardSaleForFixedPrice = require('../../out/StrategyStandardSal
 const TransferManagerERC721 = require('../../out/TransferManagerERC721.sol/TransferManagerERC721.json');
 const TransferManagerERC1155 = require('../../out/TransferManagerERC1155.sol/TransferManagerERC1155.json');
 const TransferSelectorNFT = require('../../out/TransferSelectorNFT.sol/TransferSelectorNFT.json');
-const { fuji, mumbai, rinkeby } = require('../addresses');
+const { fuji, mumbai, rinkeby, binanceTest } = require('../addresses');
 require('dotenv').config();
 
 const protocolFeeRecipient = '0xB06903728e09748E3d941b83f1657B147bA045d2';
@@ -70,8 +70,8 @@ const getFactories = (wallet) => {
 };
 
 const main = async () => {
-  provider = new ethers.providers.JsonRpcProvider(process.env.rpc_rinkeby);
-  const wallet = new ethers.Wallet(process.env.pk2, provider);
+  provider = new ethers.providers.JsonRpcProvider(process.env.rpc_binancetest);
+  const wallet = new ethers.Wallet(process.env.pk6, provider);
 
   const [
     cmFactory,
@@ -105,7 +105,7 @@ const main = async () => {
     cmContract.address,
     emContract.address,
     rfmContract.address,
-    rinkeby.weth,
+    binanceTest.wrappedNativeToken,
     protocolFeeRecipient
   );
   await seContract.deployed();

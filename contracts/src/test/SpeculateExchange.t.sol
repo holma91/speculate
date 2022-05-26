@@ -11,7 +11,6 @@ import "../libraries/OrderTypes.sol";
 
 // contracts
 import "../SpeculateExchange.sol";
-import "../StrategyStandardSaleForFixedPrice.sol";
 import "../TransferManagerERC721.sol";
 import "../TransferManagerERC1155.sol";
 import "../TransferSelectorNFT.sol";
@@ -20,11 +19,7 @@ import "../TransferSelectorNFT.sol";
 import "./mocks/MockV3Aggregator.sol";
 
 // LooksRare interfaces
-import {ICurrencyManager} from "../interfaces/ICurrencyManager.sol";
-import {IExecutionManager} from "../interfaces/IExecutionManager.sol";
 import {IExecutionStrategy} from "../interfaces/IExecutionStrategy.sol";
-import {IRoyaltyFeeManager} from "../interfaces/IRoyaltyFeeManager.sol";
-import {ILooksRareExchange} from "../interfaces/ILooksRareExchange.sol";
 import {ITransferManagerNFT} from "../interfaces/ITransferManagerNFT.sol";
 import {ITransferSelectorNFT} from "../interfaces/ITransferSelectorNFT.sol";
 
@@ -72,7 +67,6 @@ contract SpeculateExchangeTest is DSTest {
         uint256 indexed tokenId,
         bool isOrderAsk,
         address currency,
-        address strategy,
         uint256 amount,
         uint256 price,
         uint256 startTime,
@@ -87,7 +81,6 @@ contract SpeculateExchangeTest is DSTest {
         uint256 indexed tokenId,
         bool isOrderAsk,
         address currency,
-        address strategy,
         uint256 amount,
         uint256 price,
         uint256 startTime,
@@ -98,20 +91,18 @@ contract SpeculateExchangeTest is DSTest {
     event TakerBid(
         address indexed taker,
         address indexed maker,
-        address indexed strategy,
+        uint256 indexed tokenId,
         address currency,
         address collection,
-        uint256 tokenId,
         uint256 amount,
         uint256 price
     );
     event TakerAsk(
         address indexed taker,
         address indexed maker,
-        address indexed strategy,
+        uint256 indexed tokenId,
         address currency,
         address collection,
-        uint256 tokenId,
         uint256 amount,
         uint256 price
     );
@@ -130,9 +121,6 @@ contract SpeculateExchangeTest is DSTest {
     MockV3Aggregator internal btcUsdPriceFeed;
     MockV3Aggregator internal ethUsdPriceFeed;
 
-    StrategyStandardSaleForFixedPrice
-        internal strategyStandardSaleForFixedPrice;
-
     TransferManagerERC721 internal transferManagerERC721;
     TransferManagerERC1155 internal transferManagerERC1155;
     ITransferSelectorNFT internal transferSelectorNFT;
@@ -149,16 +137,7 @@ contract SpeculateExchangeTest is DSTest {
         WETH = new MockWETH();
         btcUsdPriceFeed = new MockV3Aggregator(8, 30_000 * 10**8);
         ethUsdPriceFeed = new MockV3Aggregator(8, 2_000 * 10**8);
-        strategyStandardSaleForFixedPrice = new StrategyStandardSaleForFixedPrice(
-            100
-        );
-        speculateExchange = new SpeculateExchange(
-            alice, // currencyManager
-            bob, // executionManager
-            babback, // royaltyFeeManager
-            address(WETH),
-            mange // protocolFeeRecipient
-        );
+        speculateExchange = new SpeculateExchange(address(WETH));
         transferManagerERC721 = new TransferManagerERC721(
             address(speculateExchange)
         );
@@ -191,7 +170,6 @@ contract SpeculateExchangeTest is DSTest {
             0.01 ether,
             1,
             1,
-            address(strategyStandardSaleForFixedPrice),
             address(WETH),
             1650718512,
             1650719912,
@@ -206,7 +184,6 @@ contract SpeculateExchangeTest is DSTest {
             makerAsk.tokenId,
             makerAsk.isOrderAsk,
             makerAsk.currency,
-            makerAsk.strategy,
             makerAsk.amount,
             makerAsk.price,
             makerAsk.startTime,
@@ -219,7 +196,6 @@ contract SpeculateExchangeTest is DSTest {
             .getMakerAsk(makerAsk.collection, makerAsk.tokenId);
 
         assertEq(makerAsk.signer, retrievedMakerAsk.signer);
-        assertEq(makerAsk.strategy, retrievedMakerAsk.strategy);
         assertEq(makerAsk.endTime, retrievedMakerAsk.endTime);
         assertEq(
             makerAsk.underlyingPriceTreshold,
@@ -233,7 +209,6 @@ contract SpeculateExchangeTest is DSTest {
             0.02 ether,
             1,
             1,
-            address(strategyStandardSaleForFixedPrice),
             address(WETH),
             1650718512,
             1650719912,
@@ -245,7 +220,6 @@ contract SpeculateExchangeTest is DSTest {
         OrderTypes.MakerOrder memory retrievedMakerAsk2 = speculateExchange
             .getMakerAsk(makerAsk2.collection, makerAsk2.tokenId);
         assertEq(makerAsk2.signer, retrievedMakerAsk2.signer);
-        assertEq(makerAsk2.strategy, retrievedMakerAsk2.strategy);
         assertEq(makerAsk2.endTime, retrievedMakerAsk2.endTime);
         assertEq(
             makerAsk2.underlyingPriceTreshold,
@@ -263,7 +237,6 @@ contract SpeculateExchangeTest is DSTest {
             0.01 ether,
             1,
             1,
-            address(strategyStandardSaleForFixedPrice),
             address(WETH),
             1650718512,
             1650719912,
@@ -278,7 +251,6 @@ contract SpeculateExchangeTest is DSTest {
             makerBid.tokenId,
             makerBid.isOrderAsk,
             makerBid.currency,
-            makerBid.strategy,
             makerBid.amount,
             makerBid.price,
             makerBid.startTime,
@@ -293,10 +265,8 @@ contract SpeculateExchangeTest is DSTest {
                 makerBid.tokenId,
                 makerBid.signer
             );
-        emit log_address(makerBid.signer);
-        emit log_address(retrievedMakerBid.signer);
+
         assertEq(makerBid.signer, retrievedMakerBid.signer);
-        assertEq(makerBid.strategy, retrievedMakerBid.strategy);
         assertEq(makerBid.endTime, retrievedMakerBid.endTime);
 
         // can overwrite previous bid
@@ -307,7 +277,6 @@ contract SpeculateExchangeTest is DSTest {
             0.02 ether,
             1,
             1,
-            address(strategyStandardSaleForFixedPrice),
             address(WETH),
             1650718512,
             1650719912,
@@ -324,7 +293,6 @@ contract SpeculateExchangeTest is DSTest {
             );
 
         assertEq(makerBid2.signer, retrievedMakerBid2.signer);
-        assertEq(makerBid2.strategy, retrievedMakerBid2.strategy);
         assertEq(makerBid2.endTime, retrievedMakerBid2.endTime);
         cheats.stopPrank();
     }
@@ -337,7 +305,6 @@ contract SpeculateExchangeTest is DSTest {
             0.01 ether,
             1,
             1,
-            address(strategyStandardSaleForFixedPrice),
             address(WETH),
             1650718512,
             1650719912,
@@ -354,7 +321,6 @@ contract SpeculateExchangeTest is DSTest {
             0.02 ether,
             1,
             1,
-            address(strategyStandardSaleForFixedPrice),
             address(WETH),
             1650718512,
             1650719912,
@@ -393,7 +359,6 @@ contract SpeculateExchangeTest is DSTest {
             1 ether,
             1,
             1,
-            address(strategyStandardSaleForFixedPrice),
             address(WETH),
             block.timestamp,
             1653806167,
@@ -415,7 +380,6 @@ contract SpeculateExchangeTest is DSTest {
             0.01 ether,
             1,
             1,
-            address(strategyStandardSaleForFixedPrice),
             address(WETH),
             block.timestamp,
             1653806167,
@@ -444,10 +408,9 @@ contract SpeculateExchangeTest is DSTest {
         emit TakerBid(
             takerBid.taker,
             makerAsk.signer,
-            makerAsk.strategy,
+            makerAsk.tokenId,
             makerAsk.currency,
             makerAsk.collection,
-            makerAsk.tokenId,
             makerAsk.amount,
             makerAsk.price
         );
@@ -489,7 +452,6 @@ contract SpeculateExchangeTest is DSTest {
             1 ether,
             2,
             1,
-            address(strategyStandardSaleForFixedPrice),
             address(WETH),
             block.timestamp,
             1653806167,
@@ -516,10 +478,9 @@ contract SpeculateExchangeTest is DSTest {
         emit TakerAsk(
             takerAsk.taker,
             makerBid.signer,
-            makerBid.strategy,
+            makerBid.tokenId,
             makerBid.currency,
             makerBid.collection,
-            makerBid.tokenId,
             makerBid.amount,
             makerBid.price
         );
@@ -545,7 +506,6 @@ contract SpeculateExchangeTest is DSTest {
             0.01 ether,
             1,
             1,
-            address(strategyStandardSaleForFixedPrice),
             address(WETH),
             block.timestamp,
             1650719912,
@@ -596,7 +556,6 @@ contract SpeculateExchangeTest is DSTest {
             1 ether,
             1,
             1,
-            address(strategyStandardSaleForFixedPrice),
             address(WETH),
             block.timestamp,
             1653806167,

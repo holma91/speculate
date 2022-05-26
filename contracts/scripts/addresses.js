@@ -2,21 +2,91 @@ const ADDRESS2 = '0x30429A2FfAE3bE74032B6ADD7ac4A971AbAd4d02';
 const ADDRESS3 = '0xB06903728e09748E3d941b83f1657B147bA045d2';
 const ADDRESS4 = '0xdBD33F154e62EC4a32b4fA31297FDC448b16A09b';
 
+const priceFeeds = {
+  'binance testnet': {
+    bnb: {
+      usd: '0x2514895c72f50D8bd4B4F9b1110F0D6bD2c97526',
+    },
+    eth: {
+      usd: '0x143db3CEEfbdfe5631aDD3E50f7614B6ba708BA7',
+    },
+    btc: {
+      usd: '0x5741306c21795FdCBb9b265Ea0255F499DFe515C',
+    },
+    link: {
+      usd: '0x351Ff08FF5077d6E8704A4763836Fe187f074380',
+    },
+    matic: {
+      usd: '0x957Eb0316f02ba4a9De3D308742eefd44a3c1719',
+    },
+    dot: {
+      usd: '0xEA8731FD0685DB8AeAde9EcAE90C4fdf1d8164ed',
+    },
+  },
+  rinkeby: {
+    eth: {
+      usd: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e',
+    },
+    btc: {
+      usd: '0xECe365B379E1dD183B20fc5f022230C044d51404',
+    },
+    atom: {
+      usd: '0x3539F2E214d8BC7E611056383323aC6D1b01943c',
+    },
+    link: {
+      usd: '0xd8bd0a1cb028a31aa859a21a3758685a95de4623',
+    },
+    matic: {
+      usd: '0x7794ee502922e2b723432DDD852B3C30A911F021',
+    },
+  },
+  fuji: {
+    eth: {
+      usd: '0x86d67c3D38D2bCeE722E601025C25a575021c6EA',
+    },
+    btc: {
+      usd: '0x31CF013A08c6Ac228C94551d535d5BAfE19c602a',
+    },
+    avax: {
+      usd: '0x5498BB86BC934c8D34FDA08E81D444153d0D06aD',
+    },
+    link: {
+      usd: '0x34C4c526902d88a3Aa98DB8a9b802603EB1E3470',
+    },
+  },
+};
+
+const binanceTest = {
+  currencyManager: '0x70567d2E7113FD5c543E206751DC82F1Ef0a0754',
+  executionManager: '0x301dBB14eC9534FbFEAcBA59C13351641237caA8',
+  royaltyFeeRegistry: '0x6871c75de1378150021aCb8791b74Feb0a8F7108',
+  royaltyFeeManager: '0x1842d8cF2dCcaE686fD3193f0B9103369c96CC12',
+  speculateExchange: '0x1b8D2A3E513A18af20B3444196369d623D85E01E',
+  strategy: '0x0A84Ac8eabaeCe687A8D0AB24E43433935471495',
+  transferManagerERC721: '0xEb6a1B65D50C5cABDB24f46A83Ac6be85d486cC2',
+  transferManagerERC1155: '0x669e2b14A89d219Bc0aC3Be2bd88F93380A760d4',
+  transferSelectorNFT: '0x4BFA404889cfae72d41d391214107f25e8119F3D',
+
+  wrappedNativeToken: '0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd',
+
+  optionFactory: '0xc6Ec2A265C0D065227931c297328D9D29B175f38',
+};
+
 const rinkeby = {
-  currencyManager: '0x63e701dAAf453d9576A981db069510f4C932F138',
-  executionManager: '0x1F4C32bE23326aFd885Cec3650ba2f07c597cb12',
-  royaltyFeeRegistry: '0x60b661584A1D387f0713eb0F825Dae441FB99faA',
-  royaltyFeeManager: '0xB7cBd845CBD88cFd13b7B357AA48E50491D73f8d',
-  speculateExchange: '0x2c810b811A59A949BC6f5c46783eA2F9031f0B30',
-  strategy: '0xeb2f23b533d6949e0dF5f9a36EEEbF3Cc5a19Aab',
-  transferManagerERC721: '0x4776840E64cE712508675f62E07d0ef31aE3F361',
-  transferManagerERC1155: '0x674303C63885A4b2A184Ee99D4CfB1DFaC1e27A4',
-  transferSelectorNFT: '0x494C09eeA757EF84A5cEDf9dF722dF637eb4EF3B',
+  currencyManager: '0x39fE5e410Df57F302F7cda92AA3E17DF9e03D595',
+  executionManager: '0xAf370e5B27AaAfB4123cA5b37Ab95306d9Cd63C4',
+  royaltyFeeRegistry: '0x57B28afAaD1f270bbBF5FdA6A401D52cD393b8D6',
+  royaltyFeeManager: '0xE08c291235379FEb309a61b5BC4CCfACf3e587ee',
+  speculateExchange: '0x4cAcC0E2c3C8BbaFBe1e33FaDFd565c2c308a4E6',
+  strategy: '0x720b6aa9708695d09E7Af9AD6242F0d9A61ab152',
+  transferManagerERC721: '0xa3788d9F11F6De4191016872aE17cE80DBEeC3E2',
+  transferManagerERC1155: '0x932ED71AF896BaDa73d28CF5f47Df5d684516BEe',
+  transferSelectorNFT: '0x5D9d98ef3dA6635283264b928042B0C2b14C4870',
 
   nftCollection: '0xD03fFDB76211B391877A3E6b366D863779570D19',
   weth: '0xc778417E063141139Fce010982780140Aa0cD5Ab',
 
-  optionFactory: '0xb2c51b875Ce025AE7Bc77E314b79c6E050a816B1',
+  optionFactory: '0xc6Ec2A265C0D065227931c297328D9D29B175f38',
 
   ethUsd: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e',
   btcUsd: '0xECe365B379E1dD183B20fc5f022230C044d51404',
@@ -65,4 +135,6 @@ module.exports = {
   rinkeby,
   mumbai,
   fuji,
+  binanceTest,
+  priceFeeds,
 };
