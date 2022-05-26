@@ -1,0 +1,5 @@
+- remove ierc721 import
+
+- remove ICurrencyManager
+- remove executionManager
+- remove RoyaltyFeeManager
