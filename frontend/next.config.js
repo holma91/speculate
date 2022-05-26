@@ -3,7 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   env: {
     ALCHEMY_RINKEBY_RPC:
-      'https://eth-rinkeby.alchemyapi.io/v2/yMdJ2lfGieVh__vNl2R15y9Y9Vgdsg3f',
+      'https://eth-rinkeby.alchemyapi.io/v2/IjdF6gQ3nU7X35kJ38hM5CIvIlbrvFz8',
     ALCHEMY_MUMBAI_RPC:
       'https://polygon-mumbai.g.alchemy.com/v2/i7Fu5aNLFGC4Ho0CwVobUDdbn-FBftay',
     MORALIS_API_KEY:

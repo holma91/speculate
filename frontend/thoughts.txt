@@ -1,36 +1,5 @@
 
 
-FOR ALL OPTIONS
 
-0. get maker orders which triggers 1.
-
-1. get nfts from moralis
-every nft have a token_uri
-
-2. use the token_uri to query the metadata from ipfs
-
-
-
-FOR SPECIFIC OPTION
-
-0. get id from query which triggers 1.
-
-1. 
-
-
-
-
-exercise stuff
-expires in:
-  get timestamp from ipfs
-
-is currently:
-  gets strikeprice from ipfs
-  current price from chainlink
-
-option style:
-  from ipfs
-
-terms:
-  right to buy from ipfs
-  current price from chainlink
+improvements
+- show that prices are from chainlink price feeds

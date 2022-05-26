@@ -361,7 +361,9 @@ export default function Option() {
         return;
       }
 
-      let provider = ethers.getDefaultProvider(process.env.ALCHEMY_RINKEBY_RPC);
+      let provider = new ethers.providers.JsonRpcProvider(
+        process.env.ALCHEMY_RINKEBY_RPC
+      );
 
       let contract = new ethers.Contract(
         rinkeby.optionFactory,
@@ -370,6 +372,7 @@ export default function Option() {
       );
 
       const option = await contract.getOptionById(id);
+
       const parsedOption = {
         underlyingPriceFeed: option.underlyingPriceFeed,
         underlyingAmount: option.underlyingAmount,
@@ -447,8 +450,11 @@ export default function Option() {
 
       const priceFeedAddress = priceFeeds[network][asset].USD;
 
-      if (ethereum) {
-        const provider = new ethers.providers.Web3Provider(ethereum);
+      if (activeAccount) {
+        // console.log(process.env.ALCHEMY_RINKEBY_RPC);
+        const provider = new ethers.providers.JsonRpcProvider(
+          process.env.ALCHEMY_RINKEBY_RPC
+        );
 
         const priceFeedContract = new ethers.Contract(
           priceFeedAddress,
@@ -458,6 +464,8 @@ export default function Option() {
 
         const decimals = await priceFeedContract.decimals();
         const price = await priceFeedContract.latestRoundData();
+
+        console.log(price.toString());
 
         setAssetPrice(ethers.utils.formatUnits(price.answer, decimals));
         setRawAssetPrice(price.answer);

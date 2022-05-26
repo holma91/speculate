@@ -87,7 +87,6 @@ const getShorts = () => {
 export default function Positions({ allPositions }) {
   const { data: activeAccount, isError, isLoading } = useAccount();
   const router = useRouter();
-  const [exchangeContract, setExchangeContract] = useState(null);
   const [makerAsks, setMakerAsks] = useState([]);
   const [makerBids, setMakerBids] = useState([]);
   const [nfts, setNfts] = useState([]);
@@ -101,7 +100,10 @@ export default function Positions({ allPositions }) {
     },
     'isApprovedForAll',
     {
-      args: [activeAccount?.address, rinkeby.transferManagerERC721],
+      args: [
+        '0x30429A2FfAE3bE74032B6ADD7ac4A971AbAd4d02',
+        rinkeby.transferManagerERC721,
+      ],
     }
   );
 
@@ -345,51 +347,8 @@ export default function Positions({ allPositions }) {
     router.push(`options/${position.id}`);
   };
 
-  useEffect(() => {
-    const { ethereum } = window;
-    if (ethereum) {
-      const provider = new ethers.providers.Web3Provider(ethereum);
-      const signer = provider.getSigner();
-      let contract = new ethers.Contract(
-        rinkeby.speculateExchange,
-        SpeculateExchange.abi,
-        signer
-      );
-      setExchangeContract(contract);
-    } else {
-      console.log('ethereum object not found');
-    }
-  }, []);
-
-  const listOption = async (collectionAddress, collectionId) => {
-    const { ethereum } = window;
-    if (ethereum) {
-      const makerAsk = {
-        isOrderAsk: true,
-        signer: ethereum.selectedAddress,
-        collection: collectionAddress,
-        price: ethers.BigNumber.from(ethers.utils.parseEther('0.001')),
-        tokenId: collectionId,
-        amount: 1,
-        strategy: rinkeby.strategy,
-        currency: rinkeby.weth,
-        startTime: 1651301377,
-        endTime: 1660995560,
-      };
-
-      let tx = await exchangeContract.createMakerAsk(makerAsk, {
-        gasLimit: 500000,
-      });
-      await tx.wait();
-      console.log(tx);
-    } else {
-      console.log('ethereum object not found');
-    }
-  };
-
   const acceptOffer = async (collectionAddress, collectionId) => {
-    const { ethereum } = window;
-    if (ethereum) {
+    if (activeAccount) {
       console.log('hey');
     } else {
       console.log('ethereum object not found');
@@ -472,7 +431,9 @@ export default function Positions({ allPositions }) {
         ) : (
           <NFTView
             nfts={nfts}
-            listOption={listOption}
+            listOption={() => {
+              console.log('list!');
+            }}
             acceptOffer={acceptOffer}
           />
         )}
