@@ -15,12 +15,79 @@ import { ethers } from 'ethers';
 import * as buffer from 'buffer/';
 import styled from 'styled-components';
 import { Canvg } from 'canvg';
-import { ArrowRightIcon, ArrowNarrowRightIcon } from '@heroicons/react/solid';
+import {
+  ArrowRightIcon,
+  ArrowNarrowRightIcon,
+  ExternalLinkIcon,
+} from '@heroicons/react/solid';
+import Table from '../components/Table';
 
 import { generateMetadata, uploadToIpfs, createSvg } from '../utils/ipfsHelper';
 import { fuji, rinkeby } from '../utils/addresses';
 import OptionFactory from '../../contracts/out/OptionFactory.sol/OptionFactory.json';
 import { optionTemplates } from '../data/optionTemplates';
+
+const getShorts = () => {
+  const data = [
+    {
+      asset: 'eth',
+      priceFeed: 'ETH/USD',
+      type: 'call',
+      strikePrice: '$2000',
+      rightToBuy: 1,
+      expiry: '2023-01-01',
+      premium: '1 ETH',
+      collateral: 1,
+      numberOfOptions: 1,
+      filled: '80%',
+      CL: 'COVERED',
+      img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg',
+    },
+    {
+      asset: 'btc',
+      priceFeed: 'BTC/USD',
+      type: 'call',
+      strikePrice: '$30000',
+      rightToBuy: 2,
+      expiry: '2023-01-01',
+      premium: '1 ETH',
+      collateral: 1,
+      numberOfOptions: 1,
+      filled: '100%',
+      CL: '190%',
+      img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/19a58483-b100-4d09-ab0d-7d221a491090_BTC.svg',
+    },
+    {
+      asset: 'avax',
+      priceFeed: 'AVAX/USD',
+      type: 'put',
+      strikePrice: '$40',
+      rightToBuy: 5,
+      expiry: '2023-01-01',
+      premium: '0.25 ETH',
+      collateral: 1,
+      numberOfOptions: 1,
+      filled: '30%',
+      CL: '150%',
+      img: 'https://images.prismic.io/data-chain-link/63137341-c4d1-4825-b284-b8a5a8436d15_ICON_AVAX.png?auto=compress,format',
+    },
+    {
+      asset: 'link',
+      priceFeed: 'LINK/USD',
+      type: 'call',
+      strikePrice: '$5',
+      rightToBuy: 3,
+      expiry: '2023-01-01',
+      premium: '0.15 ETH',
+      collateral: 1,
+      numberOfOptions: 1,
+      filled: '25%',
+      CL: '120%',
+      img: 'https://data-chain-link.cdn.prismic.io/data-chain-link/ad14983c-eec5-448e-b04c-d1396e644596_LINK.svg',
+    },
+  ];
+  return [...data, ...data, ...data];
+};
 
 const sleep = (ms) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -170,9 +237,6 @@ export default function Write() {
     }
   );
 
-  const canvasRef = useRef(null);
-  const svgRef = useRef(null);
-
   const formik = useFormik({
     initialValues: {
       asset: template.asset,
@@ -181,7 +245,6 @@ export default function Write() {
       type: 'call',
       expiry: template.expiry,
       collateral: 1,
-      premium: template.premium,
     },
 
     validationSchema: Yup.object({
@@ -208,6 +271,7 @@ export default function Write() {
           assetDecimals
         ),
         expiry: 1000000,
+        seller: activeAccount.address,
       };
       const collateral = {
         priceFeed: priceFeeds.RINKEBY.ETH.USD,
@@ -226,7 +290,7 @@ export default function Write() {
         },
       });
     } else {
-      console.log('cannot your wallet!');
+      console.log('connect your wallet!');
     }
   };
 
@@ -236,8 +300,10 @@ export default function Write() {
       const priceFeedAddress =
         priceFeeds[network][formik.values.asset.toUpperCase()].USD;
 
-      if (ethereum) {
-        const provider = new ethers.providers.Web3Provider(ethereum);
+      if (activeAccount) {
+        const provider = new ethers.providers.JsonRpcProvider(
+          process.env.ALCHEMY_RINKEBY_RPC
+        );
 
         const priceFeedContract = new ethers.Contract(
           priceFeedAddress,
@@ -265,7 +331,9 @@ export default function Write() {
       const priceFeedAddress = priceFeeds[network][collateral].USD;
 
       if (ethereum) {
-        const provider = new ethers.providers.Web3Provider(ethereum);
+        const provider = new ethers.providers.JsonRpcProvider(
+          process.env.ALCHEMY_RINKEBY_RPC
+        );
 
         const priceFeedContract = new ethers.Contract(
           priceFeedAddress,
@@ -320,6 +388,15 @@ export default function Write() {
 
   return (
     <BaseContainer>
+      {createdOptionId ? (
+        <NewOption>
+          <Link href={`/options/${createdOptionId}`}>
+            <a>
+              View Newly Created Option <ExternalLinkIcon></ExternalLinkIcon>
+            </a>
+          </Link>
+        </NewOption>
+      ) : null}
       <OuterContainer>
         <InnerContainer>
           <form>
@@ -377,91 +454,67 @@ export default function Write() {
                 error={formik.touched.collateral && formik.errors.collateral}
               />
             </InputContainer>
-            <InputContainer>
-              <label htmlFor="premium">Premium (ETH): </label>
-              <StyledMyTextInput
-                name="premium"
-                type="number"
-                placeholder="1"
-                {...formik.getFieldProps('premium')}
-              />
-            </InputContainer>
           </form>
         </InnerContainer>
         <StyledArrowRightIcon></StyledArrowRightIcon>
         <NFTContainer>
-          <StyledSVG
-            ref={svgRef}
-            width="350"
-            height="350"
-            version="1.1"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <rect x="0" y="0" width="350" height="350" fill="white" />
-            <text x="122" y="49" fontSize="25" fontWeight="200">
-              {formik.values.asset.toUpperCase()} CALL
-            </text>
-            <line
-              x1="40"
-              y1="65"
-              x2="310"
-              y2="65"
-              stroke="black"
-              strokeWidth="1"
-            />
-            <text x="80" y="105" fontSize="20" fontWeight="200">
-              Price Feed: {`${formik.values.asset.toUpperCase()}/USD`}
-            </text>
-            <text x="80" y="150" fontSize="20" fontWeight="200">
-              Strike Price: {`$${formik.values.strikePrice}`}
-            </text>
-            <text x="80" y="195" fontSize="20" fontWeight="200">
-              Amount:{' '}
-              {`${
-                formik.values.rightToBuy
-              } ${formik.values.asset.toUpperCase()}`}
-            </text>
-            <text x="80" y="240" fontSize="20" fontWeight="200">
-              Expiry: {formik.values.expiry}
-            </text>
-            <text x="80" y="285" fontSize="20" fontWeight="200">
-              American Style
-            </text>
-          </StyledSVG>
+          <Summary>
+            <InnerContainer>
+              <Stats>
+                {formik.values.asset !== 'eth' ? (
+                  <MarketPriceDiv>
+                    <p className="price-header">
+                      Current {formik.values.asset.toUpperCase()} Price:
+                    </p>
+                    <p className="price">${trimStr(assetPrice)}</p>
+                  </MarketPriceDiv>
+                ) : null}
+                <MarketPriceDiv>
+                  <p className="price-header">Current ETH Price:</p>
+                  <p className="price">${trimStr(collateralPrice)}</p>
+                </MarketPriceDiv>
+              </Stats>
+              <Stats>
+                <MarketPriceDiv>
+                  <p className="price-header">Risk:</p>
+                  <p className="price">
+                    $
+                    {trimStr(
+                      (assetPrice * formik.values.rightToBuy).toString()
+                    )}{' '}
+                  </p>
+                </MarketPriceDiv>
+              </Stats>
+              <Stats>
+                <MarketPriceDiv>
+                  <p className="price-header">Collateral:</p>
+                  <p className="price">
+                    {trimStr(
+                      (collateralPrice * formik.values.collateral).toString()
+                    )}
+                  </p>
+                </MarketPriceDiv>
+              </Stats>
+              <Stats className="last-one">
+                <MarketPriceDiv>
+                  <p className="price-header">Collateral-to-Risk Ratio:</p>
+                  <p className="price">{calculateCRRatio()}</p>
+                </MarketPriceDiv>
+              </Stats>
+              <form onSubmit={formik.handleSubmit}>
+                {createOptionFunc.isLoading ? (
+                  <Button type="button">Loading...</Button>
+                ) : waitForCreateOptionFunc.isLoading ? (
+                  <Button type="button">Pending...</Button>
+                ) : (
+                  <Button type="submit">Write Option</Button>
+                )}
+              </form>
+            </InnerContainer>
+          </Summary>
         </NFTContainer>
       </OuterContainer>
 
-      <Summary>
-        <InnerContainer>
-          {createdOptionId ? (
-            <Link href={`/options/${createdOptionId}`}>
-              <a>Newly Created Option</a>
-            </Link>
-          ) : null}
-          <form onSubmit={formik.handleSubmit}>
-            {formik.values.asset !== 'eth' ? (
-              <p>
-                Current {formik.values.asset.toUpperCase()} Price = $
-                {trimStr(assetPrice)}
-              </p>
-            ) : null}
-            <p>Current ETH Price = ${trimStr(collateralPrice)}</p>
-            <p>
-              Max Risk = {formik.values.asset.toUpperCase()} Price x Amount = $
-              {trimStr((assetPrice * formik.values.rightToBuy).toString())}
-            </p>
-            <p>
-              Collateral = ETH Price x Deposit = $
-              {trimStr((collateralPrice * formik.values.collateral).toString())}
-            </p>
-            <p>
-              Collateral-to-Risk Ratio = Collateral / Max Risk ={' '}
-              {calculateCRRatio()}
-            </p>
-            <Button type="submit">Write Option</Button>
-          </form>
-        </InnerContainer>
-      </Summary>
       {/* <TemplateContainer>
         <Templates>
           <p>Templates</p>
@@ -472,7 +525,6 @@ export default function Write() {
           />
         </Templates>
       </TemplateContainer> */}
-      <StyledCanvas ref={canvasRef}></StyledCanvas>
     </BaseContainer>
   );
 }
@@ -487,6 +539,10 @@ const StyledImg = styled.img`
 
 const BaseContainer = styled.div`
   padding: 10px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 `;
 
 const StyledArrowRightIcon = styled(ArrowNarrowRightIcon)`
@@ -494,9 +550,34 @@ const StyledArrowRightIcon = styled(ArrowNarrowRightIcon)`
 `;
 
 const Summary = styled.div`
-  padding: 10px 30px;
+  padding: 10px 10px;
   display: flex;
   justify-content: center;
+`;
+
+const NewOption = styled.div`
+  width: 100vw;
+  padding-top: 10px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #ecedef;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  a {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 3px;
+    font-weight: 500;
+
+    :hover {
+      color: #0e76fd;
+    }
+  }
+
+  svg {
+    width: 22px;
+  }
 `;
 
 const TemplateContainer = styled.div`
@@ -552,7 +633,7 @@ const InnerContainer = styled.div`
   /* box-shadow: 0 8px 24px -16px rgba(12, 22, 44, 0.32); */
   padding: 25px;
   font-size: 120%;
-  /* min-width: 500px; */
+  min-width: 350px;
   p {
     margin-top: 10px;
   }
@@ -567,7 +648,7 @@ const InnerContainer = styled.div`
 const Button = styled.button`
   background-color: #0e76fd;
   color: white;
-  margin-top: 20px;
+  /* margin-top: 20px; */
   padding: 9px 25px;
   font-size: 100%;
   font-weight: 700;
@@ -583,23 +664,57 @@ const Button = styled.button`
   }
 `;
 
+const Stats = styled.div`
+  margin-bottom: 10px;
+  display: flex;
+  gap: 30px;
+  flex-wrap: wrap;
+  /* grid-template-columns: repeat(4, auto); */
+  /* justify-items: start; */
+
+  .last-one {
+    margin-bottom: 0;
+  }
+`;
+
+const MarketPriceDiv = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  .price-header {
+    font-size: 14px;
+  }
+  .price {
+    font-size: 24px;
+    font-weight: 500;
+  }
+  p {
+    margin: 0;
+  }
+`;
+
 const StyledMyTextInput = styled.input`
-  margin: 10px 0px;
-  padding: 5px;
+  margin-top: 5px;
+  margin-bottom: 10px;
+  padding: 7px;
   border: 1px solid lightblue;
-  border: ${(props) => (props.error ? '1px solid red' : '1px solid lightblue')};
+  border: ${(props) => (props.error ? '1px solid red' : '1px solid #ecedef')};
   border-radius: 3px;
+  font-weight: 500;
 `;
 
 const InputContainer = styled.div`
   display: flex;
+  flex-direction: column;
   justify-content: start;
-  align-items: center;
+  /* align-items: center; */
 
   label {
-    margin: 7px;
-    margin-left: 7px;
+    font-size: 16px;
+    margin-left: 2px;
     margin-right: 15px;
+    color: #737581;
+    opacity: 75%;
   }
 
   p {
@@ -610,11 +725,54 @@ const InputContainer = styled.div`
 `;
 
 const StyledSelect = styled.select`
-  margin: 10px 0px;
-  padding: 3px;
+  margin-top: 5px;
+  margin-bottom: 10px;
+  padding: 6px;
   padding-right: 10px;
   font-size: 15px;
   background-color: white;
-  border: 1px solid lightblue;
+  border: 1px solid #ecedef;
   border-radius: 3px;
+  font-weight: 500;
 `;
+
+/*
+<StyledSVG
+            ref={svgRef}
+            width="350"
+            height="350"
+            version="1.1"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect x="0" y="0" width="350" height="350" fill="white" />
+            <text x="122" y="49" fontSize="25" fontWeight="200">
+              {formik.values.asset.toUpperCase()} CALL
+            </text>
+            <line
+              x1="40"
+              y1="65"
+              x2="310"
+              y2="65"
+              stroke="black"
+              strokeWidth="1"
+            />
+            <text x="80" y="105" fontSize="20" fontWeight="200">
+              Price Feed: {`${formik.values.asset.toUpperCase()}/USD`}
+            </text>
+            <text x="80" y="150" fontSize="20" fontWeight="200">
+              Strike Price: {`$${formik.values.strikePrice}`}
+            </text>
+            <text x="80" y="195" fontSize="20" fontWeight="200">
+              Amount:{' '}
+              {`${
+                formik.values.rightToBuy
+              } ${formik.values.asset.toUpperCase()}`}
+            </text>
+            <text x="80" y="240" fontSize="20" fontWeight="200">
+              Expiry: {formik.values.expiry}
+            </text>
+            <text x="80" y="285" fontSize="20" fontWeight="200">
+              American Style
+            </text>
+          </StyledSVG>
+          */

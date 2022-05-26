@@ -1,4 +1,4 @@
-import Positions from '../components/Positions';
+import Positions from '../../components/Positions';
 
 export default function PositionsPage() {
   return (

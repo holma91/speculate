@@ -1,5 +1,6 @@
 import { useMemo, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import {
   useSendTransaction,
   useContractWrite,
@@ -9,6 +10,11 @@ import {
   useContractEvent,
 } from 'wagmi';
 import { useFormik } from 'formik';
+import {
+  ArrowRightIcon,
+  ArrowNarrowRightIcon,
+  ExternalLinkIcon,
+} from '@heroicons/react/solid';
 import * as Yup from 'yup';
 import { ethers } from 'ethers';
 import styled from 'styled-components';
@@ -380,6 +386,7 @@ export default function Option() {
         strikePrice: option.strikePrice,
         expiry: option.expiry,
         european: option.european,
+        seller: option.seller,
       };
 
       setOption(parsedOption);
@@ -730,175 +737,291 @@ export default function Option() {
   };
 
   return (
-    <OuterContainer>
-      <Container>
-        <div className="left">
-          {nft?.metadata ? (
-            <StyledImg
-              src={`data:image/svg+xml;utf8,${nft.metadata.image}`}
-              sizes="(max-width: 48rem) 95vw, (max-width: 90rem) 60vw, 536px"
-            />
-          ) : (
-            <StyledImg />
-          )}
+    <BaseContainer>
+      {true ? (
+        <ShortOption>
+          <Link href={`/options/1`}>
+            <a>
+              You are short this option <ExternalLinkIcon></ExternalLinkIcon>
+            </a>
+          </Link>
+        </ShortOption>
+      ) : null}
+      <OuterContainer>
+        <Container>
+          <div className="left">
+            {nft?.metadata ? (
+              <StyledImg
+                src={`data:image/svg+xml;utf8,${nft.metadata.image}`}
+                sizes="(max-width: 48rem) 95vw, (max-width: 90rem) 60vw, 536px"
+              />
+            ) : (
+              <StyledImg />
+            )}
 
-          <DescriptionBox>
-            <p className="owned-by">
-              {nft ? `Owned by ${styleAddress(nft.owner_of)}` : 'Owned by '}
-            </p>
-          </DescriptionBox>
-        </div>
-        <div className="right">
-          <p className="collection-header">{asset} Options</p>
-          <p className="header">{asset} CALL</p>
-          <Stats>
-            {option ? (
-              <MarketPriceDiv>
-                <p className="price-header">Strike Price:</p>
-                <p className="price">
-                  $
-                  {trimStr(
-                    ethers.utils
-                      .formatUnits(option.strikePrice.toString(), 8)
-                      .toString()
-                  )}
-                </p>
-              </MarketPriceDiv>
-            ) : null}
-            {rawAssetPrice && option ? (
-              <>
+            <DescriptionBox>
+              <p className="owned-by">
+                {nft ? `Owned by ${styleAddress(nft.owner_of)}` : 'Owned by '}
+              </p>
+            </DescriptionBox>
+          </div>
+          <div className="right">
+            <p className="collection-header">{asset} Options</p>
+            <p className="header">LONG {asset} CALL</p>
+            <Stats>
+              {option ? (
                 <MarketPriceDiv>
-                  <p className="price-header">
-                    {nft.metadata.attributes[0].value} Price:
-                  </p>
-                  <p className="price">${trimStr(assetPrice)}</p>
-                </MarketPriceDiv>
-                <MarketPriceDiv>
-                  <p className="price-header">Status:</p>
-                  <p className="price">{getOptionStatus()}</p>
-                </MarketPriceDiv>
-                <MarketPriceDiv>
-                  <p className="price-header">Expiry:</p>
-                  <p className="price">{getExpiryDate()}</p>
-                </MarketPriceDiv>
-                <MarketPriceDiv>
-                  <p className="price-header">Right to buy:</p>
+                  <p className="price-header">Strike Price:</p>
                   <p className="price">
-                    {getRightToBuy()}
-                    {asset}
+                    $
+                    {trimStr(
+                      ethers.utils
+                        .formatUnits(option.strikePrice.toString(), 8)
+                        .toString()
+                    )}
                   </p>
                 </MarketPriceDiv>
-              </>
-            ) : null}
-          </Stats>
-          <Stats>
-            <MarketPriceDiv>
-              <p className="price-header">Inherent Value:</p>
-              {rawAssetPrice && option ? (
-                <p className="price">{trimStr(getValue())}</p>
               ) : null}
-            </MarketPriceDiv>
-          </Stats>
-          <PriceBox isClicked={showExerciseInfo}>
-            <div
-              onClick={() => setShowExerciseInfo(!showExerciseInfo)}
-              className="time"
-            >
-              <p>Exercising information</p>
-            </div>
-            {showExerciseInfo ? (
-              nft?.metadata && assetPrice && option ? (
-                <div className="exercising-info">
-                  {option.european ? (
-                    <p>
-                      Since the option is of european style, it cannot be
-                      exercised before expiry.
+              {rawAssetPrice && option ? (
+                <>
+                  <MarketPriceDiv>
+                    <p className="price-header">
+                      {nft.metadata.attributes[0].value} Price:
                     </p>
-                  ) : (
-                    <>
-                      <p>
-                        Since the option is ITM and american style, it can be
-                        exercised early.
-                      </p>
-                      All our options settle in cash, which means the profit is
-                      payed back in WETH.
-                      <p></p>
-                      <Button onClick={exercise}>Exercise</Button>
-                    </>
-                  )}
-                </div>
-              ) : null
-            ) : null}
-          </PriceBox>
-          {listed ? (
-            <PriceBox isClicked={showListingInfo}>
+                    <p className="price">${trimStr(assetPrice)}</p>
+                  </MarketPriceDiv>
+                  <MarketPriceDiv>
+                    <p className="price-header">Status:</p>
+                    <p className="price">{getOptionStatus()}</p>
+                  </MarketPriceDiv>
+                  <MarketPriceDiv>
+                    <p className="price-header">Expiry:</p>
+                    <p className="price">{getExpiryDate()}</p>
+                  </MarketPriceDiv>
+                  <MarketPriceDiv>
+                    <p className="price-header">Right to buy:</p>
+                    <p className="price">
+                      {getRightToBuy()}
+                      {asset}
+                    </p>
+                  </MarketPriceDiv>
+                </>
+              ) : null}
+            </Stats>
+            <Stats>
+              <MarketPriceDiv>
+                <p className="price-header">Inherent Value:</p>
+                {rawAssetPrice && option ? (
+                  <p className="price">{trimStr(getValue())}</p>
+                ) : null}
+              </MarketPriceDiv>
+            </Stats>
+            <PriceBox isClicked={showExerciseInfo}>
               <div
+                onClick={() => setShowExerciseInfo(!showExerciseInfo)}
                 className="time"
-                onClick={() => setShowListingInfo(!showListingInfo)}
               >
-                <p>Listing information</p>
+                <p>Exercising information</p>
               </div>
-              {showListingInfo ? (
-                <div className="listing-info">
-                  <p className="extra-info">
-                    Sale expires in 15 days OR when {asset} price {'>'} $
-                    {ethers.utils.formatUnits(
-                      makerAsk.underlyingPriceTreshold,
-                      8
-                    )}
-                  </p>
-                  <div className="price">
-                    {listed ? (
-                      <>
-                        <span>Buy now price:</span>
-                        <p>{ethers.utils.formatEther(makerAsk.price)} ETH</p>
-                      </>
+              {showExerciseInfo ? (
+                nft?.metadata && assetPrice && option ? (
+                  <div className="exercising-info">
+                    {option.european ? (
+                      <p>
+                        Since the option is of european style, it cannot be
+                        exercised before expiry.
+                      </p>
                     ) : (
-                      <p>Unlisted</p>
-                    )}
-                    {bidded ? (
                       <>
-                        <span>Highest Offer:</span>
                         <p>
-                          {ethers.utils.formatEther(makerBids[0].price)} ETH
+                          Since the option is ITM and american style, it can be
+                          exercised early.
                         </p>
+                        All our options settle in cash, which means the profit
+                        is payed back in WETH.
+                        <p></p>
+                        <Button onClick={exercise}>Exercise</Button>
                       </>
-                    ) : null}
+                    )}
+                  </div>
+                ) : null
+              ) : null}
+            </PriceBox>
+            {listed ? (
+              <PriceBox isClicked={showListingInfo}>
+                <div
+                  className="time"
+                  onClick={() => setShowListingInfo(!showListingInfo)}
+                >
+                  <p>Listing information</p>
+                </div>
+                {showListingInfo ? (
+                  <div className="listing-info">
+                    <p className="extra-info">
+                      Sale expires in 15 days OR when {asset} price {'>'} $
+                      {ethers.utils.formatUnits(
+                        makerAsk.underlyingPriceTreshold,
+                        8
+                      )}
+                    </p>
+                    <div className="price">
+                      {listed ? (
+                        <>
+                          <span>Buy now price:</span>
+                          <p>{ethers.utils.formatEther(makerAsk.price)} ETH</p>
+                        </>
+                      ) : (
+                        <p>Unlisted</p>
+                      )}
+                      {bidded ? (
+                        <>
+                          <span>Highest Offer:</span>
+                          <p>
+                            {ethers.utils.formatEther(makerBids[0].price)} ETH
+                          </p>
+                        </>
+                      ) : null}
+                      {!isLoading &&
+                      nft &&
+                      nft.owner_of.toLowerCase() ===
+                        activeAccount.address.toLowerCase() ? (
+                        <>
+                          {bidded ? (
+                            acceptFunc.isLoading ? (
+                              <Button>Loading...</Button>
+                            ) : waitForAcceptFunc.isLoading ? (
+                              <Button>Pending...</Button>
+                            ) : (
+                              <Button onClick={acceptOffer}>
+                                Accept Offer
+                              </Button>
+                            )
+                          ) : null}
+                          <Button onClick={cancelListing}>
+                            Cancel Listing
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <form onSubmit={offerFormik.handleSubmit}>
+                            <InputContainer>
+                              <label htmlFor="price">Offer price: </label>
+                              <StyledMyTextInput
+                                name="price"
+                                type="number"
+                                placeholder="2000"
+                                {...offerFormik.getFieldProps('price')}
+                              />
+                            </InputContainer>
+                            <InputContainer>
+                              <label htmlFor="until">Valid until: </label>
+                              <StyledMyTextInput
+                                name="until"
+                                type="date"
+                                placeholder=""
+                                {...offerFormik.getFieldProps('until')}
+                              />
+                            </InputContainer>
+                            <InputContainer>
+                              <label htmlFor="treshold">
+                                {asset} price treshold:{' '}
+                              </label>
+                              <StyledMyTextInput
+                                name="treshold"
+                                type="number"
+                                {...formik.getFieldProps('treshold')}
+                              />
+                            </InputContainer>
+                            {listed &&
+                            allowanceFunc?.data?.lt(makerAsk.price) ? (
+                              <ApproveDiv>
+                                {approveSpendingFunc.isLoading ? (
+                                  <Button
+                                    type="button"
+                                    onClick={approveSpending}
+                                  >
+                                    Loading...
+                                  </Button>
+                                ) : waitForApproveSpendingFunc.isLoading ? (
+                                  <Button
+                                    type="button"
+                                    onClick={approveSpending}
+                                  >
+                                    Pending...
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    type="button"
+                                    onClick={approveSpending}
+                                  >
+                                    Approve spending
+                                  </Button>
+                                )}
+                              </ApproveDiv>
+                            ) : null}
+                            <BuyDiv>
+                              {bidFunc.isLoading ? (
+                                <Button type="submit">Loading...</Button>
+                              ) : waitForBidFunc.isLoading ? (
+                                <Button type="submit">Pending...</Button>
+                              ) : (
+                                <Button type="submit">Make Offer</Button>
+                              )}
+
+                              {buyNowFunc.isLoading ? (
+                                <Button onClick={buyNow} type="button">
+                                  Loading...
+                                </Button>
+                              ) : waitForBuyNowFunc.isLoading ? (
+                                <Button onClick={buyNow} type="button">
+                                  Pending...
+                                </Button>
+                              ) : (
+                                <Button onClick={buyNow} type="button">
+                                  Buy now
+                                </Button>
+                              )}
+                            </BuyDiv>
+                          </form>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+              </PriceBox>
+            ) : (
+              <PriceBox isClicked={showListingInfo}>
+                <div
+                  className="time"
+                  onClick={() => setShowListingInfo(!showListingInfo)}
+                >
+                  <p>Listing information</p>
+                </div>
+                {showListingInfo ? (
+                  <div className="price">
+                    <p>Unlisted</p>
                     {!isLoading &&
                     nft &&
                     nft.owner_of.toLowerCase() ===
                       activeAccount.address.toLowerCase() ? (
                       <>
-                        {bidded ? (
-                          acceptFunc.isLoading ? (
-                            <Button>Loading...</Button>
-                          ) : waitForAcceptFunc.isLoading ? (
-                            <Button>Pending...</Button>
-                          ) : (
-                            <Button onClick={acceptOffer}>Accept Offer</Button>
-                          )
-                        ) : null}
-                        <Button onClick={cancelListing}>Cancel Listing</Button>
-                      </>
-                    ) : (
-                      <>
-                        <form onSubmit={offerFormik.handleSubmit}>
+                        <form onSubmit={formik.handleSubmit}>
                           <InputContainer>
-                            <label htmlFor="price">Offer price: </label>
+                            <label htmlFor="price">price: </label>
                             <StyledMyTextInput
                               name="price"
                               type="number"
                               placeholder="2000"
-                              {...offerFormik.getFieldProps('price')}
+                              {...formik.getFieldProps('price')}
                             />
                           </InputContainer>
                           <InputContainer>
-                            <label htmlFor="until">Valid until: </label>
+                            <label htmlFor="until">until: </label>
                             <StyledMyTextInput
                               name="until"
                               type="date"
                               placeholder=""
-                              {...offerFormik.getFieldProps('until')}
+                              {...formik.getFieldProps('until')}
                             />
                           </InputContainer>
                           <InputContainer>
@@ -911,142 +1034,84 @@ export default function Option() {
                               {...formik.getFieldProps('treshold')}
                             />
                           </InputContainer>
-                          {listed && allowanceFunc?.data?.lt(makerAsk.price) ? (
-                            <ApproveDiv>
-                              {approveSpendingFunc.isLoading ? (
-                                <Button type="button" onClick={approveSpending}>
-                                  Loading...
-                                </Button>
-                              ) : waitForApproveSpendingFunc.isLoading ? (
-                                <Button type="button" onClick={approveSpending}>
-                                  Pending...
-                                </Button>
-                              ) : (
-                                <Button type="button" onClick={approveSpending}>
-                                  Approve spending
-                                </Button>
-                              )}
-                            </ApproveDiv>
-                          ) : null}
-                          <BuyDiv>
-                            {bidFunc.isLoading ? (
-                              <Button type="submit">Loading...</Button>
-                            ) : waitForBidFunc.isLoading ? (
-                              <Button type="submit">Pending...</Button>
-                            ) : (
-                              <Button type="submit">Make Offer</Button>
-                            )}
-
-                            {buyNowFunc.isLoading ? (
-                              <Button onClick={buyNow} type="button">
-                                Loading...
-                              </Button>
-                            ) : waitForBuyNowFunc.isLoading ? (
-                              <Button onClick={buyNow} type="button">
-                                Pending...
-                              </Button>
-                            ) : (
-                              <Button onClick={buyNow} type="button">
-                                Buy now
-                              </Button>
-                            )}
-                          </BuyDiv>
+                          {listFunc.isLoading ? (
+                            <Button type="submit">Loading...</Button>
+                          ) : waitForListFunc.isLoading ? (
+                            <Button type="submit">Pending...</Button>
+                          ) : (
+                            <Button type="submit">List Option</Button>
+                          )}
                         </form>
+                      </>
+                    ) : (
+                      <>
+                        <Button>sup</Button>
                       </>
                     )}
                   </div>
-                </div>
-              ) : null}
-            </PriceBox>
-          ) : (
-            <PriceBox isClicked={showListingInfo}>
+                ) : null}
+              </PriceBox>
+            )}
+            <OfferBox isClicked={showOffers}>
               <div
-                className="time"
-                onClick={() => setShowListingInfo(!showListingInfo)}
+                className="offers-info"
+                onClick={() => setShowOffers(!showOffers)}
               >
-                <p>Listing information</p>
+                <p>Offers</p>
               </div>
-              {showListingInfo ? (
-                <div className="price">
-                  <p>Unlisted</p>
-                  {!isLoading &&
-                  nft &&
-                  nft.owner_of.toLowerCase() ===
-                    activeAccount.address.toLowerCase() ? (
-                    <>
-                      <form onSubmit={formik.handleSubmit}>
-                        <InputContainer>
-                          <label htmlFor="price">price: </label>
-                          <StyledMyTextInput
-                            name="price"
-                            type="number"
-                            placeholder="2000"
-                            {...formik.getFieldProps('price')}
-                          />
-                        </InputContainer>
-                        <InputContainer>
-                          <label htmlFor="until">until: </label>
-                          <StyledMyTextInput
-                            name="until"
-                            type="date"
-                            placeholder=""
-                            {...formik.getFieldProps('until')}
-                          />
-                        </InputContainer>
-                        <InputContainer>
-                          <label htmlFor="treshold">
-                            {asset} price treshold:{' '}
-                          </label>
-                          <StyledMyTextInput
-                            name="treshold"
-                            type="number"
-                            {...formik.getFieldProps('treshold')}
-                          />
-                        </InputContainer>
-                        {listFunc.isLoading ? (
-                          <Button type="submit">Loading...</Button>
-                        ) : waitForListFunc.isLoading ? (
-                          <Button type="submit">Pending...</Button>
-                        ) : (
-                          <Button type="submit">List Option</Button>
-                        )}
-                      </form>
-                    </>
-                  ) : (
-                    <>
-                      <Button>sup</Button>
-                    </>
-                  )}
-                </div>
+              {showOffers ? (
+                offers.length > 0 ? (
+                  <div className="table-wrapper">
+                    <SmallTable
+                      columns={offerColumns}
+                      data={offers}
+                      initialState={initialState}
+                    />
+                  </div>
+                ) : (
+                  <NoOffers>No Offers</NoOffers>
+                )
               ) : null}
-            </PriceBox>
-          )}
-          <OfferBox isClicked={showOffers}>
-            <div
-              className="offers-info"
-              onClick={() => setShowOffers(!showOffers)}
-            >
-              <p>Offers</p>
-            </div>
-            {showOffers ? (
-              offers.length > 0 ? (
-                <div className="table-wrapper">
-                  <SmallTable
-                    columns={offerColumns}
-                    data={offers}
-                    initialState={initialState}
-                  />
-                </div>
-              ) : (
-                <NoOffers>No Offers</NoOffers>
-              )
-            ) : null}
-          </OfferBox>
-        </div>
-      </Container>
-    </OuterContainer>
+            </OfferBox>
+          </div>
+        </Container>
+      </OuterContainer>
+    </BaseContainer>
   );
 }
+
+const BaseContainer = styled.div`
+  padding: 10px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+`;
+
+const ShortOption = styled.div`
+  width: 100vw;
+  padding-top: 10px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #ecedef;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  a {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 3px;
+    font-weight: 500;
+
+    :hover {
+      color: #0e76fd;
+    }
+  }
+
+  svg {
+    width: 22px;
+  }
+`;
 
 const Stats = styled.div`
   display: flex;
@@ -1223,7 +1288,7 @@ const Container = styled.div`
   display: grid;
   grid-template-columns: 1fr 2fr;
   /* align-items: center; */
-  gap: 20px;
+  gap: 40px;
   max-width: 1200px;
 
   .left {

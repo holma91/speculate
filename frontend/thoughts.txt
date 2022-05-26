@@ -3,3 +3,5 @@
 
 improvements
 - show that prices are from chainlink price feeds
+- ui of the svg
+- 
