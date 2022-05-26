@@ -8,6 +8,7 @@ import {
   useWaitForTransaction,
   useAccount,
   useContractEvent,
+  useNetwork,
 } from 'wagmi';
 import { useFormik } from 'formik';
 import {
@@ -79,35 +80,36 @@ const sleep = (ms) => {
 };
 
 const priceFeeds = {
-  RINKEBY: {
-    ETH: {
-      USD: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e',
+  bsc_test: {},
+  rinkeby: {
+    eth: {
+      usd: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e',
     },
-    BTC: {
-      USD: '0xECe365B379E1dD183B20fc5f022230C044d51404',
+    btc: {
+      usd: '0xECe365B379E1dD183B20fc5f022230C044d51404',
     },
-    ATOM: {
-      USD: '0x3539F2E214d8BC7E611056383323aC6D1b01943c',
+    atom: {
+      usd: '0x3539F2E214d8BC7E611056383323aC6D1b01943c',
     },
-    LINK: {
-      USD: '0xd8bd0a1cb028a31aa859a21a3758685a95de4623',
+    link: {
+      usd: '0xd8bd0a1cb028a31aa859a21a3758685a95de4623',
     },
-    MATIC: {
-      USD: '0x7794ee502922e2b723432DDD852B3C30A911F021',
+    matic: {
+      usd: '0x7794ee502922e2b723432DDD852B3C30A911F021',
     },
   },
-  FUJI: {
-    ETH: {
-      USD: '0x86d67c3D38D2bCeE722E601025C25a575021c6EA',
+  fuji: {
+    eth: {
+      usd: '0x86d67c3D38D2bCeE722E601025C25a575021c6EA',
     },
-    BTC: {
-      USD: '0x31CF013A08c6Ac228C94551d535d5BAfE19c602a',
+    btc: {
+      usd: '0x31CF013A08c6Ac228C94551d535d5BAfE19c602a',
     },
-    AVAX: {
-      USD: '0x5498BB86BC934c8D34FDA08E81D444153d0D06aD',
+    avax: {
+      usd: '0x5498BB86BC934c8D34FDA08E81D444153d0D06aD',
     },
-    LINK: {
-      USD: '0x34C4c526902d88a3Aa98DB8a9b802603EB1E3470',
+    link: {
+      usd: '0x34C4c526902d88a3Aa98DB8a9b802603EB1E3470',
     },
   },
 };
@@ -120,7 +122,16 @@ const styleAddress = (address) => {
   );
 };
 
+const moralisMapping = {
+  rinkeby: 'rinkeby',
+  bsc: 'bsc',
+  bsc_test: 'bsc testnet',
+};
+
 export default function Option() {
+  const { activeChain } = useNetwork();
+  const { data: activeAccount, isError, isLoading } = useAccount();
+
   const [showExerciseInfo, setShowExerciseInfo] = useState(true);
   const [showListingInfo, setShowListingInfo] = useState(false);
   const [showOffers, setShowOffers] = useState(false);
@@ -128,7 +139,6 @@ export default function Option() {
   const [makerBids, setMakerBids] = useState([]);
   const [listed, setListed] = useState(false);
   const [bidded, setBidded] = useState(false);
-  const { data: activeAccount, isError, isLoading } = useAccount();
   const [option, setOption] = useState(null);
   const [nft, setNft] = useState(null);
   const [asset, setAsset] = useState('');
@@ -362,13 +372,13 @@ export default function Option() {
   };
 
   const getOption = async () => {
-    if (activeAccount) {
+    if (activeAccount && activeChain) {
       if (!id) {
         return;
       }
 
       let provider = new ethers.providers.JsonRpcProvider(
-        process.env.ALCHEMY_RINKEBY_RPC
+        activeChain.rpcUrls.default
       );
 
       let contract = new ethers.Contract(
@@ -407,20 +417,22 @@ export default function Option() {
     };
 
     const moralisRequest = async (id) => {
-      const chain = 'rinkeby';
-      const url = `https://deep-index.moralis.io/api/v2/nft/${rinkeby.optionFactory}/${id}?chain=${chain}&format=decimal`;
-      let response = await fetch(url, {
-        headers: { 'X-API-Key': process.env.MORALIS_API_KEY },
-      });
+      if (activeChain) {
+        const chain = moralisMapping[activeChain.name.toLowerCase()];
+        const url = `https://deep-index.moralis.io/api/v2/nft/${rinkeby.optionFactory}/${id}?chain=${chain}&format=decimal`;
+        let response = await fetch(url, {
+          headers: { 'X-API-Key': process.env.MORALIS_API_KEY },
+        });
 
-      response = await response.json();
+        response = await response.json();
 
-      let actualNft = {
-        ...response,
-        metadata: response.metadata ? JSON.parse(response.metadata) : null,
-      };
+        let actualNft = {
+          ...response,
+          metadata: response.metadata ? JSON.parse(response.metadata) : null,
+        };
 
-      return actualNft;
+        return actualNft;
+      }
     };
 
     if (activeAccount) {
@@ -451,16 +463,15 @@ export default function Option() {
       if (!nft) {
         return;
       }
-      const network = 'RINKEBY';
       const asset = nft.metadata.attributes[0].value;
       setAsset(asset);
 
-      const priceFeedAddress = priceFeeds[network][asset].USD;
+      if (activeAccount && activeChain) {
+        const network = activeChain.name.toLowerCase();
+        const priceFeedAddress = priceFeeds[network][asset.toLowerCase()].usd;
 
-      if (activeAccount) {
-        // console.log(process.env.ALCHEMY_RINKEBY_RPC);
         const provider = new ethers.providers.JsonRpcProvider(
-          process.env.ALCHEMY_RINKEBY_RPC
+          activeChain.rpcUrls.default
         );
 
         const priceFeedContract = new ethers.Contract(
@@ -562,7 +573,8 @@ export default function Option() {
 
   const listOption = async ({ price, until, treshold }) => {
     if (activeAccount) {
-      const priceFeed = priceFeeds.RINKEBY[asset.toUpperCase()].USD;
+      const network = activeChain.name.toLowerCase();
+      const priceFeed = priceFeeds[network][asset.toLowerCase()].usd;
       const makerAsk = {
         isOrderAsk: true,
         signer: activeAccount.address,
@@ -611,8 +623,9 @@ export default function Option() {
   };
 
   const makeOffer = async ({ price, until, treshold }) => {
-    const priceFeed = priceFeeds.RINKEBY[asset.toUpperCase()].USD;
-    if (activeAccount) {
+    if (activeAccount && activeChain) {
+      const network = activeChain.name.toLowerCase();
+      const priceFeed = priceFeeds[network][asset.toLowerCase()].usd;
       const makerBid = {
         isOrderAsk: false,
         signer: activeAccount.address,

@@ -4,6 +4,7 @@ import {
   useContractWrite,
   useContractRead,
   useWaitForTransaction,
+  useNetwork,
 } from 'wagmi';
 import { ethers } from 'ethers';
 import { useRouter } from 'next/router';
@@ -84,7 +85,14 @@ const getShorts = () => {
   return [...data, ...data, ...data];
 };
 
+const moralisMapping = {
+  rinkeby: 'rinkeby',
+  bsc: 'bsc',
+  bsc_test: 'bsc testnet',
+};
+
 export default function Positions({ allPositions }) {
+  const { activeChain } = useNetwork();
   const { data: activeAccount, isError, isLoading } = useAccount();
   const router = useRouter();
   const [makerAsks, setMakerAsks] = useState([]);
@@ -154,8 +162,8 @@ export default function Positions({ allPositions }) {
       }
     };
 
-    if (activeAccount) {
-      const chain = 'rinkeby';
+    if (activeAccount && activeChain) {
+      const chain = moralisMapping[activeChain.name.toLowerCase()];
       let url = '';
       if (!allPositions) {
         url = `https://deep-index.moralis.io/api/v2/${activeAccount.address}/nft/${rinkeby.optionFactory}?chain=${chain}&format=decimal`;
@@ -172,6 +180,11 @@ export default function Positions({ allPositions }) {
       if (!receivedNFTs) return;
 
       for (const nft of receivedNFTs) {
+        if (!nft.token_uri) {
+          console.log("moralis can't find token_uri! for", nft);
+          // set dummy metadata?
+          continue;
+        }
         if (!nft.metadata) {
           const re = /\/ipfs\/.+metadata.json$/;
           const ipfsString = nft.token_uri.match(re)[0];

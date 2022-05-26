@@ -194,14 +194,7 @@ let addresses = {
 };
 
 export default function Write() {
-  const {
-    activeChain,
-    chains,
-    error,
-    isLoading: il,
-    pendingChainId,
-    switchNetwork,
-  } = useNetwork();
+  const { activeChain } = useNetwork();
   const { data: activeAccount, isError, isLoading } = useAccount();
   const [template, setTemplate] = useState(optionTemplates[0]);
   const [assetPrice, setAssetPrice] = useState('');
