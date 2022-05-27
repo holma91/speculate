@@ -41,11 +41,42 @@ contract OptionFactory is ERC721URIStorage {
         require(option.seller == msg.sender, "seller must be sender");
         collateralById[currentOptionId] = collateral;
 
+        int256 simulatedIntrinsicValue = getSimulatedIntrinsicValue(option);
+        int256 collateralValue = getCollateralValue(currentOptionId);
+
+        require(
+            collateralValue >= simulatedIntrinsicValue,
+            "base collateral not enough"
+        );
+
         optionById[currentOptionId] = option;
         _safeMint(msg.sender, currentOptionId);
         _setTokenURI(currentOptionId, metadataURI);
 
         return currentOptionId++;
+    }
+
+    // simulate a price increase
+    function getSimulatedIntrinsicValue(Option memory option)
+        public
+        view
+        returns (int256)
+    {
+        (, int256 underlyingPrice, , , ) = AggregatorV3Interface(
+            option.underlyingPriceFeed
+        ).latestRoundData();
+
+        int256 simulatedPrice = underlyingPrice * (1.25 * 10**3);
+
+        int256 value = (simulatedPrice * int256(option.underlyingAmount)) /
+            10**3;
+
+        int256 valueAtStrikePrice = int256(option.strikePrice) *
+            int256(option.underlyingAmount);
+
+        int256 intrinsicValue = value - valueAtStrikePrice;
+
+        return intrinsicValue;
     }
 
     function addCollateral(uint256 optionId) public payable {

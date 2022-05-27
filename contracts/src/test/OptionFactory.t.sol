@@ -376,5 +376,108 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
         assertEq(collatAfter.amount, 0.0005 ether);
     }
 
+    function testGetSim() public {
+        // BNB CALL
+        OptionFactory.Option memory bnbCall = OptionFactory.Option(
+            address(bnbUsdPriceFeed),
+            1 ether,
+            true,
+            310 * 10**8,
+            1_000,
+            false,
+            address(this)
+        );
+
+        assertEq(
+            optionFactory.getSimulatedIntrinsicValue(bnbCall),
+            65 * 10**(8 + 18)
+        );
+
+        OptionFactory.Collateral memory collateral_bnbCall = OptionFactory
+            .Collateral(address(bnbUsdPriceFeed), 0.216 ether);
+
+        cheats.expectRevert("base collateral not enough");
+        optionFactory.createOption{value: 0.216 ether}(
+            bnbCall,
+            collateral_bnbCall,
+            ""
+        );
+        collateral_bnbCall.amount = 0.217 ether;
+        optionFactory.createOption{value: 0.217 ether}(
+            bnbCall,
+            collateral_bnbCall,
+            ""
+        );
+
+        // ETH CALL
+        ethUsdPriceFeed.updateAnswer(2000 * 10**8);
+        OptionFactory.Option memory ethCall = OptionFactory.Option(
+            address(ethUsdPriceFeed),
+            2 ether,
+            true,
+            2000 * 10**8,
+            1_000,
+            false,
+            address(this)
+        );
+
+        assertEq(
+            optionFactory.getSimulatedIntrinsicValue(ethCall),
+            1000 * 10**(8 + 18)
+        );
+
+        OptionFactory.Collateral memory collateral_ethCall = OptionFactory
+            .Collateral(address(ethUsdPriceFeed), 0.49 ether);
+
+        cheats.expectRevert("base collateral not enough");
+        optionFactory.createOption{value: 0.49 ether}(
+            ethCall,
+            collateral_ethCall,
+            ""
+        );
+
+        collateral_ethCall.amount = 0.5 ether;
+        optionFactory.createOption{value: 0.5 ether}(
+            ethCall,
+            collateral_ethCall,
+            ""
+        );
+
+        // ETH CALL w/ BNB collateral
+        ethUsdPriceFeed.updateAnswer(2000 * 10**8);
+        bnbUsdPriceFeed.updateAnswer(300 * 10**8);
+        OptionFactory.Option memory ethCall2 = OptionFactory.Option(
+            address(ethUsdPriceFeed),
+            3 ether,
+            true,
+            2000 * 10**8,
+            1_000,
+            false,
+            address(this)
+        );
+
+        assertEq(
+            optionFactory.getSimulatedIntrinsicValue(ethCall2),
+            1500 * 10**(8 + 18)
+        );
+
+        OptionFactory.Collateral memory collateral_ethCall2 = OptionFactory
+            .Collateral(address(bnbUsdPriceFeed), 4.99 ether);
+
+        cheats.expectRevert("base collateral not enough");
+        optionFactory.createOption{value: 4.99 ether}(
+            ethCall2,
+            collateral_ethCall2,
+            ""
+        );
+
+        collateral_ethCall2.amount = 5 ether;
+        optionFactory.createOption{value: 5 ether}(
+            ethCall2,
+            collateral_ethCall2,
+            ""
+        );
+    }
+
     receive() external payable {}
 }
