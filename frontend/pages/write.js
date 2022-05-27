@@ -43,6 +43,13 @@ export default function Write() {
 
   const [createdOptionId, setCreatedOptionId] = useState(null);
   const [cRatio, setCRatio] = useState(0.0);
+  const [healthFactor, setHealthFactor] = useState(0);
+
+  const [minimumCollateral, setMinimumCollateral] = useState({
+    usd: 0,
+    native: 0,
+  });
+
   const [isSSR, setIsSSR] = useState(true);
 
   useEffect(() => {
@@ -233,6 +240,27 @@ export default function Write() {
     setCRatio(ratio);
   };
 
+  const getMinimumCollateral = () => {
+    if (assetPrice && collateralPrice) {
+      let underlyingAmount = formik.values.rightToBuy;
+      let strikePrice = formik.values.strikePrice;
+      const simulatedIntrinsicValue = assetPrice * 1.25 * underlyingAmount;
+      const value = strikePrice * underlyingAmount;
+      const baseCollateralUsd = simulatedIntrinsicValue - value;
+      const baseCollateralBnb = baseCollateralUsd / collateralPrice;
+      setMinimumCollateral({
+        usd: parseFloat(baseCollateralUsd.toFixed(2)),
+        native: parseFloat(baseCollateralBnb.toFixed(5)),
+      });
+    }
+  };
+
+  const getHealthFactor = () => {
+    if (minimumCollateral.native > 0) {
+      setHealthFactor(formik.values.collateral / minimumCollateral.native);
+    }
+  };
+
   useEffect(() => {
     calculateCRatio();
   }, [
@@ -249,6 +277,19 @@ export default function Write() {
   useEffect(() => {
     getCollateralPrice();
   }, []);
+
+  useEffect(() => {
+    getHealthFactor();
+  }, [formik.values.collateral, minimumCollateral]);
+
+  useEffect(() => {
+    getMinimumCollateral();
+  }, [
+    assetPrice,
+    collateralPrice,
+    formik.values.strikePrice,
+    formik.values.rightToBuy,
+  ]);
 
   const getTemplates = () => {
     return optionTemplates.map((template) => {
@@ -492,19 +533,18 @@ export default function Write() {
               </Stats>
               <Stats>
                 <MarketPriceDiv>
-                  <p className="price-header">Risk:</p>
+                  <p className="price-header">Minimum collateral:</p>
                   <p className="price">
-                    $
-                    {trimStr(
-                      (assetPrice * formik.values.rightToBuy).toString()
-                    )}{' '}
+                    {minimumCollateral.native}
+                    BNB &asymp; ${minimumCollateral.usd}
                   </p>
                 </MarketPriceDiv>
               </Stats>
               <Stats>
                 <MarketPriceDiv>
-                  <p className="price-header">Collateral:</p>
+                  <p className="price-header">Your collateral:</p>
                   <p className="price">
+                    {formik.values.collateral}BNB &asymp; $
                     {trimStr(
                       (collateralPrice * formik.values.collateral).toString()
                     )}
@@ -512,22 +552,28 @@ export default function Write() {
                 </MarketPriceDiv>
               </Stats>
               <Stats className="last-one">
-                <CRatioDiv ratio={cRatio}>
-                  <p className="price-header">Collateral-to-Risk Ratio:</p>
-                  <p className="price">{cRatio}</p>
-                </CRatioDiv>
+                <HealthFactorDiv ratio={healthFactor}>
+                  <p className="price-header">Health Factor:</p>
+                  <p className="price">{healthFactor.toFixed(2)}</p>
+                </HealthFactorDiv>
               </Stats>
               <form onSubmit={formik.handleSubmit}>
                 {createOptionFunc.isLoading ? (
-                  <Button type="button">
+                  <WriteButton type="button">
                     <Spinner />
-                  </Button>
+                  </WriteButton>
                 ) : waitForCreateOptionFunc.isLoading ? (
-                  <Button type="button">
+                  <WriteButton type="button">
                     <Spinner />
-                  </Button>
+                  </WriteButton>
                 ) : (
-                  <Button type="submit">Write Option</Button>
+                  <WriteButton
+                    type="submit"
+                    disabled
+                    hf={formik.values.collateral / minimumCollateral.native}
+                  >
+                    Write Option
+                  </WriteButton>
                 )}
               </form>
             </InnerContainer>
@@ -669,6 +715,26 @@ const Button = styled.button`
   }
 `;
 
+const WriteButton = styled.button`
+  background-color: #0e76fd;
+  color: white;
+  /* margin-top: 20px; */
+  padding: 9px 25px;
+  font-size: 100%;
+  font-weight: 700;
+  border-radius: 12px;
+  width: 100%;
+  border: none;
+  outline: none;
+  cursor: ${(props) => (props.hf < 1 ? '' : 'pointer')};
+  opacity: ${(props) => (props.hf < 1 ? '30%' : '100%')};
+
+  :hover {
+    transform: ${(props) =>
+      props.hf < 1 ? '' : 'scale(1.01) perspective(1px)'};
+  }
+`;
+
 const Stats = styled.div`
   margin-bottom: 10px;
   display: flex;
@@ -706,7 +772,7 @@ const MarketPriceDiv = styled.div`
   }
 `;
 
-const CRatioDiv = styled.div`
+const HealthFactorDiv = styled.div`
   display: flex;
   flex-direction: column;
   gap: 5px;

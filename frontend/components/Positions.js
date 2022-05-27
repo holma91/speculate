@@ -13,7 +13,7 @@ import { useRouter } from 'next/router';
 import regeneratorRuntime from 'regenerator-runtime'; // eslint-disable-line no-unused-vars
 import styled from 'styled-components';
 import Table, { AvatarCell } from '../components/Table';
-import { rinkeby, binanceTest, zeroAddress } from '../utils/addresses';
+import { binance, binanceTest, zeroAddress } from '../utils/addresses';
 import { NFTView } from '../components/OptionViews';
 import OptionFactory from '../../contracts/out/OptionFactory.sol/OptionFactory.json';
 import { moralisMapping, assetToImage } from '../utils/misc';
@@ -111,21 +111,21 @@ export default function Positions({ allPositions }) {
 
   const isApprovedForAllFunc = useContractRead(
     {
-      addressOrName: rinkeby.optionFactory,
+      addressOrName: binance.optionFactory,
       contractInterface: OptionFactory.abi,
     },
     'isApprovedForAll',
     {
       args: [
         activeAccount ? activeAccount.address : zeroAddress,
-        rinkeby.transferManagerERC721,
+        binance.transferManagerERC721,
       ],
     }
   );
 
   const setApprovalFunc = useContractWrite(
     {
-      addressOrName: rinkeby.optionFactory,
+      addressOrName: binance.optionFactory,
       contractInterface: OptionFactory.abi,
     },
     'setApprovalForAll'
@@ -174,9 +174,9 @@ export default function Positions({ allPositions }) {
       const chain = moralisMapping[activeChain.name.toLowerCase()];
       let url = '';
       if (!allPositions) {
-        url = `https://deep-index.moralis.io/api/v2/${activeAccount.address}/nft/${rinkeby.optionFactory}?chain=${chain}&format=decimal`;
+        url = `https://deep-index.moralis.io/api/v2/${activeAccount.address}/nft/${binance.optionFactory}?chain=${chain}&format=decimal`;
       } else {
-        url = `https://deep-index.moralis.io/api/v2/nft/${rinkeby.optionFactory}?chain=${chain}&format=decimal`;
+        url = `https://deep-index.moralis.io/api/v2/nft/${binance.optionFactory}?chain=${chain}&format=decimal`;
       }
 
       let response = await fetch(url, {
@@ -208,6 +208,7 @@ export default function Positions({ allPositions }) {
       }
 
       let filteredNFTs = receivedNFTs.map((nft) => {
+        // console.log(nft);
         let listed = false;
         let listPrice = '';
         let bidded = false;
@@ -395,7 +396,7 @@ export default function Positions({ allPositions }) {
                     type="button"
                     onClick={() =>
                       setApprovalFunc.write({
-                        args: [rinkeby.transferManagerERC721, true],
+                        args: [binance.transferManagerERC721, true],
                       })
                     }
                   >

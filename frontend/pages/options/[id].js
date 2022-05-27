@@ -837,7 +837,17 @@ export default function Option() {
                         All our options settle in cash, which means the profit
                         is payed back in the wrapped native token.
                         <p></p>
-                        <Button onClick={exercise}>Exercise</Button>
+                        {exerciseFunc.isLoading ? (
+                          <Button>
+                            <Spinner />
+                          </Button>
+                        ) : waitForExerciseFunc.isLoading ? (
+                          <Button>
+                            <Spinner />
+                          </Button>
+                        ) : (
+                          <Button onClick={exercise}>Exercise Option</Button>
+                        )}
                       </>
                     )}
                   </div>

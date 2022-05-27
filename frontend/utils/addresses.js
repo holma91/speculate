@@ -12,7 +12,7 @@ export const binance = {
 
   wrappedNativeToken: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
 
-  optionFactory: '0xB9Ce9f620897AB2cA69D63406fc42801Db93C22D',
+  optionFactory: '0x604f36C79Fe100c81F9184d02C04652e9d6f6442',
 };
 
 export const binanceTest = {
