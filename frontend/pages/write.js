@@ -24,6 +24,7 @@ import { rinkeby, binance, zeroAddress } from '../utils/addresses';
 import OptionFactory from '../../contracts/out/OptionFactory.sol/OptionFactory.json';
 import { optionTemplates } from '../data/optionTemplates';
 import { priceFeeds, aggregatorV3InterfaceABI } from '../utils/misc';
+import { Spinner } from '../components/shared/Utils';
 
 export default function Write() {
   const { activeChain } = useNetwork();
@@ -64,6 +65,10 @@ export default function Write() {
     'Transfer',
     ([from, to, tokenId]) => {
       setCreatedOptionId(tokenId.toString());
+
+      setTimeout(() => {
+        setCreatedOptionId(null);
+      }, '20000');
     }
   );
 
@@ -120,6 +125,7 @@ export default function Write() {
       const generatedSvg = createSvg(option, assetSymbol, assetDecimals);
       const metadata = generateMetadata(values, generatedSvg);
       let metadataURI = await uploadToIpfs(metadata);
+      console.log(metadataURI);
 
       createOptionFunc.write({
         args: [option, collateral, metadataURI],
@@ -432,9 +438,13 @@ export default function Write() {
               </Stats>
               <form onSubmit={formik.handleSubmit}>
                 {createOptionFunc.isLoading ? (
-                  <Button type="button">Loading...</Button>
+                  <Button type="button">
+                    <Spinner />
+                  </Button>
                 ) : waitForCreateOptionFunc.isLoading ? (
-                  <Button type="button">Pending...</Button>
+                  <Button type="button">
+                    <Spinner />
+                  </Button>
                 ) : (
                   <Button type="submit">Write Option</Button>
                 )}
@@ -571,7 +581,6 @@ const Button = styled.button`
   outline: none;
   cursor: pointer;
 
-  /* box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1); */
   :hover {
     transform: scale(1.01) perspective(1px);
   }

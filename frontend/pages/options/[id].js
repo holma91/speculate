@@ -26,6 +26,7 @@ import SpeculateExchange from '../../../contracts/out/SpeculateExchange.sol/Spec
 import OptionFactory from '../../../contracts/out/OptionFactory.sol/OptionFactory.json';
 import wethABI from '../../../contracts/wethABI.json';
 import { priceFeeds, moralisMapping } from '../../utils/misc';
+import { Spinner } from '../../components/shared/Utils';
 
 const trimStr = (str) => {
   let lock = true;
@@ -888,9 +889,13 @@ export default function Option() {
                         <>
                           {bidded ? (
                             acceptFunc.isLoading ? (
-                              <Button>Loading...</Button>
+                              <Button>
+                                <Spinner />
+                              </Button>
                             ) : waitForAcceptFunc.isLoading ? (
-                              <Button>Pending...</Button>
+                              <Button>
+                                <Spinner />
+                              </Button>
                             ) : (
                               <Button onClick={acceptOffer}>
                                 Accept Offer
@@ -902,7 +907,7 @@ export default function Option() {
                           </Button>
                         </>
                       ) : (
-                        <>
+                        <InnerContainer>
                           <form onSubmit={offerFormik.handleSubmit}>
                             <InputContainer>
                               <label htmlFor="price">Offer price: </label>
@@ -936,18 +941,12 @@ export default function Option() {
                             allowanceFunc?.data?.lt(makerAsk.price) ? (
                               <ApproveDiv>
                                 {approveSpendingFunc.isLoading ? (
-                                  <Button
-                                    type="button"
-                                    onClick={approveSpending}
-                                  >
-                                    Loading...
+                                  <Button type="button">
+                                    <Spinner />
                                   </Button>
                                 ) : waitForApproveSpendingFunc.isLoading ? (
-                                  <Button
-                                    type="button"
-                                    onClick={approveSpending}
-                                  >
-                                    Pending...
+                                  <Button type="button">
+                                    <Spinner />
                                   </Button>
                                 ) : (
                                   <Button
@@ -961,20 +960,24 @@ export default function Option() {
                             ) : null}
                             <BuyDiv>
                               {bidFunc.isLoading ? (
-                                <Button type="submit">Loading...</Button>
+                                <Button type="submit">
+                                  <Spinner />
+                                </Button>
                               ) : waitForBidFunc.isLoading ? (
-                                <Button type="submit">Pending...</Button>
+                                <Button type="submit">
+                                  <Spinner />
+                                </Button>
                               ) : (
                                 <Button type="submit">Make Offer</Button>
                               )}
 
                               {buyNowFunc.isLoading ? (
-                                <Button onClick={buyNow} type="button">
-                                  Loading...
+                                <Button type="button">
+                                  <Spinner />
                                 </Button>
                               ) : waitForBuyNowFunc.isLoading ? (
-                                <Button onClick={buyNow} type="button">
-                                  Pending...
+                                <Button type="button">
+                                  <Spinner />
                                 </Button>
                               ) : (
                                 <Button onClick={buyNow} type="button">
@@ -983,7 +986,7 @@ export default function Option() {
                               )}
                             </BuyDiv>
                           </form>
-                        </>
+                        </InnerContainer>
                       )}
                     </div>
                   </div>
@@ -1003,7 +1006,7 @@ export default function Option() {
                     nft &&
                     nft.owner_of.toLowerCase() ===
                       activeAccount.address.toLowerCase() ? (
-                      <>
+                      <InnerContainer>
                         <form onSubmit={formik.handleSubmit}>
                           <InputContainer>
                             <label htmlFor="price">price: </label>
@@ -1038,9 +1041,13 @@ export default function Option() {
                             !isApprovedForAllFunc.data ? (
                               <>
                                 {setApprovalFunc.isLoading ? (
-                                  <Button type="button">Loading...</Button>
+                                  <Button type="button">
+                                    <Spinner />
+                                  </Button>
                                 ) : waitForSetApprovalFunc.isLoading ? (
-                                  <Button type="button">Pending...</Button>
+                                  <Button type="button">
+                                    <Spinner />
+                                  </Button>
                                 ) : (
                                   <Button
                                     type="button"
@@ -1060,14 +1067,18 @@ export default function Option() {
                             ) : null}
                           </div>
                           {listFunc.isLoading ? (
-                            <Button type="submit">Loading...</Button>
+                            <Button type="submit">
+                              <Spinner />
+                            </Button>
                           ) : waitForListFunc.isLoading ? (
-                            <Button type="submit">Pending...</Button>
+                            <Button type="submit">
+                              <Spinner />
+                            </Button>
                           ) : (
                             <Button type="submit">List Option</Button>
                           )}
                         </form>
-                      </>
+                      </InnerContainer>
                     ) : (
                       <>
                         <p>Unlisted</p>
@@ -1133,6 +1144,19 @@ const ShortOption = styled.div`
     }
   }
 
+  p {
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 3px;
+    font-weight: 500;
+
+    :hover {
+      color: #0e76fd;
+    }
+  }
+
   svg {
     width: 22px;
   }
@@ -1185,30 +1209,12 @@ const ApproveDiv = styled.div`
   }
 `;
 
-const StyledMyTextInput = styled.input`
+const StyledMyTextInputOld = styled.input`
   margin: 10px 0px;
   padding: 5px;
   border: 1px solid lightblue;
   border: ${(props) => (props.error ? '1px solid red' : '1px solid lightblue')};
   border-radius: 3px;
-`;
-
-const InputContainer = styled.div`
-  display: flex;
-  justify-content: start;
-  align-items: center;
-
-  label {
-    margin: 7px;
-    margin-left: 7px;
-    margin-right: 15px;
-  }
-
-  p {
-    margin: 10px;
-    margin-left: 7px;
-    margin-right: 15px;
-  }
 `;
 
 const OuterContainer = styled.div`
@@ -1386,4 +1392,85 @@ const Button = styled.button`
   :hover {
     transform: scale(1.01) perspective(1px);
   }
+`;
+
+const InnerContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  /* border: 1px solid #ecedef; */
+  border-radius: 6px;
+
+  /* padding: 25px; */
+  /* font-size: 120%; */
+  /* min-width: 350px; */
+  p {
+    margin-top: 10px;
+  }
+
+  a {
+    :hover {
+      color: #0e76fd;
+    }
+  }
+`;
+
+const InputContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+
+  label {
+    font-size: 16px;
+    margin-left: 2px;
+    margin-right: 15px;
+    color: #737581;
+    opacity: 75%;
+  }
+
+  p {
+    margin: 10px;
+    margin-left: 7px;
+    margin-right: 15px;
+  }
+`;
+
+const InputContainerOld = styled.div`
+  display: flex;
+  justify-content: start;
+  align-items: center;
+
+  label {
+    margin: 7px;
+    margin-left: 7px;
+    margin-right: 15px;
+  }
+
+  p {
+    margin: 10px;
+    margin-left: 7px;
+    margin-right: 15px;
+  }
+`;
+
+const StyledMyTextInput = styled.input`
+  margin-top: 5px;
+  margin-bottom: 10px;
+  padding: 7px;
+  border: 1px solid lightblue;
+  border: ${(props) => (props.error ? '1px solid red' : '1px solid #ecedef')};
+  border-radius: 3px;
+  font-weight: 500;
+  width: 250px;
+`;
+
+const StyledSelect = styled.select`
+  margin-top: 5px;
+  margin-bottom: 10px;
+  padding: 6px;
+  padding-right: 10px;
+  font-size: 15px;
+  background-color: white;
+  border: 1px solid #ecedef;
+  border-radius: 3px;
+  font-weight: 500;
 `;
