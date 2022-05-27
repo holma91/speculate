@@ -70,10 +70,35 @@ contract OptionFactory is ERC721URIStorage {
         require(sent, "failed ether transfer");
     }
 
+    function getPayout(uint256 optionId) public view returns (uint256) {
+        require(ownerOf(optionId) == msg.sender, "only owner can exercise");
+
+        Option memory option = getOptionById(optionId);
+        Collateral storage collateral = collateralById[optionId];
+
+        if (option.european) {
+            require(block.timestamp >= option.expiry, "not at expiry");
+        }
+
+        int256 intrinsicValue = getIntrinsicValue(optionId);
+        require(intrinsicValue > 0, "option is OTM");
+        int256 collateralValue = getCollateralValue(optionId);
+        require(collateralValue > 0, "Zero collateral");
+
+        (, int256 underlyingPrice, , , ) = AggregatorV3Interface(
+            option.underlyingPriceFeed
+        ).latestRoundData();
+
+        int256 payout = (intrinsicValue * 10**18) / (underlyingPrice * 10**18);
+
+        return uint256(payout);
+    }
+
     function exerciseOption(uint256 optionId) public {
         require(ownerOf(optionId) == msg.sender, "only owner can exercise");
 
         Option memory option = getOptionById(optionId);
+        Collateral storage collateral = collateralById[optionId];
 
         if (option.european) {
             require(block.timestamp >= option.expiry, "not at expiry");
@@ -93,6 +118,8 @@ contract OptionFactory is ERC721URIStorage {
 
         // burn the nft representing the exercised option
         _burn(optionId);
+
+        collateral.amount -= uint256(payout);
 
         // settle in cash
         (bool sent, ) = msg.sender.call{value: uint256(payout)}("");

@@ -39,6 +39,7 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
     OptionFactory internal optionFactory;
     MockV3Aggregator internal btcUsdPriceFeed;
     MockV3Aggregator internal ethUsdPriceFeed;
+    MockV3Aggregator internal bnbUsdPriceFeed;
     OptionFactory.Option internal eth1Call;
     OptionFactory.Option internal btc20Call;
     OptionFactory.Collateral internal collateral_eth1Call;
@@ -53,6 +54,7 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
         optionFactory = new OptionFactory();
         btcUsdPriceFeed = new MockV3Aggregator(8, 40_000 * 10**8);
         ethUsdPriceFeed = new MockV3Aggregator(8, 3_000 * 10**8);
+        bnbUsdPriceFeed = new MockV3Aggregator(8, 3_00 * 10**8);
 
         eth1Call = OptionFactory.Option(
             address(ethUsdPriceFeed),
@@ -332,6 +334,46 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
         // ratio = optionFactory.getCollateralizationRatio(eth1CallId);
         // // assertEq(ratio, 7);
         // emit log_int(ratio);
+    }
+
+    function testRealTest() public {
+        payable(alice).transfer(1 ether);
+        cheats.startPrank(alice, alice);
+        emit log_uint(alice.balance);
+        OptionFactory.Option memory bnbCall = OptionFactory.Option(
+            address(bnbUsdPriceFeed),
+            0.001 ether,
+            true,
+            150 * 10**8,
+            1_000,
+            false,
+            alice
+        );
+
+        OptionFactory.Collateral memory collateral_bnbCall = OptionFactory
+            .Collateral(address(bnbUsdPriceFeed), 0.001 ether);
+
+        uint256 id = optionFactory.createOption{value: 0.001 ether}(
+            bnbCall,
+            collateral_bnbCall,
+            ""
+        );
+        assertEq(optionFactory.getIntrinsicValue(id), 0.15 * 10**(8 + 18));
+        emit log_uint(alice.balance);
+
+        emit log_uint(optionFactory.getPayout(id));
+
+        assertEq(optionFactory.getPayout(id), 0.0005 ether);
+
+        uint256 balanceBefore = alice.balance;
+        optionFactory.exerciseOption(id);
+
+        assertEq(alice.balance, balanceBefore + 0.0005 ether);
+
+        OptionFactory.Collateral memory collatAfter = optionFactory
+            .getCollateralById(id);
+
+        assertEq(collatAfter.amount, 0.0005 ether);
     }
 
     receive() external payable {}

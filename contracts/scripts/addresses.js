@@ -65,7 +65,7 @@ const binanceTest = {
 
   wrappedNativeToken: '0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd',
 
-  optionFactory: '0xB9Ce9f620897AB2cA69D63406fc42801Db93C22D',
+  optionFactory: '0x809D71c732190a7484EaCEdfD88A6e11b3368c7d',
 };
 
 const binance = {
@@ -76,7 +76,7 @@ const binance = {
 
   wrappedNativeToken: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
 
-  optionFactory: '0xB9Ce9f620897AB2cA69D63406fc42801Db93C22D',
+  optionFactory: '0x604f36C79Fe100c81F9184d02C04652e9d6f6442',
 };
 
 const rinkeby = {
@@ -139,6 +139,7 @@ module.exports = {
   ADDRESS2,
   ADDRESS3,
   ADDRESS4,
+  ADDRESS7,
   rinkeby,
   mumbai,
   fuji,
