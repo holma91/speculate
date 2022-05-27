@@ -19,37 +19,10 @@ deploy:
 7. TransferManagerERC1155
 8. TransferSelector
   8.5. set TransferSelector on SpeculateExchange
-  
-call getters:
 
-RINKEBY:
-CurrencyManager deployed at: 0x8534C56955cF3A8E967f5508A60EDee28E3484B5
-ExecutionManager deployed at: 0x7273D4B7B29318CC0EC70FB146Cb7bD6a233FBD6
-RoyaltyFeeRegistry deployed at: 0x6fAB2177a25d39955BF55f29B7a0380c33F44857
-RoyaltyFeeManager deployed at: 0x62F0b6c3A3e728fF32552B9318B7EFef9dE2B1Bd
-SpeculateExchange deployed at: 0xE9c418bd0951EC3b53610035caB248D9e012ADA4
-strategyStandardSaleForFixedPrice deployed at: 0xB49DDf223e2300e6f79Ec32749E0a56Aea09A0a5
-transferManagerERC721 deployed at: 0xC0775914CdfE43B5Fb890eF5D5E1Ce3799c5A371
-transferManagerERC1155 deployed at: 0xd7308BAa36232eab76A58252b75481EACA6D4120
-transferSelectorNFT deployed at: 0x629f1Fd7377DD6284C2E896a02E233A9A5fd727C
-
-optionFactory deployed at: 0x3b61B8289f0b43b600c5032831B621C6DaF4149E
-
-
-MUMBAI:
-
-CurrencyManager deployed at: 0x231d6A39B6Af973Ee1C8bDaf9c7D050aB782c2Fd
-ExecutionManager deployed at: 0x29b1A6Fe8F22D90d0D97d4B0521D81888cd4a679
-RoyaltyFeeRegistry deployed at: 0x4845df926f67E4CB644B7DF220b30569323E09e9
-RoyaltyFeeManager deployed at: 0xC5917F064b6b459CEaF32F4B5BE48b90e84672B7
-SpeculateExchange deployed at: 0xf2BDB860bc5CCc2ACBAa60261F6090177aC1f07D
-strategyStandardSaleForFixedPrice deployed at: 0x093AD2Fd36FD87F402e20633CfB0F54cbAfa5b8d
-transferManagerERC721 deployed at: 0x2192c32F806155124582521E1571583703A0430C
-transferManagerERC1155 deployed at: 0x3F32F4B2Da6958bdA7447B547D164fA7A012bBf2
-transferSelectorNFT deployed at: 0xCB45cd473c3C04f2915C1917a47e71Cdab4904E5
-
-
-
-OPTION SIDE:
-deploy:
-optionFactory deployed at: 0x9637e2145dCAdA494e4aadf28C636F05a2dAA9aE
+deploy NEW:
+1. SpeculateExchange
+2. TransferManagerERC721
+3. TransferManagerERC1155
+4. TransferSelector
+  4.5. set TransferSelector on SpeculateExchange

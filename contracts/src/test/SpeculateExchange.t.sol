@@ -19,7 +19,6 @@ import "../TransferSelectorNFT.sol";
 import "./mocks/MockV3Aggregator.sol";
 
 // LooksRare interfaces
-import {IExecutionStrategy} from "../interfaces/IExecutionStrategy.sol";
 import {ITransferManagerNFT} from "../interfaces/ITransferManagerNFT.sol";
 import {ITransferSelectorNFT} from "../interfaces/ITransferSelectorNFT.sol";
 

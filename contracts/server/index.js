@@ -10,7 +10,7 @@ app.use(cors());
 const port = 3001;
 
 // set up contract
-provider = new ethers.providers.JsonRpcProvider(process.env.rpc_binancetest);
+provider = new ethers.providers.JsonRpcProvider(process.env.rpc_binance);
 const wallet = new ethers.Wallet(process.env.pk2, provider);
 const speculateExchange = new ethers.Contract(
   binanceTest.speculateExchange,

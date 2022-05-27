@@ -1,19 +1,10 @@
 const ethers = require('ethers');
-const CurrencyManager = require('../../out/CurrencyManager.sol/CurrencyManager.json');
-const ExecutionManager = require('../../out/ExecutionManager.sol/ExecutionManager.json');
-const RoyaltyFeeRegistry = require('../../out/RoyaltyFeeRegistry.sol/RoyaltyFeeRegistry.json');
-const RoyaltyFeeManager = require('../../out/RoyaltyFeeManager.sol/RoyaltyFeeManager.json');
 const SpeculateExchange = require('../../out/SpeculateExchange.sol/SpeculateExchange.json');
-const StrategyStandardSaleForFixedPrice = require('../../out/StrategyStandardSaleForFixedPrice.sol/StrategyStandardSaleForFixedPrice.json');
 const TransferManagerERC721 = require('../../out/TransferManagerERC721.sol/TransferManagerERC721.json');
 const TransferManagerERC1155 = require('../../out/TransferManagerERC1155.sol/TransferManagerERC1155.json');
 const TransferSelectorNFT = require('../../out/TransferSelectorNFT.sol/TransferSelectorNFT.json');
-const { fuji, mumbai, rinkeby, binanceTest } = require('../addresses');
+const { binanceTest, binance } = require('../addresses');
 require('dotenv').config();
-
-const protocolFeeRecipient = '0xB06903728e09748E3d941b83f1657B147bA045d2';
-const _protocolFee = 200;
-const _royaltyFeeLimit = 9000;
 
 const sleep = (ms) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -22,33 +13,8 @@ const sleep = (ms) => {
 const getFactories = (wallet) => {
   return [
     new ethers.ContractFactory(
-      CurrencyManager.abi,
-      CurrencyManager.bytecode,
-      wallet
-    ),
-    new ethers.ContractFactory(
-      ExecutionManager.abi,
-      ExecutionManager.bytecode,
-      wallet
-    ),
-    new ethers.ContractFactory(
-      RoyaltyFeeRegistry.abi,
-      RoyaltyFeeRegistry.bytecode,
-      wallet
-    ),
-    new ethers.ContractFactory(
-      RoyaltyFeeManager.abi,
-      RoyaltyFeeManager.bytecode,
-      wallet
-    ),
-    new ethers.ContractFactory(
       SpeculateExchange.abi,
       SpeculateExchange.bytecode,
-      wallet
-    ),
-    new ethers.ContractFactory(
-      StrategyStandardSaleForFixedPrice.abi,
-      StrategyStandardSaleForFixedPrice.bytecode,
       wallet
     ),
     new ethers.ContractFactory(
@@ -70,59 +36,15 @@ const getFactories = (wallet) => {
 };
 
 const main = async () => {
-  provider = new ethers.providers.JsonRpcProvider(process.env.rpc_binancetest);
-  const wallet = new ethers.Wallet(process.env.pk6, provider);
+  provider = new ethers.providers.JsonRpcProvider(process.env.rpc_binance);
+  const wallet = new ethers.Wallet(process.env.pk7, provider);
 
-  const [
-    cmFactory,
-    emFactory,
-    rfrFactory,
-    rfmFactory,
-    seFactory,
-    strategyFactory,
-    tmERC721Factory,
-    tmERC1155Factory,
-    tsFactory,
-  ] = getFactories(wallet);
+  const [seFactory, tmERC721Factory, tmERC1155Factory, tsFactory] =
+    getFactories(wallet);
 
-  const cmContract = await cmFactory.deploy();
-  await cmContract.deployed();
-  console.log('CurrencyManager deployed at:', cmContract.address);
-
-  const emContract = await emFactory.deploy();
-  await emContract.deployed();
-  console.log('ExecutionManager deployed at:', emContract.address);
-
-  const rfrContract = await rfrFactory.deploy(_royaltyFeeLimit);
-  await rfrContract.deployed();
-  console.log('RoyaltyFeeRegistry deployed at:', rfrContract.address);
-
-  const rfmContract = await rfmFactory.deploy(rfrContract.address);
-  await rfmContract.deployed();
-  console.log('RoyaltyFeeManager deployed at:', rfmContract.address);
-
-  const seContract = await seFactory.deploy(
-    cmContract.address,
-    emContract.address,
-    rfmContract.address,
-    binanceTest.wrappedNativeToken,
-    protocolFeeRecipient
-  );
+  const seContract = await seFactory.deploy(binance.wrappedNativeToken);
   await seContract.deployed();
   console.log('SpeculateExchange deployed at:', seContract.address);
-
-  const strategyStandardSaleForFixedPrice = await strategyFactory.deploy(
-    _protocolFee
-  );
-  await strategyStandardSaleForFixedPrice.deployed();
-  console.log(
-    'strategyStandardSaleForFixedPrice deployed at:',
-    strategyStandardSaleForFixedPrice.address
-  );
-
-  let addCurrencyTx = await cmContract.addCurrency(rinkeby.weth);
-  await addCurrencyTx.wait();
-  console.log('addCurrency tx:', addCurrencyTx.hash);
 
   const transferManagerERC721 = await tmERC721Factory.deploy(
     seContract.address

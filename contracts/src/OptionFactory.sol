@@ -61,8 +61,10 @@ contract OptionFactory is ERC721URIStorage {
         );
         collateral.amount -= amount;
 
-        int256 ratio = getCollateralToRiskRatio(optionId);
-        require(ratio >= 1000, "cannot go below 1 in collateral-to-risk ratio");
+        require(
+            canBeLiquidated(optionId) == false,
+            "can't withdraw below liq limit"
+        );
 
         (bool sent, ) = msg.sender.call{value: amount}("");
         require(sent, "failed ether transfer");
@@ -72,79 +74,79 @@ contract OptionFactory is ERC721URIStorage {
         require(ownerOf(optionId) == msg.sender, "only owner can exercise");
 
         Option memory option = getOptionById(optionId);
-        Collateral memory collateral = getCollateralById(optionId);
 
         if (option.european) {
-            // european style option can only be exercised at expiry
             require(block.timestamp >= option.expiry, "not at expiry");
         }
 
-        // can only exercise if ITM
+        int256 intrinsicValue = getIntrinsicValue(optionId);
+        require(intrinsicValue > 0, "option is OTM");
+        int256 collateralValue = getCollateralValue(optionId);
+        require(collateralValue > 0, "Zero collateral");
 
-        // check price
-        (, int256 currentUnderlyingPrice, , , ) = AggregatorV3Interface(
+        (, int256 underlyingPrice, , , ) = AggregatorV3Interface(
             option.underlyingPriceFeed
         ).latestRoundData();
 
-        (, int256 currentCollateralPrice, , , ) = AggregatorV3Interface(
-            collateral.priceFeed
-        ).latestRoundData();
-
-        require(
-            currentUnderlyingPrice > 0 && currentCollateralPrice > 0,
-            "oracle error, negative price"
-        );
-        require(
-            currentUnderlyingPrice > int256(option.strikePrice),
-            "option is OTM, cannot be exercised"
-        );
-
-        uint256 payoutInUSD = option.underlyingAmount *
-            uint256(currentUnderlyingPrice);
-        uint256 payoutInETH = payoutInUSD / uint256(currentCollateralPrice);
+        int256 payout = (intrinsicValue * 10**18) / (underlyingPrice * 10**18);
+        require(payout > 0, "negative payout");
 
         // burn the nft representing the exercised option
         _burn(optionId);
 
         // settle in cash
-        (bool sent, ) = msg.sender.call{value: payoutInETH}("");
+        (bool sent, ) = msg.sender.call{value: uint256(payout)}("");
         require(sent, "failed ether transfer");
     }
 
-    function getCollateralToRiskRatio(uint256 optionId)
-        public
-        view
-        returns (int256)
-    {
-        Option memory option = optionById[optionId];
+    function getCollateralValue(uint256 optionId) public view returns (int256) {
         Collateral memory collateral = collateralById[optionId];
-
-        (, int256 underlyingPrice, , , ) = AggregatorV3Interface(
-            option.underlyingPriceFeed
-        ).latestRoundData();
         (, int256 collateralPrice, , , ) = AggregatorV3Interface(
             collateral.priceFeed
         ).latestRoundData();
 
-        int256 riskUsd = int256(option.underlyingAmount) * underlyingPrice;
-        int256 collateralUsd = int256(collateral.amount) * collateralPrice;
+        int256 collateralValue = collateralPrice * int256(collateral.amount);
+        return collateralValue;
+    }
 
-        return (collateralUsd * 10**3) / riskUsd;
+    function getIntrinsicValue(uint256 optionId) public view returns (int256) {
+        Option memory option = optionById[optionId];
+
+        (, int256 underlyingPrice, , , ) = AggregatorV3Interface(
+            option.underlyingPriceFeed
+        ).latestRoundData();
+
+        int256 value = underlyingPrice * int256(option.underlyingAmount);
+        int256 valueAtStrikePrice = int256(option.strikePrice) *
+            int256(option.underlyingAmount);
+
+        int256 intrinsicValue = value - valueAtStrikePrice;
+
+        return intrinsicValue;
+    }
+
+    function getUnderlyingValue(uint256 optionId) public view returns (int256) {
+        Option memory option = optionById[optionId];
+
+        (, int256 underlyingPrice, , , ) = AggregatorV3Interface(
+            option.underlyingPriceFeed
+        ).latestRoundData();
+
+        int256 value = underlyingPrice * int256(option.underlyingAmount);
+
+        return value;
     }
 
     function canBeLiquidated(uint256 optionId) public view returns (bool) {
-        Option memory option = optionById[optionId];
+        int256 intrinsicValue = getIntrinsicValue(optionId);
+        if (intrinsicValue <= 0) return false;
 
-        Collateral memory collateral = collateralById[optionId];
-        require(
-            option.underlyingPriceFeed != collateral.priceFeed &&
-                option.underlyingAmount <= collateral.amount,
-            "liquidate: covered call cannot be liquidated"
-        );
+        int256 collateralValue = getCollateralValue(optionId);
+        require(collateralValue > 0, "must always exist collateral");
 
-        int256 collateralToRiskRatio = getCollateralToRiskRatio(optionId);
+        int256 ratio = (collateralValue * 1_000) / intrinsicValue;
 
-        return collateralToRiskRatio < 1200;
+        return ratio < 1200;
     }
 
     function getCollateralById(uint256 optionId)

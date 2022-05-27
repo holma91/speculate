@@ -58,7 +58,7 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
             address(ethUsdPriceFeed),
             1 * 10**18,
             true,
-            1_000 * 10**8,
+            3_000 * 10**8,
             1_000,
             true,
             address(this)
@@ -76,7 +76,7 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
             address(btcUsdPriceFeed),
             1 * 10**18,
             true,
-            20_000 * 10**8,
+            40_000 * 10**8,
             1_000,
             true,
             address(this)
@@ -111,33 +111,29 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
     }
 
     function testCanCheckIfLiquidateable() public {
-        uint256 eth1CallId = optionFactory.createOption{value: 1 ether}(
-            eth1Call,
-            collateral_eth1Call,
-            metadata_eth1Call
-        );
-        cheats.expectRevert("liquidate: covered call cannot be liquidated");
-        optionFactory.canBeLiquidated(eth1CallId);
-        // ethUsdPriceFeed.updateAnswer(2500);
-
         uint256 btc20CallId = optionFactory.createOption{value: 20 ether}(
             btc20Call,
             collateral_btc20Call,
             metadata_btc20Call
         );
 
-        int256 CR = optionFactory.getCollateralToRiskRatio(btc20CallId);
-
-        assertEq(CR, 1500);
         assertTrue(!optionFactory.canBeLiquidated(btc20CallId));
 
-        // eth plummets against btc
-        ethUsdPriceFeed.updateAnswer(2100 * 10**8);
+        // collateral = 42k
+        // intrinsic value is still 0
+        assertTrue(!optionFactory.canBeLiquidated(btc20CallId));
 
-        CR = optionFactory.getCollateralToRiskRatio(btc20CallId);
-        emit log_int(CR);
-        assertEq(CR, 1050);
+        btcUsdPriceFeed.updateAnswer(60000 * 10**8);
+        // intrinsic value is now 20k
+        assertTrue(!optionFactory.canBeLiquidated(btc20CallId));
 
+        btcUsdPriceFeed.updateAnswer(80000 * 10**8);
+        // intrinsic value is now 40k, collateral value is 60k
+        assertTrue(!optionFactory.canBeLiquidated(btc20CallId));
+
+        btcUsdPriceFeed.updateAnswer(95000 * 10**8);
+        // intrinsic value is now 55k, collateral value is 60k
+        // ratio = 60 / 55 = 1.09...
         assertTrue(optionFactory.canBeLiquidated(btc20CallId));
     }
 
@@ -159,9 +155,11 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
 
     function testCanExerciseEuropeanAtExpiry() public {
         uint256 balanceStart = address(this).balance;
+        eth1Call.underlyingAmount = 2 ether;
+        collateral_eth1Call.amount = 2 ether;
 
         // write option
-        uint256 eth1CallId = optionFactory.createOption{value: 1 ether}(
+        uint256 eth1CallId = optionFactory.createOption{value: 2 ether}(
             eth1Call,
             collateral_eth1Call,
             metadata_eth1Call
@@ -175,6 +173,10 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
         assertEq(optionFactory.ownerOf(eth1CallId), alice);
 
         ethUsdPriceFeed.updateAnswer(4000 * 10**8);
+        assertEq(
+            optionFactory.getIntrinsicValue(eth1CallId),
+            2000 * 10**(18 + 8)
+        );
         cheats.warp(1000); // now at expiry
 
         emit log_uint(alice.balance);
@@ -184,7 +186,7 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
         uint256 balanceAfter = alice.balance;
         emit log_uint(alice.balance);
 
-        assertEq(balanceBefore + eth1Call.underlyingAmount, balanceAfter);
+        assertEq(balanceAfter, balanceBefore + 0.5 ether);
 
         // token should now be burned
         cheats.expectRevert("ERC721: owner query for nonexistent token");
@@ -228,14 +230,15 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
 
         ethUsdPriceFeed.updateAnswer(4000 * 10**8);
 
-        emit log_uint(alice.balance);
+        // intrinsic value is in usd
+        int256 intrinsicValue = optionFactory.getIntrinsicValue(eth1CallId);
+        assertEq(intrinsicValue, 1000 * 10**(18 + 8));
+
         uint256 balanceBefore = alice.balance;
         cheats.prank(alice);
         optionFactory.exerciseOption(eth1CallId);
         uint256 balanceAfter = alice.balance;
-        emit log_uint(alice.balance);
-
-        assertEq(balanceBefore + eth1Call.underlyingAmount, balanceAfter);
+        assertEq(balanceAfter, balanceBefore + 0.25 ether);
 
         // token should now be burned
         cheats.expectRevert("ERC721: owner query for nonexistent token");
@@ -294,13 +297,17 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
 
         emit log_uint(collateralBefore.amount);
 
-        cheats.expectRevert("cannot go below 1 in collateral-to-risk ratio");
-        optionFactory.withdrawCollateral(eth1CallId, 2 ether);
+        emit log_uint(address(this).balance);
 
-        OptionFactory.Collateral memory collateralAfter = optionFactory
-            .getCollateralById(eth1CallId);
+        // cheats.expectRevert("can't withdraw below liq limit");
+        optionFactory.withdrawCollateral(eth1CallId, 1.9 ether);
 
-        assertEq(collateralBefore.amount, collateralAfter.amount);
+        emit log_uint(address(this).balance);
+
+        // OptionFactory.Collateral memory collateralAfter = optionFactory
+        //     .getCollateralById(eth1CallId);
+
+        // assertEq(collateralBefore.amount, collateralAfter.amount);
     }
 
     function testCanGetRatio() public {
@@ -310,11 +317,21 @@ contract OptionFactoryTest is DSTest, ERC1155Holder, ERC721Holder {
             metadata_eth1Call
         );
 
-        int256 ratio = optionFactory.getCollateralToRiskRatio(eth1CallId);
-        assertEq(ratio, 1000);
-        optionFactory.addCollateral{value: 0.5 ether}(eth1CallId);
-        int256 ratio2 = optionFactory.getCollateralToRiskRatio(eth1CallId);
-        assertEq(ratio2, 1500);
+        ethUsdPriceFeed.updateAnswer(4000 * 10**8);
+
+        // int256 ratio = optionFactory.getCollateralizationRatio(eth1CallId);
+        // // risk = $1000 / $4000 = 0.25 ETH
+        // // ratio = 1 ETH / 0.25 ETH = 4.00 scaled up to 4000
+        // assertEq(ratio, 4000);
+
+        // ethUsdPriceFeed.updateAnswer(3500 * 10**8);
+        // ratio = optionFactory.getCollateralizationRatio(eth1CallId);
+        // assertEq(ratio, 7);
+
+        // ethUsdPriceFeed.updateAnswer(3000 * 10**8);
+        // ratio = optionFactory.getCollateralizationRatio(eth1CallId);
+        // // assertEq(ratio, 7);
+        // emit log_int(ratio);
     }
 
     receive() external payable {}

@@ -1,3 +1,0 @@
-minimalist express server
-
-- build up state by listening to contract events

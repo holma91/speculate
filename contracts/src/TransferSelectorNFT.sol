@@ -11,18 +11,13 @@ import {ITransferSelectorNFT} from "./interfaces/ITransferSelectorNFT.sol";
  * @notice It selects the NFT transfer manager based on a collection address.
  */
 contract TransferSelectorNFT is ITransferSelectorNFT, Ownable {
-    // ERC721 interfaceID
     bytes4 public constant INTERFACE_ID_ERC721 = 0x80ac58cd;
-    // ERC1155 interfaceID
     bytes4 public constant INTERFACE_ID_ERC1155 = 0xd9b67a26;
 
-    // Address of the transfer manager contract for ERC721 tokens
     address public immutable TRANSFER_MANAGER_ERC721;
 
-    // Address of the transfer manager contract for ERC1155 tokens
     address public immutable TRANSFER_MANAGER_ERC1155;
 
-    // Map collection address to transfer manager address
     mapping(address => address) public transferManagerSelectorForCollection;
 
     event CollectionTransferManagerAdded(
@@ -78,7 +73,6 @@ contract TransferSelectorNFT is ITransferSelectorNFT, Ownable {
             "Owner: Collection has no transfer manager"
         );
 
-        // Set it to the address(0)
         transferManagerSelectorForCollection[collection] = address(0);
 
         emit CollectionTransferManagerRemoved(collection);
