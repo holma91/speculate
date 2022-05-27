@@ -34,6 +34,8 @@ FIX GENERAL: show that price comes from chainlink feeds
 FIXES SMALL: 
 - collateralization ratio is always red
 - make header stick
+- make it spin when pending
+- listen for offers
 
 
 

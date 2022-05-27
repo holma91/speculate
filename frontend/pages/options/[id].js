@@ -862,26 +862,28 @@ export default function Option() {
                       )}
                     </p>
                     <div className="price">
-                      {listed && activeChain ? (
-                        <>
-                          <span>Buy now price:</span>
-                          <p>
-                            {ethers.utils.formatEther(makerAsk.price)}{' '}
-                            {activeChain.nativeCurrency.symbol.toUpperCase()}
-                          </p>
-                        </>
-                      ) : (
-                        <p>Unlisted</p>
-                      )}
-                      {bidded && activeChain ? (
-                        <>
-                          <span>Highest Offer:</span>
-                          <p>
-                            {ethers.utils.formatEther(makerBids[0].price)}{' '}
-                            {activeChain.nativeCurrency.symbol.toUpperCase()}
-                          </p>
-                        </>
-                      ) : null}
+                      <Stats>
+                        {listed && activeChain ? (
+                          <MarketPriceDiv>
+                            <span>Buy now price:</span>
+                            <p>
+                              {ethers.utils.formatEther(makerAsk.price)}{' '}
+                              {activeChain.nativeCurrency.symbol.toUpperCase()}
+                            </p>
+                          </MarketPriceDiv>
+                        ) : (
+                          <p>Unlisted</p>
+                        )}
+                        {bidded && activeChain ? (
+                          <MarketPriceDiv>
+                            <span>Highest Offer:</span>
+                            <p>
+                              {ethers.utils.formatEther(makerBids[0].price)}{' '}
+                              {activeChain.nativeCurrency.symbol.toUpperCase()}
+                            </p>
+                          </MarketPriceDiv>
+                        ) : null}
+                      </Stats>
                       {!isLoading &&
                       nft &&
                       nft.owner_of.toLowerCase() ===
@@ -1170,6 +1172,10 @@ const Stats = styled.div`
   /* justify-items: start; */
 `;
 
+const OfferAndBuyNow = styled.div`
+  display: flex;
+`;
+
 const MarketPriceDiv = styled.div`
   display: flex;
   flex-direction: column;
@@ -1199,6 +1205,8 @@ const BuyDiv = styled.div`
   /* width: 50%; */
   display: flex;
   align-items: center;
+  justify-content: center;
+  gap: 5px;
   button {
     /* width: 47%; */
   }
@@ -1259,7 +1267,7 @@ const PriceBox = styled.div`
     }
 
     p {
-      margin-top: 5px;
+      /* margin-top: 5px; */
       font-size: 22px;
     }
   }
@@ -1379,7 +1387,7 @@ const Button = styled.button`
   background-color: #0e76fd;
   color: white;
   margin-top: 10px;
-  margin-right: 10px;
+  /* margin-right: 10px; */
   margin-left: 0;
   padding: 9px 25px;
   font-size: 100%;
@@ -1414,6 +1422,11 @@ const InnerContainer = styled.div`
     :hover {
       color: #0e76fd;
     }
+  }
+
+  form {
+    width: 45%;
+    min-width: 325px;
   }
 `;
 
@@ -1463,7 +1476,7 @@ const StyledMyTextInput = styled.input`
   border: ${(props) => (props.error ? '1px solid red' : '1px solid #ecedef')};
   border-radius: 3px;
   font-weight: 500;
-  width: 250px;
+  /* width: 250px; */
 `;
 
 const StyledSelect = styled.select`

@@ -1,5 +1,8 @@
 import React from 'react';
 import Link from 'next/link';
+// WARNING: IF THE LINE BELOW IS REMOVED IT WONT COMPILE,
+// because of "ReferenceError: regeneratorRuntime is not defined"
+import regeneratorRuntime from 'regenerator-runtime'; // eslint-disable-line no-unused-vars
 import { useState, useEffect, useMemo } from 'react';
 import { useFormik } from 'formik';
 import {
@@ -17,13 +20,17 @@ import {
   ExternalLinkIcon,
   ShieldCheckIcon,
 } from '@heroicons/react/solid';
-import Table from '../components/Table';
+import Table, { AvatarCell } from '../components/Table';
 
 import { generateMetadata, uploadToIpfs, createSvg } from '../utils/ipfsHelper';
 import { rinkeby, binance, zeroAddress } from '../utils/addresses';
 import OptionFactory from '../../contracts/out/OptionFactory.sol/OptionFactory.json';
 import { optionTemplates } from '../data/optionTemplates';
-import { priceFeeds, aggregatorV3InterfaceABI } from '../utils/misc';
+import {
+  priceFeeds,
+  aggregatorV3InterfaceABI,
+  assetToImage,
+} from '../utils/misc';
 import { Spinner } from '../components/shared/Utils';
 
 export default function Write() {
@@ -73,15 +80,16 @@ export default function Write() {
   );
 
   const formik = useFormik({
+    enableReinitialize: true,
     initialValues: {
-      type: 'cryptocurrencies',
-      asset: 'bnb',
+      type: template.type,
+      asset: template.asset,
       strikePrice: template.strikePrice,
       rightToBuy: template.rightToBuy,
-      optionType: 'call',
+      optionType: template.optionType,
       expiry: template.expiry,
-      collateral: 1,
-      optionStyle: 'european',
+      collateral: template.collateral,
+      optionStyle: template.optionStyle,
     },
 
     validationSchema: Yup.object({
@@ -242,6 +250,79 @@ export default function Write() {
     getCollateralPrice();
   }, []);
 
+  const getTemplates = () => {
+    return optionTemplates.map((template) => {
+      return {
+        ...template,
+        strikePrice: '$' + template.strikePrice,
+        img: assetToImage[template.asset.toLowerCase()],
+      };
+    });
+  };
+
+  const templateColumns = useMemo(
+    () => [
+      {
+        Header: 'Asset',
+        accessor: 'asset',
+        Cell: AvatarCell,
+        imgAccessor: 'img',
+      },
+      {
+        Header: 'type',
+        accessor: 'type',
+      },
+      {
+        Header: 'Option type',
+        accessor: 'optionType',
+      },
+      {
+        Header: 'Strike Price',
+        accessor: 'strikePrice',
+      },
+      {
+        Header: 'Right to buy',
+        accessor: 'rightToBuy',
+      },
+      {
+        Header: 'Expiry',
+        accessor: 'expiry',
+      },
+      {
+        Header: 'Collateral',
+        accessor: 'collateral',
+      },
+      {
+        Header: 'Option style',
+        accessor: 'optionStyle',
+      },
+    ],
+    []
+  );
+
+  const templates = useMemo(() => getTemplates(), []);
+
+  const initialState = {
+    sortBy: [
+      {
+        id: 'expiry',
+        desc: true,
+      },
+    ],
+    pageSize: 5,
+  };
+
+  const onClickedPosition = (template) => {
+    let processed = {
+      ...template,
+      strikePrice: template.strikePrice.substring(
+        1,
+        template.strikePrice.length
+      ),
+    };
+    setTemplate(processed);
+  };
+
   return (
     <BaseContainer>
       {createdOptionId ? (
@@ -260,7 +341,7 @@ export default function Write() {
               <InnerContainerHalf>
                 <label htmlFor="type">Type: </label>
                 <StyledSelect id="type" {...formik.getFieldProps('type')}>
-                  <option value="cryptocurrencies">Cryptocurrencies</option>
+                  <option value="crypto">Crypto</option>
                   <option value="equities">Equities</option>
                   <option value="fiat">Fiat</option>
                   <option value="commodities">Commodities</option>
@@ -268,7 +349,7 @@ export default function Write() {
               </InnerContainerHalf>
               <InnerContainerHalf>
                 <label htmlFor="asset">Asset: </label>
-                {formik.values.type === 'cryptocurrencies' ? (
+                {formik.values.type === 'crypto' ? (
                   <StyledSelect id="asset" {...formik.getFieldProps('asset')}>
                     <option value="bnb">$BNB</option>
                     <option value="eth">$ETH</option>
@@ -454,19 +535,34 @@ export default function Write() {
         </NFTContainer>
       </OuterContainer>
 
-      {/* <TemplateContainer>
+      <TemplateContainer>
         <Templates>
-          <p>Templates</p>
           <Table
-            columns={shortColumns}
-            data={shorts}
+            columns={templateColumns}
+            data={templates}
             initialState={initialState}
+            removeSearch={true}
+            onClickedPosition={onClickedPosition}
           />
         </Templates>
-      </TemplateContainer> */}
+      </TemplateContainer>
     </BaseContainer>
   );
 }
+
+const TemplateContainer = styled.div`
+  margin-top: 25px;
+  display: flex;
+  justify-content: center;
+`;
+
+const Templates = styled.div`
+  /* max-width: 1000px; */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  justify-content: start;
+`;
 
 const BaseContainer = styled.div`
   padding: 10px 30px;
@@ -509,19 +605,6 @@ const NewOption = styled.div`
   svg {
     width: 22px;
   }
-`;
-
-const TemplateContainer = styled.div`
-  display: flex;
-  justify-content: center;
-`;
-
-const Templates = styled.div`
-  max-width: 1000px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  justify-content: start;
 `;
 
 const NFTContainer = styled.div`

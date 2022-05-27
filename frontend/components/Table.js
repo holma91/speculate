@@ -113,6 +113,7 @@ function Table({
   initialState,
   clickedPosition,
   onClickedPosition,
+  removeSearch,
 }) {
   // Use the state and functions returned from useTable to build your UI
   const {
@@ -147,23 +148,25 @@ function Table({
   // Render the UI for your table
   return (
     <>
-      <GlobalFilterDiv>
-        <GlobalFilter
-          preGlobalFilteredRows={preGlobalFilteredRows}
-          globalFilter={state.globalFilter}
-          setGlobalFilter={setGlobalFilter}
-        />
-        {headerGroups.map((headerGroup) =>
-          headerGroup.headers.map((column) =>
-            column.Filter ? (
-              <div key={column.id}>
-                {/* <label for={column.id}>{column.render('Header')}: </label> */}
-                {column.render('Filter')}
-              </div>
-            ) : null
-          )
-        )}
-      </GlobalFilterDiv>
+      {!removeSearch ? (
+        <GlobalFilterDiv>
+          <GlobalFilter
+            preGlobalFilteredRows={preGlobalFilteredRows}
+            globalFilter={state.globalFilter}
+            setGlobalFilter={setGlobalFilter}
+          />
+          {headerGroups.map((headerGroup) =>
+            headerGroup.headers.map((column) =>
+              column.Filter ? (
+                <div key={column.id}>
+                  {/* <label for={column.id}>{column.render('Header')}: </label> */}
+                  {column.render('Filter')}
+                </div>
+              ) : null
+            )
+          )}
+        </GlobalFilterDiv>
+      ) : null}
       <TableDivContainer>
         <div className="div-2">
           <div className="div-3">
