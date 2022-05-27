@@ -4,8 +4,8 @@ const { fuji, mumbai, rinkeby, binance, binanceTest } = require('../addresses');
 require('dotenv').config();
 
 const main = async () => {
-  provider = new ethers.providers.JsonRpcProvider(process.env.rpc_binance);
-  const wallet = new ethers.Wallet(process.env.pk7, provider);
+  provider = new ethers.providers.JsonRpcProvider(process.env.rpc_binancetest);
+  const wallet = new ethers.Wallet(process.env.pk8, provider);
   const factory = new ethers.ContractFactory(
     OptionFactory.abi,
     OptionFactory.bytecode,

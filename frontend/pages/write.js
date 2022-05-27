@@ -82,7 +82,7 @@ export default function Write() {
 
       setTimeout(() => {
         setCreatedOptionId(null);
-      }, '20000');
+      }, '200000');
     }
   );
 
@@ -246,8 +246,10 @@ export default function Write() {
       let strikePrice = formik.values.strikePrice;
       const simulatedIntrinsicValue = assetPrice * 1.25 * underlyingAmount;
       const value = strikePrice * underlyingAmount;
-      const baseCollateralUsd = simulatedIntrinsicValue - value;
-      const baseCollateralBnb = baseCollateralUsd / collateralPrice;
+      let baseCollateralUsd = simulatedIntrinsicValue - value;
+      if (baseCollateralUsd < 0) baseCollateralUsd = 0;
+      let baseCollateralBnb = baseCollateralUsd / collateralPrice;
+      if (baseCollateralBnb < 0) baseCollateralBnb = 0;
       setMinimumCollateral({
         usd: parseFloat(baseCollateralUsd.toFixed(2)),
         native: parseFloat(baseCollateralBnb.toFixed(5)),
@@ -383,9 +385,15 @@ export default function Write() {
                 <label htmlFor="type">Type: </label>
                 <StyledSelect id="type" {...formik.getFieldProps('type')}>
                   <option value="crypto">Crypto</option>
-                  <option value="equities">Equities</option>
-                  <option value="fiat">Fiat</option>
-                  <option value="commodities">Commodities</option>
+                  {!isSSR &&
+                  activeChain &&
+                  activeChain.name.toLowerCase() === 'binance chain' ? (
+                    <>
+                      <option value="equities">Equities</option>
+                      <option value="fiat">Fiat</option>
+                      <option value="commodities">Commodities</option>
+                    </>
+                  ) : null}
                 </StyledSelect>
               </InnerContainerHalf>
               <InnerContainerHalf>
@@ -569,7 +577,7 @@ export default function Write() {
                 ) : (
                   <WriteButton
                     type="submit"
-                    disabled
+                    disabled={healthFactor < 1}
                     hf={formik.values.collateral / minimumCollateral.native}
                   >
                     Write Option
@@ -686,6 +694,8 @@ const InnerContainer = styled.div`
   padding: 25px;
   font-size: 120%;
   min-width: 350px;
+  /* max-width: 375px; */
+  width: 360px;
   p {
     margin-top: 10px;
   }

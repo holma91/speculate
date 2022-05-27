@@ -37,7 +37,7 @@ const getFactories = (wallet) => {
 
 const main = async () => {
   provider = new ethers.providers.JsonRpcProvider(process.env.rpc_binance);
-  const wallet = new ethers.Wallet(process.env.pk7, provider);
+  const wallet = new ethers.Wallet(process.env.pk8, provider);
 
   const [seFactory, tmERC721Factory, tmERC1155Factory, tsFactory] =
     getFactories(wallet);

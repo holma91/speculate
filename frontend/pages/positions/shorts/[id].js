@@ -10,7 +10,7 @@ import {
 import { ethers } from 'ethers';
 import styled from 'styled-components';
 import {
-  rinkeby,
+  binance,
   binanceTest,
   zeroAddress,
   nativeTokenMapper,
@@ -83,7 +83,7 @@ export default function Option() {
       );
 
       let contract = new ethers.Contract(
-        rinkeby.optionFactory,
+        binance.optionFactory,
         OptionFactory.abi,
         provider
       );
@@ -134,7 +134,7 @@ export default function Option() {
     const moralisRequest = async (id) => {
       if (activeChain) {
         const chain = moralisMapping[activeChain.name.toLowerCase()];
-        const url = `https://deep-index.moralis.io/api/v2/nft/${rinkeby.optionFactory}/${id}?chain=${chain}&format=decimal`;
+        const url = `https://deep-index.moralis.io/api/v2/nft/${binance.optionFactory}/${id}?chain=${chain}&format=decimal`;
         let response = await fetch(url, {
           headers: { 'X-API-Key': process.env.MORALIS_API_KEY },
         });
@@ -352,7 +352,7 @@ export default function Option() {
                 </>
               ) : null}
             </Stats>
-            <Stats>
+            {/* <Stats>
               <MarketPriceDiv className="ratio">
                 <p className="price-header">Collateralization Ratio:</p>
                 {collateralizationRatio ? (
@@ -361,7 +361,7 @@ export default function Option() {
                   </CollateralRatio>
                 ) : null}
               </MarketPriceDiv>
-            </Stats>
+            </Stats> */}
             {isUserShort ? (
               <ButtonDiv>
                 <Button ratio={collateralizationRatio} add={true}>

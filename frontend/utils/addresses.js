@@ -5,14 +5,14 @@ export const ADDRESS4 = '0xdBD33F154e62EC4a32b4fA31297FDC448b16A09b';
 export const zeroAddress = '0x0000000000000000000000000000000000000000';
 
 export const binance = {
-  speculateExchange: '0x9533Ae97a5fD6B173D1f0AC835D8aaCe9a2A2845',
-  transferManagerERC721: '0xB8A7059DD8f0A0afA18757fc66B75c82D5C21372',
-  transferManagerERC1155: '0x90Cd79F6E63A95d886f55b7FE7206064C91B5641',
-  transferSelectorNFT: '0x0a4E9Ba1286405e85DA3d7D74c2a1C995C3Fa2c3',
+  speculateExchange: '0xDA25d3D604215E2Ea543ACff61b6F24B33B80dc6',
+  transferManagerERC721: '0xa659B6BDBBe9706a6116A3DcFD066Ba8Ea5cb48f',
+  transferManagerERC1155: '0x55A6A31C42d1cE0DbeB19f61bDD8716E974bE79D',
+  transferSelectorNFT: '0x06D21E631CF21E3Cf5FDE4864056b0BF4946b1e6',
 
   wrappedNativeToken: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
 
-  optionFactory: '0x604f36C79Fe100c81F9184d02C04652e9d6f6442',
+  optionFactory: '0xEC73a918a65f0244b0e76AdAAA054CE45501a3E4',
 };
 
 export const binanceTest = {
@@ -23,7 +23,7 @@ export const binanceTest = {
 
   wrappedNativeToken: '0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd',
 
-  optionFactory: '0xB9Ce9f620897AB2cA69D63406fc42801Db93C22D',
+  optionFactory: '0xEC73a918a65f0244b0e76AdAAA054CE45501a3E4',
 };
 
 export const rinkeby = {

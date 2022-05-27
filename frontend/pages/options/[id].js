@@ -278,10 +278,13 @@ export default function Option() {
       if (!addresses.has(bid.signer)) {
         processedOffers.push({
           price: ethers.utils.formatEther(bid.price),
-          usdPrice: '$100', //bid.price.mul(10),
+          usdPrice:
+            '$' +
+            (
+              parseFloat(ethers.utils.formatEther(bid.price)) *
+              parseFloat(assetPrice)
+            ).toFixed(7),
           expiration: bid.endTime,
-          priceTreshold:
-            '$' + ethers.utils.formatUnits(bid.underlyingPriceTreshold, 8),
           from: styleAddress(bid.signer),
           img: 'https://cryptologos.cc/logos/bnb-bnb-logo.svg?v=022',
         });
@@ -308,10 +311,10 @@ export default function Option() {
         Header: 'Expiration',
         accessor: 'expiration',
       },
-      {
-        Header: 'Price Treshold',
-        accessor: 'priceTreshold',
-      },
+      // {
+      //   Header: 'Price Treshold',
+      //   accessor: 'priceTreshold',
+      // },
       {
         Header: 'From',
         accessor: 'from',
@@ -831,11 +834,11 @@ export default function Option() {
                     ) : (
                       <>
                         <p>
-                          Since the option is ITM and american style, it can be
+                          Since the option is American style, it can be
                           exercised early.
                         </p>
                         All our options settle in cash, which means the profit
-                        is payed back in the wrapped native token.
+                        is payed back in the native token.
                         <p></p>
                         {exerciseFunc.isLoading ? (
                           <Button>
@@ -846,7 +849,12 @@ export default function Option() {
                             <Spinner />
                           </Button>
                         ) : (
-                          <Button onClick={exercise}>Exercise Option</Button>
+                          <Button
+                            onClick={exercise}
+                            disabled={getOptionStatus() === 'OTM'}
+                          >
+                            Exercise Option
+                          </Button>
                         )}
                       </>
                     )}

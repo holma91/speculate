@@ -1,5 +1,17 @@
 
 
+1. homepage
+2. small prez
+3. write option
+4. view long and short
+5. list option
+6. change account and buy it
+7. view all your positions
+8. view all options
+9. make a bid
+
+
+
 
 
 - determine if user is short

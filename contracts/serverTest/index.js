@@ -7,10 +7,10 @@ require('dotenv').config();
 const cors = require('cors');
 const app = express();
 app.use(cors());
-const port = 3001;
+const port = 3002;
 
 // set up contract
-provider = new ethers.providers.JsonRpcProvider(process.env.rpc_binance);
+provider = new ethers.providers.JsonRpcProvider(process.env.rpc_binancetest);
 const wallet = new ethers.Wallet(process.env.pk2, provider);
 const speculateExchange = new ethers.Contract(
   binanceTest.speculateExchange,
@@ -21,11 +21,11 @@ const speculateExchange = new ethers.Contract(
 let makerAsks = {};
 let makerBids = {};
 
-fs.readFile('./server/makerAsks.json', 'utf8', (_, storedMakerAsks) => {
+fs.readFile('./serverTest/makerAsks.json', 'utf8', (_, storedMakerAsks) => {
   makerAsks = JSON.parse(storedMakerAsks);
 });
 
-fs.readFile('./server/makerBids.json', 'utf8', (_, storedMakerBids) => {
+fs.readFile('./serverTest/makerBids.json', 'utf8', (_, storedMakerBids) => {
   makerBids = JSON.parse(storedMakerBids);
 });
 
@@ -65,7 +65,7 @@ speculateExchange.on(
     };
 
     fs.writeFile(
-      './server/makerAsks.json',
+      './serverTest/makerAsks.json',
       JSON.stringify(makerAsks),
       (err, _) => {
         if (err) console.log(err);
@@ -133,7 +133,7 @@ speculateExchange.on(
     }
 
     fs.writeFile(
-      './server/makerBids.json',
+      './serverTest/makerBids.json',
       JSON.stringify(makerBids),
       (err, _) => {
         if (err) console.log(err);
@@ -150,7 +150,7 @@ speculateExchange.on(
     delete makerBids[collection][tokenId];
     delete makerAsks[collection][tokenId];
     fs.writeFile(
-      './server/makerBids.json',
+      './serverTest/makerBids.json',
       JSON.stringify(makerBids),
       (err, _) => {
         if (err) console.log(err);
@@ -167,7 +167,7 @@ speculateExchange.on(
     delete makerAsks[collection][tokenId];
     delete makerBids[collection][tokenId];
     fs.writeFile(
-      './server/makerAsks.json',
+      './serverTest/makerAsks.json',
       JSON.stringify(makerAsks),
       (err, _) => {
         if (err) console.log(err);

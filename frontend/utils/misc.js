@@ -21,6 +21,9 @@ export const priceFeeds = {
     sol: {
       usd: '0x0E8a53DD9c13589df6382F13dA6B3Ec8F919B323',
     },
+    aave: {
+      usd: '0xA8357BF572460fC40f4B0aCacbB2a6A61c89f475',
+    },
     avax: {
       usd: '0x5974855ce31EE8E1fff2e76591CbF83D7110F151',
     },
@@ -100,6 +103,9 @@ export const priceFeeds = {
     },
     dot: {
       usd: '0xEA8731FD0685DB8AeAde9EcAE90C4fdf1d8164ed',
+    },
+    aave: {
+      usd: '0x298619601ebCd58d0b526963Deb2365B485Edc74',
     },
   },
   rinkeby: {

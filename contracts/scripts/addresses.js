@@ -65,18 +65,18 @@ const binanceTest = {
 
   wrappedNativeToken: '0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd',
 
-  optionFactory: '0x809D71c732190a7484EaCEdfD88A6e11b3368c7d',
+  optionFactory: '0xEC73a918a65f0244b0e76AdAAA054CE45501a3E4',
 };
 
 const binance = {
-  speculateExchange: '0x1b8D2A3E513A18af20B3444196369d623D85E01E',
-  transferManagerERC721: '0xEb6a1B65D50C5cABDB24f46A83Ac6be85d486cC2',
-  transferManagerERC1155: '0x669e2b14A89d219Bc0aC3Be2bd88F93380A760d4',
-  transferSelectorNFT: '0x4BFA404889cfae72d41d391214107f25e8119F3D',
+  speculateExchange: '0xDA25d3D604215E2Ea543ACff61b6F24B33B80dc6',
+  transferManagerERC721: '0xa659B6BDBBe9706a6116A3DcFD066Ba8Ea5cb48f',
+  transferManagerERC1155: '0x55A6A31C42d1cE0DbeB19f61bDD8716E974bE79D',
+  transferSelectorNFT: '0x06D21E631CF21E3Cf5FDE4864056b0BF4946b1e6',
 
   wrappedNativeToken: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
 
-  optionFactory: '0x604f36C79Fe100c81F9184d02C04652e9d6f6442',
+  optionFactory: '0xEC73a918a65f0244b0e76AdAAA054CE45501a3E4',
 };
 
 const rinkeby = {
