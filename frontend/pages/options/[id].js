@@ -283,7 +283,7 @@ export default function Option() {
           priceTreshold:
             '$' + ethers.utils.formatUnits(bid.underlyingPriceTreshold, 8),
           from: styleAddress(bid.signer),
-          img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg',
+          img: 'https://cryptologos.cc/logos/bnb-bnb-logo.svg?v=022',
         });
       }
       addresses.add(bid.signer);
@@ -1197,6 +1197,8 @@ const ExerciseTerms = styled.div`
 
 const BuyDiv = styled.div`
   /* width: 50%; */
+  display: flex;
+  align-items: center;
   button {
     /* width: 47%; */
   }
@@ -1383,7 +1385,7 @@ const Button = styled.button`
   font-size: 100%;
   font-weight: 700;
   border-radius: 12px;
-  /* width: 50%; */
+  min-width: 150px;
   border: none;
   outline: none;
   cursor: pointer;
@@ -1395,6 +1397,7 @@ const Button = styled.button`
 `;
 
 const InnerContainer = styled.div`
+  margin-top: 10px;
   display: flex;
   flex-direction: column;
   /* border: 1px solid #ecedef; */

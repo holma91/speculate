@@ -20,8 +20,8 @@ const SpinnerStyle = styled.div`
     }
   }
   .loading-spinner {
-    width: 25px;
-    height: 25px;
+    width: 22px;
+    height: 22px;
     border: 6px solid #f3f3f3; /* Light grey */
     border-top: 6px solid #383636; /* Blue */
     border-radius: 50%;
