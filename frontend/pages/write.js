@@ -12,18 +12,18 @@ import {
 import * as Yup from 'yup';
 import { ethers } from 'ethers';
 import styled from 'styled-components';
-import { ArrowNarrowRightIcon, ExternalLinkIcon } from '@heroicons/react/solid';
+import {
+  ArrowNarrowRightIcon,
+  ExternalLinkIcon,
+  ShieldCheckIcon,
+} from '@heroicons/react/solid';
 import Table from '../components/Table';
 
 import { generateMetadata, uploadToIpfs, createSvg } from '../utils/ipfsHelper';
-import { rinkeby, zeroAddress } from '../utils/addresses';
+import { rinkeby, binance, zeroAddress } from '../utils/addresses';
 import OptionFactory from '../../contracts/out/OptionFactory.sol/OptionFactory.json';
 import { optionTemplates } from '../data/optionTemplates';
 import { priceFeeds, aggregatorV3InterfaceABI } from '../utils/misc';
-
-const sleep = (ms) => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-};
 
 export default function Write() {
   const { activeChain } = useNetwork();
@@ -34,6 +34,7 @@ export default function Write() {
   const [assetDecimals, setAssetDecimals] = useState(0);
 
   const [createdOptionId, setCreatedOptionId] = useState(null);
+  const [cRatio, setCRatio] = useState(0.0);
   const [isSSR, setIsSSR] = useState(true);
 
   useEffect(() => {
@@ -42,7 +43,7 @@ export default function Write() {
 
   const createOptionFunc = useContractWrite(
     {
-      addressOrName: rinkeby.optionFactory,
+      addressOrName: binance.optionFactory,
       contractInterface: OptionFactory.abi,
     },
     'createOption'
@@ -57,7 +58,7 @@ export default function Write() {
 
   useContractEvent(
     {
-      addressOrName: rinkeby.optionFactory,
+      addressOrName: binance.optionFactory,
       contractInterface: OptionFactory.abi,
     },
     'Transfer',
@@ -68,13 +69,14 @@ export default function Write() {
 
   const formik = useFormik({
     initialValues: {
-      asset: template.asset,
+      type: 'cryptocurrencies',
+      asset: 'bnb',
       strikePrice: template.strikePrice,
       rightToBuy: template.rightToBuy,
-      type: 'call',
+      optionType: 'call',
       expiry: template.expiry,
       collateral: 1,
-      style: 'european',
+      optionStyle: 'european',
     },
 
     validationSchema: Yup.object({
@@ -208,12 +210,23 @@ export default function Write() {
     return str.substring(0, i);
   };
 
-  const calculateCRRatio = () => {
-    return (
+  const calculateCRatio = () => {
+    const ratio = (
       (collateralPrice * formik.values.collateral) /
       (assetPrice * formik.values.rightToBuy)
     ).toFixed(2);
+
+    setCRatio(ratio);
   };
+
+  useEffect(() => {
+    calculateCRatio();
+  }, [
+    assetPrice,
+    collateralPrice,
+    formik.values.collateral,
+    formik.values.rightToBuy,
+  ]);
 
   useEffect(() => {
     getAssetPrice();
@@ -228,7 +241,7 @@ export default function Write() {
       {createdOptionId ? (
         <NewOption>
           <Link href={`/options/${createdOptionId}`}>
-            <a>
+            <a target="_blank">
               View Newly Created Option <ExternalLinkIcon></ExternalLinkIcon>
             </a>
           </Link>
@@ -237,18 +250,59 @@ export default function Write() {
       <OuterContainer>
         <InnerContainer>
           <form>
+            <InputContainerHalf>
+              <InnerContainerHalf>
+                <label htmlFor="type">Type: </label>
+                <StyledSelect id="type" {...formik.getFieldProps('type')}>
+                  <option value="cryptocurrencies">Cryptocurrencies</option>
+                  <option value="equities">Equities</option>
+                  <option value="fiat">Fiat</option>
+                  <option value="commodities">Commodities</option>
+                </StyledSelect>
+              </InnerContainerHalf>
+              <InnerContainerHalf>
+                <label htmlFor="asset">Asset: </label>
+                {formik.values.type === 'cryptocurrencies' ? (
+                  <StyledSelect id="asset" {...formik.getFieldProps('asset')}>
+                    <option value="bnb">$BNB</option>
+                    <option value="eth">$ETH</option>
+                    <option value="btc">$BTC</option>
+                    <option value="link">$LINK</option>
+                    <option value="matic">$MATIC</option>
+                    <option value="dot">$DOT</option>
+                  </StyledSelect>
+                ) : formik.values.type === 'equities' ? (
+                  <StyledSelect id="asset" {...formik.getFieldProps('asset')}>
+                    <option value="tsla">$TSLA</option>
+                    <option value="amzn">$AMZN</option>
+                    <option value="nflx">$NFLX</option>
+                    <option value="fb">$FB</option>
+                    <option value="gme">$GME</option>
+                    <option value="aapl">$AAPL</option>
+                  </StyledSelect>
+                ) : formik.values.type === 'fiat' ? (
+                  <StyledSelect id="asset" {...formik.getFieldProps('asset')}>
+                    <option value="eur">$EUR</option>
+                    <option value="gbp">$GBP</option>
+                    <option value="chf">$CHF</option>
+                    <option value="cad">$CAD</option>
+                    <option value="aur">$AUR</option>
+                  </StyledSelect>
+                ) : (
+                  <StyledSelect id="asset" {...formik.getFieldProps('asset')}>
+                    <option value="xau">$XAU</option>
+                    <option value="xag">$XAG</option>
+                    <option value="wti">$WTI</option>
+                  </StyledSelect>
+                )}
+              </InnerContainerHalf>
+            </InputContainerHalf>
             <InputContainer>
-              <label htmlFor="asset">Asset: </label>
-              <StyledSelect id="asset" {...formik.getFieldProps('asset')}>
-                <option value="eth">$ETH</option>
-                <option value="btc">$BTC</option>
-                <option value="link">$LINK</option>
-                <option value="matic">$MATIC</option>
-              </StyledSelect>
-            </InputContainer>
-            <InputContainer>
-              <label htmlFor="type">Type: </label>
-              <StyledSelect id="type" {...formik.getFieldProps('type')}>
+              <label htmlFor="optionType">Option type: </label>
+              <StyledSelect
+                id="optionType"
+                {...formik.getFieldProps('optionType')}
+              >
                 <option value="call">CALL</option>
                 <option value="put">PUT</option>
               </StyledSelect>
@@ -283,8 +337,11 @@ export default function Write() {
               />
             </InputContainer>
             <InputContainer>
-              <label htmlFor="style">Style: </label>
-              <StyledSelect id="style" {...formik.getFieldProps('style')}>
+              <label htmlFor="optionStyle">Option style: </label>
+              <StyledSelect
+                id="optionStyle"
+                {...formik.getFieldProps('optionStyle')}
+              >
                 <option value="european">European</option>
                 <option value="american">American</option>
               </StyledSelect>
@@ -318,9 +375,16 @@ export default function Write() {
                 {formik.values.asset !== 'bnb' ? (
                   <MarketPriceDiv>
                     <p className="price-header">
-                      Current {formik.values.asset.toUpperCase()} Price:
+                      {formik.values.asset.toUpperCase()} Price:
                     </p>
-                    <p className="price">${trimStr(assetPrice)}</p>
+                    <a
+                      className="inner-price"
+                      href="https://data.chain.link"
+                      target="_blank"
+                    >
+                      <StyledShieldCheckIcon></StyledShieldCheckIcon>
+                      <p className="price">${trimStr(assetPrice)}</p>
+                    </a>
                   </MarketPriceDiv>
                 ) : null}
                 <MarketPriceDiv>
@@ -329,7 +393,14 @@ export default function Write() {
                       {activeChain.nativeCurrency.name.toUpperCase()} Price:
                     </p>
                   ) : null}
-                  <p className="price">${trimStr(collateralPrice)}</p>
+                  <a
+                    className="inner-price"
+                    href="https://data.chain.link"
+                    target="_blank"
+                  >
+                    <StyledShieldCheckIcon></StyledShieldCheckIcon>
+                    <p className="price">${trimStr(collateralPrice)}</p>
+                  </a>
                 </MarketPriceDiv>
               </Stats>
               <Stats>
@@ -354,10 +425,10 @@ export default function Write() {
                 </MarketPriceDiv>
               </Stats>
               <Stats className="last-one">
-                <MarketPriceDiv>
+                <CRatioDiv ratio={cRatio}>
                   <p className="price-header">Collateral-to-Risk Ratio:</p>
-                  <p className="price">{calculateCRRatio()}</p>
-                </MarketPriceDiv>
+                  <p className="price">{cRatio}</p>
+                </CRatioDiv>
               </Stats>
               <form onSubmit={formik.handleSubmit}>
                 {createOptionFunc.isLoading ? (
@@ -526,6 +597,14 @@ const MarketPriceDiv = styled.div`
   .price-header {
     font-size: 14px;
   }
+
+  .inner-price {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    cursor: pointer;
+  }
+
   .price {
     font-size: 24px;
     font-weight: 500;
@@ -533,6 +612,38 @@ const MarketPriceDiv = styled.div`
   p {
     margin: 0;
   }
+`;
+
+const CRatioDiv = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  .price-header {
+    font-size: 14px;
+  }
+
+  .inner-price {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .price {
+    font-size: 24px;
+    font-weight: 500;
+    /* color: ${(props) => (props.ratio >= 1 ? 'green' : 'red')}; */
+    color: ${(props) =>
+      props.ratio < 1 ? '#f8333c' : props.ratio < 1.2 ? '#FCAB10' : '#44AF69'};
+  }
+  p {
+    margin: 0;
+  }
+`;
+
+const StyledShieldCheckIcon = styled(ShieldCheckIcon)`
+  height: 20px;
+  width: 20px;
 `;
 
 const StyledMyTextInput = styled.input`
@@ -543,6 +654,31 @@ const StyledMyTextInput = styled.input`
   border: ${(props) => (props.error ? '1px solid red' : '1px solid #ecedef')};
   border-radius: 3px;
   font-weight: 500;
+`;
+
+const InputContainerHalf = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+`;
+
+const InnerContainerHalf = styled.div`
+  display: flex;
+  flex-direction: column;
+
+  label {
+    font-size: 16px;
+    margin-left: 2px;
+    margin-right: 15px;
+    color: #737581;
+    opacity: 75%;
+  }
+
+  p {
+    margin: 10px;
+    margin-left: 7px;
+    margin-right: 15px;
+  }
 `;
 
 const InputContainer = styled.div`

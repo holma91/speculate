@@ -8,7 +8,7 @@
 check if current user == option.seller
 
 
-
+view stuff in different apps?
 
 
 CHECKLIST

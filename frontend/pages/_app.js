@@ -10,24 +10,6 @@ import {
 } from '@rainbow-me/rainbowkit';
 import { chain, createClient, WagmiProvider } from 'wagmi';
 
-const avalancheChain = {
-  id: 43_114,
-  name: 'Avalanche',
-  nativeCurrency: {
-    decimals: 18,
-    name: 'Avalanche',
-    symbol: 'AVAX',
-  },
-  rpcUrls: {
-    default: 'https://api.avax.network/ext/bc/C/rpc',
-  },
-  blockExplorers: {
-    default: { name: 'SnowTrace', url: 'https://snowtrace.io' },
-    snowtrace: { name: 'SnowTrace', url: 'https://snowtrace.io' },
-  },
-  testnet: false,
-};
-
 const binanceSmartChain = {
   id: 56,
   name: 'Binance Chain',

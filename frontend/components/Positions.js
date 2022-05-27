@@ -16,7 +16,7 @@ import Table, { AvatarCell } from '../components/Table';
 import { rinkeby, binanceTest, zeroAddress } from '../utils/addresses';
 import { NFTView } from '../components/OptionViews';
 import OptionFactory from '../../contracts/out/OptionFactory.sol/OptionFactory.json';
-import { moralisMapping } from '../utils/misc';
+import { moralisMapping, assetToImage } from '../utils/misc';
 
 const getShorts = () => {
   const data = [
@@ -35,7 +35,21 @@ const getShorts = () => {
       img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg',
     },
     {
-      asset: 'btc',
+      asset: 'googl',
+      priceFeed: 'ETH/USD',
+      type: 'call',
+      strikePrice: '$2000',
+      rightToBuy: 1,
+      expiry: '2023-01-01',
+      premium: '1 ETH',
+      collateral: 1,
+      numberOfOptions: 1,
+      filled: '80%',
+      CL: 'COVERED',
+      img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/7e81db43-5e57-406d-91d9-6f2df24901ca_ETH.svg',
+    },
+    {
+      asset: 'fb',
       priceFeed: 'BTC/USD',
       type: 'call',
       strikePrice: '$30000',
@@ -46,10 +60,10 @@ const getShorts = () => {
       numberOfOptions: 1,
       filled: '100%',
       CL: '190%',
-      img: 'https://prismic-io.s3.amazonaws.com/data-chain-link/19a58483-b100-4d09-ab0d-7d221a491090_BTC.svg',
+      img: 'https://cdn.freelogovectors.net/svg04/facebook-logo-new-2019.svg',
     },
     {
-      asset: 'avax',
+      asset: 'aud',
       priceFeed: 'AVAX/USD',
       type: 'put',
       strikePrice: '$40',
@@ -60,7 +74,7 @@ const getShorts = () => {
       numberOfOptions: 1,
       filled: '30%',
       CL: '150%',
-      img: 'https://images.prismic.io/data-chain-link/63137341-c4d1-4825-b284-b8a5a8436d15_ICON_AVAX.png?auto=compress,format',
+      img: 'https://data-chain-link.cdn.prismic.io/data-chain-link/7bdb9930-38a3-4f49-9d91-4deaa8060bc1_AUD.svg',
     },
     {
       asset: 'link',
@@ -129,7 +143,7 @@ export default function Positions({ allPositions }) {
     let processedNfts = nfts.map((nft) => {
       return {
         asset: nft.metadata.attributes[0].value,
-        assetImg: `${nft.metadata.attributes[0].value}.svg`,
+        assetImg: assetToImage[nft.metadata.attributes[0].value.toLowerCase()],
         strikePrice: nft.metadata.attributes[1].value,
         rightToBuy: nft.metadata.attributes[2].value,
         expiry: nft.metadata.attributes[3].value,

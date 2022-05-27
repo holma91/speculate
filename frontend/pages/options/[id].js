@@ -15,7 +15,12 @@ import * as Yup from 'yup';
 import { ethers } from 'ethers';
 import styled from 'styled-components';
 import SmallTable, { AvatarCell } from '../../components/SmallTable';
-import { rinkeby, zeroAddress, nativeTokenMapper } from '../../utils/addresses';
+import {
+  rinkeby,
+  binance,
+  zeroAddress,
+  nativeTokenMapper,
+} from '../../utils/addresses';
 import aggregatorV3Interface from '../../../contracts/out/AggregatorV3Interface.sol/AggregatorV3Interface.json';
 import SpeculateExchange from '../../../contracts/out/SpeculateExchange.sol/SpeculateExchange.json';
 import OptionFactory from '../../../contracts/out/OptionFactory.sol/OptionFactory.json';
@@ -66,26 +71,27 @@ export default function Option() {
   const [rawAssetPrice, setRawAssetPrice] = useState(null);
   const [assetDecimals, setAssetDecimals] = useState(0);
   const [isUserShort, setIsUserShort] = useState(false);
+  const [noMetadata, setNoMetadata] = useState(false);
   const router = useRouter();
   const { id } = router.query;
 
   const isApprovedForAllFunc = useContractRead(
     {
-      addressOrName: rinkeby.optionFactory,
+      addressOrName: binance.optionFactory,
       contractInterface: OptionFactory.abi,
     },
     'isApprovedForAll',
     {
       args: [
         activeAccount ? activeAccount.address : zeroAddress,
-        rinkeby.transferManagerERC721,
+        binance.transferManagerERC721,
       ],
     }
   );
 
   const setApprovalFunc = useContractWrite(
     {
-      addressOrName: rinkeby.optionFactory,
+      addressOrName: binance.optionFactory,
       contractInterface: OptionFactory.abi,
     },
     'setApprovalForAll'
@@ -108,7 +114,7 @@ export default function Option() {
     },
     'allowance',
     {
-      args: [activeAccount?.address, rinkeby.speculateExchange],
+      args: [activeAccount?.address, binance.speculateExchange],
     }
   );
 
@@ -132,7 +138,7 @@ export default function Option() {
 
   const buyNowFunc = useContractWrite(
     {
-      addressOrName: rinkeby.speculateExchange,
+      addressOrName: binance.speculateExchange,
       contractInterface: SpeculateExchange.abi,
     },
     'matchAskWithTakerBid'
@@ -144,7 +150,7 @@ export default function Option() {
 
   const exerciseFunc = useContractWrite(
     {
-      addressOrName: rinkeby.optionFactory,
+      addressOrName: binance.optionFactory,
       contractInterface: OptionFactory.abi,
     },
     'exerciseOption'
@@ -156,7 +162,7 @@ export default function Option() {
 
   const bidFunc = useContractWrite(
     {
-      addressOrName: rinkeby.speculateExchange,
+      addressOrName: binance.speculateExchange,
       contractInterface: SpeculateExchange.abi,
     },
     'createMakerBid'
@@ -168,7 +174,7 @@ export default function Option() {
 
   const listFunc = useContractWrite(
     {
-      addressOrName: rinkeby.speculateExchange,
+      addressOrName: binance.speculateExchange,
       contractInterface: SpeculateExchange.abi,
     },
     'createMakerAsk'
@@ -180,7 +186,7 @@ export default function Option() {
 
   const acceptFunc = useContractWrite(
     {
-      addressOrName: rinkeby.speculateExchange,
+      addressOrName: binance.speculateExchange,
       contractInterface: SpeculateExchange.abi,
     },
     'matchBidWithTakerAsk'
@@ -192,7 +198,7 @@ export default function Option() {
 
   useContractEvent(
     {
-      addressOrName: rinkeby.speculateExchange,
+      addressOrName: binance.speculateExchange,
       contractInterface: SpeculateExchange.abi,
     },
     'MakerAsk',
@@ -228,7 +234,7 @@ export default function Option() {
   );
   useContractEvent(
     {
-      addressOrName: rinkeby.speculateExchange,
+      addressOrName: binance.speculateExchange,
       contractInterface: SpeculateExchange.abi,
     },
     'MakerBid',
@@ -334,7 +340,7 @@ export default function Option() {
       );
 
       let contract = new ethers.Contract(
-        rinkeby.optionFactory,
+        binance.optionFactory,
         OptionFactory.abi,
         provider
       );
@@ -375,7 +381,7 @@ export default function Option() {
     const moralisRequest = async (id) => {
       if (activeChain) {
         const chain = moralisMapping[activeChain.name.toLowerCase()];
-        const url = `https://deep-index.moralis.io/api/v2/nft/${rinkeby.optionFactory}/${id}?chain=${chain}&format=decimal`;
+        const url = `https://deep-index.moralis.io/api/v2/nft/${binance.optionFactory}/${id}?chain=${chain}&format=decimal`;
         let response = await fetch(url, {
           headers: { 'X-API-Key': process.env.MORALIS_API_KEY },
         });
@@ -398,7 +404,7 @@ export default function Option() {
 
       let actualNft = await moralisRequest(id);
 
-      if (!actualNft.metadata) {
+      if (!actualNft.metadata && actualNft.token_uri) {
         const re = /\/ipfs\/.+metadata.json$/;
         const ipfsString = actualNft.token_uri.match(re)[0];
 
@@ -408,7 +414,15 @@ export default function Option() {
         actualNft.metadata = metadata;
       }
 
-      setNft(actualNft);
+      if (actualNft.metadata) {
+        setNft(actualNft);
+        setNoMetadata(false);
+      } else {
+        setNoMetadata(true);
+        console.log(
+          'moralis is not filling up the token_uri nor metadata field'
+        );
+      }
     } else {
       console.log('connect with your wallet!');
     }
@@ -465,10 +479,10 @@ export default function Option() {
     }
     const setUpMakerOrders = async () => {
       const responseMakerAsk = await fetch(
-        `http://localhost:3001/makerAsks/${rinkeby.optionFactory.toLowerCase()}/${id}`
+        `http://localhost:3001/makerAsks/${binance.optionFactory.toLowerCase()}/${id}`
       );
       const responseMakerBids = await fetch(
-        `http://localhost:3001/makerBids/${rinkeby.optionFactory.toLowerCase()}/${id}`
+        `http://localhost:3001/makerBids/${binance.optionFactory.toLowerCase()}/${id}`
       );
       let makerAsk = await responseMakerAsk.json();
       let makerBids = await responseMakerBids.json();
@@ -664,7 +678,7 @@ export default function Option() {
   const approveSpending = async () => {
     if (activeAccount) {
       approveSpendingFunc.write({
-        args: [rinkeby.speculateExchange, ethers.utils.parseEther('10000000')], // arbitrary value
+        args: [binance.speculateExchange, ethers.utils.parseEther('10000000')], // arbitrary value
       });
     } else {
       console.log('connect your wallet!');
@@ -700,6 +714,16 @@ export default function Option() {
     return value.gt(0) ? '$' + ethers.utils.formatUnits(value, 18 + 8) : '-';
   };
 
+  const reSyncMetadata = async () => {
+    const chain = moralisMapping[activeChain.name.toLowerCase()];
+    const url = `https://deep-index.moralis.io/api/v2/nft/${binance.optionFactory}/${id}/metadata/resync?chain=${chain}&flag=uri&mode=sync`;
+    let response = await fetch(url, {
+      headers: { 'X-API-Key': process.env.MORALIS_API_KEY },
+    });
+    response = await response.json();
+    getNft();
+  };
+
   return (
     <BaseContainer>
       {isUserShort ? (
@@ -709,6 +733,11 @@ export default function Option() {
               You are short this option <ExternalLinkIcon></ExternalLinkIcon>
             </a>
           </Link>
+        </ShortOption>
+      ) : null}
+      {noMetadata ? (
+        <ShortOption>
+          <p onClick={reSyncMetadata}>Can not get metadata. Click to re-sync</p>
         </ShortOption>
       ) : null}
       <OuterContainer>
@@ -1018,7 +1047,7 @@ export default function Option() {
                                     onClick={() =>
                                       setApprovalFunc.write({
                                         args: [
-                                          rinkeby.transferManagerERC721,
+                                          binance.transferManagerERC721,
                                           true,
                                         ],
                                       })

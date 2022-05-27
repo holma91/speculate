@@ -1,7 +1,15 @@
 
 
 
-improvements
-- show that prices are from chainlink price feeds
-- ui of the svg
-- 
+
+todo:
+
+- deploy on testnet
+- deploy on bsc mainnet
+
+
+- try to get the stuff to pancakeswap nft
+
+- try uploading a vid
+
+- start looking at stonks

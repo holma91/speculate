@@ -4,38 +4,38 @@ export const ADDRESS4 = '0xdBD33F154e62EC4a32b4fA31297FDC448b16A09b';
 
 export const zeroAddress = '0x0000000000000000000000000000000000000000';
 
+export const binance = {
+  speculateExchange: '0x9533Ae97a5fD6B173D1f0AC835D8aaCe9a2A2845',
+  transferManagerERC721: '0xB8A7059DD8f0A0afA18757fc66B75c82D5C21372',
+  transferManagerERC1155: '0x90Cd79F6E63A95d886f55b7FE7206064C91B5641',
+  transferSelectorNFT: '0x0a4E9Ba1286405e85DA3d7D74c2a1C995C3Fa2c3',
+
+  wrappedNativeToken: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
+
+  optionFactory: '0xB9Ce9f620897AB2cA69D63406fc42801Db93C22D',
+};
+
 export const binanceTest = {
-  currencyManager: '0x70567d2E7113FD5c543E206751DC82F1Ef0a0754',
-  executionManager: '0x301dBB14eC9534FbFEAcBA59C13351641237caA8',
-  royaltyFeeRegistry: '0x6871c75de1378150021aCb8791b74Feb0a8F7108',
-  royaltyFeeManager: '0x1842d8cF2dCcaE686fD3193f0B9103369c96CC12',
-  speculateExchange: '0x1b8D2A3E513A18af20B3444196369d623D85E01E',
-  strategy: '0x0A84Ac8eabaeCe687A8D0AB24E43433935471495',
-  transferManagerERC721: '0xEb6a1B65D50C5cABDB24f46A83Ac6be85d486cC2',
-  transferManagerERC1155: '0x669e2b14A89d219Bc0aC3Be2bd88F93380A760d4',
-  transferSelectorNFT: '0x4BFA404889cfae72d41d391214107f25e8119F3D',
+  speculateExchange: '0x9533Ae97a5fD6B173D1f0AC835D8aaCe9a2A2845',
+  transferManagerERC721: '0xB8A7059DD8f0A0afA18757fc66B75c82D5C21372',
+  transferManagerERC1155: '0x90Cd79F6E63A95d886f55b7FE7206064C91B5641',
+  transferSelectorNFT: '0x0a4E9Ba1286405e85DA3d7D74c2a1C995C3Fa2c3',
 
   wrappedNativeToken: '0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd',
 
-  optionFactory: '0xc6Ec2A265C0D065227931c297328D9D29B175f38',
+  optionFactory: '0xB9Ce9f620897AB2cA69D63406fc42801Db93C22D',
 };
 
 export const rinkeby = {
-  currencyManager: '0x70567d2E7113FD5c543E206751DC82F1Ef0a0754',
-  executionManager: '0x301dBB14eC9534FbFEAcBA59C13351641237caA8',
-  royaltyFeeRegistry: '0x6871c75de1378150021aCb8791b74Feb0a8F7108',
-  royaltyFeeManager: '0x1842d8cF2dCcaE686fD3193f0B9103369c96CC12',
-  speculateExchange: '0x1b8D2A3E513A18af20B3444196369d623D85E01E',
-  strategy: '0x0A84Ac8eabaeCe687A8D0AB24E43433935471495',
-  transferManagerERC721: '0xEb6a1B65D50C5cABDB24f46A83Ac6be85d486cC2',
-  transferManagerERC1155: '0x669e2b14A89d219Bc0aC3Be2bd88F93380A760d4',
-  transferSelectorNFT: '0x4BFA404889cfae72d41d391214107f25e8119F3D',
+  speculateExchange: '0x9533Ae97a5fD6B173D1f0AC835D8aaCe9a2A2845',
+  transferManagerERC721: '0xB8A7059DD8f0A0afA18757fc66B75c82D5C21372',
+  transferManagerERC1155: '0x90Cd79F6E63A95d886f55b7FE7206064C91B5641',
+  transferSelectorNFT: '0x0a4E9Ba1286405e85DA3d7D74c2a1C995C3Fa2c3',
 
-  nftCollection: '0xD03fFDB76211B391877A3E6b366D863779570D19',
   weth: '0xc778417E063141139Fce010982780140Aa0cD5Ab',
   wrappedNativeToken: '0xc778417E063141139Fce010982780140Aa0cD5Ab',
 
-  optionFactory: '0xc6Ec2A265C0D065227931c297328D9D29B175f38',
+  optionFactory: '0xB9Ce9f620897AB2cA69D63406fc42801Db93C22D',
 };
 
 export const rinkebyOld = {
@@ -91,5 +91,6 @@ export const fuji = {
 
 export const nativeTokenMapper = {
   'binance testnet': binanceTest.wrappedNativeToken,
+  'binance chain': binance.wrappedNativeToken,
   rinkeby: rinkeby.wrappedNativeToken,
 };
