@@ -1,3 +1,5 @@
 next.config.js
+*.config.js
 .env
 bs.txt
+frontend/next.config.js

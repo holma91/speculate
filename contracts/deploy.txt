@@ -7,18 +7,6 @@ POSSIBLE ERRORS
 - staticcall_0_1 on 0x0000... address is when I forget to update transferSelectorNFT on SpeculateExchange (polygon error prob)
 - forget changing addresses on frontend
 
-setup order:
-deploy:
-1. CurrencyManager
-  1.5. add WMATIC with CurrencyManager
-2. ExecutionManager
-3. RoyaltyFeeRegistry
-4. RoyaltyFeeManager
-5. SpeculateExchange
-6. TransferManagerERC721
-7. TransferManagerERC1155
-8. TransferSelector
-  8.5. set TransferSelector on SpeculateExchange
 
 deploy NEW:
 1. SpeculateExchange

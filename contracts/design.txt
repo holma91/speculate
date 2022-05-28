@@ -1,9 +1,0 @@
-
-
-
-
-calculate base commitment on frontend.
-
-
-in createOption, check:
-- collateral value > intrinsic value when (underlying * 1.25)
