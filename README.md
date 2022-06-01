@@ -2,6 +2,9 @@
 ### OBS
 There are definitely bugs in the contracts, use carefully if you are on mainnet (lol)
 
+### video submission for the hackathon
+https://www.youtube.com/watch?v=OYNJi6o9Obo
+
 ## Summary
 
 A platform/exchange where users can both be market makers (by writing and selling the options) and takers by buying options. It's not only limited to cryptocurrencies, it works just aswell with equities and fiat. Everything that's necessary to make this work is chainlink price feeds and basic math. The caveat is that the collateral needs to be in cryptocurrency, it can of course not be in say, apple stock. Every option that gets created gets a corresponding NFT that is traded freely. If you sell your NFT, you also sell your right to exercise the option. So the NFT isn't just connected to the option, it is the actual option.
