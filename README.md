@@ -1,4 +1,6 @@
 # Tokenized Options (Chainlink Hackathon Spring 2022 Submission)
+### OBS
+There are definitely bugs in the contracts, use carefully (lol)
 
 ## Summary
 
